@@ -29,8 +29,10 @@ class ChainEnv:
         self.blocks = blocks
 
 class User:
-    def __init__(self, user_id):
+    def __init__(self, user_id, env: ChainEnv, name: str):
         self.user_id = user_id
+        self.env = env
+        self.env.users[name] = self
 
 class Proposer:
     def __init__(self, proposer_id):
