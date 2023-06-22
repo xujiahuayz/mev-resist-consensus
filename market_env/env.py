@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-class DefiEnv:
+class ChainEnv:
     def __init__(
         self,
         users: dict[str, User] | None = None,
@@ -27,6 +27,61 @@ class DefiEnv:
         self.builders = builders
         self.mempools = mempools
         self.blocks = blocks
+
+class User:
+    def __init__(self, user_id, env: ChainEnv, name: str):
+        self.user_id = user_id
+        self.env = env
+        self.env.users[name] = self
+
+class Proposer:
+    def __init__(self, proposer_id):
+        self.proposer_id = proposer_id
+
+class Builder:
+    def __init__(self, builder_id):
+        self.builder_id = builder_id
+        self.mempool = None
+
+    def set_mempool(self, mempool):
+        self.mempool = mempool
+
+    def build_block(self, block_id):
+        if self.mempool is None:
+            raise ValueError("Mempool not set for the builder.")
+        
+        transactions = self.mempool.get_transactions()
+        ordered_transactions = self.order_transactions(transactions)
+
+        block = Block(block_id)
+        for transaction in ordered_transactions:
+            block.add_transaction(transaction)
+        return block
+    
+    def order_transactions(self, transactions):
+        ordered_transactions = sorted(transactions, key=lambda x: x.gas_usage)
+        return ordered_transactions
+
+class Mempool:
+    def __init__(self):
+        self.transactions = []
+
+    def add_transaction(self, transaction):
+        self.transactions.append(transaction)
+
+    def get_transactions(self):
+        return self.transactions
+
+class Block:
+    def __init__(self, block_id):
+        self.block_id = block_id
+        self.transactions = []
+
+    def add_transaction(self, transaction):
+        self.transactions.append(transaction)
+
+    def get_transactions(self):
+        return self.transactions
 
 
         
