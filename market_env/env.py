@@ -18,9 +18,9 @@ class ChainEnv:
         if builders is None:
             builders = {}
         if mempools is None:
-            mempools = {}
+            mempools = []
         if blocks is None:
-            blocks = {}
+            blocks = []
 
         self.users = users
         self.proposers = proposers
@@ -34,9 +34,23 @@ class User:
         self.env = env
         self.env.users[name] = self
 
+    # users initiate transactions to a recipient
+    def create_transaction(self, transaction_id, amount, recipient):
+        transaction = Transaction(transaction_id, amount, recipient)
+        return transaction
+    
+    # users send transactions to mempool
+    def send_transaction(self, transaction):
+        self.env.mempools.add_transaction(transaction)
+
 class Proposer:
     def __init__(self, proposer_id):
         self.proposer_id = proposer_id
+
+    # select the block with the highest pay
+    def select_block(self, block_id, builder_blocks):
+        selected_block = max(builder_blocks, key=lambda block: block.get_pay())
+        return selected_block
 
 class Builder:
     def __init__(self, builder_id):
@@ -46,10 +60,11 @@ class Builder:
     def set_mempool(self, mempool):
         self.mempool = mempool
 
+    # check mempoool, order the transactions, and build the block
     def build_block(self, block_id):
         if self.mempool is None:
             raise ValueError("Mempool not set for the builder.")
-        
+
         transactions = self.mempool.get_transactions()
         ordered_transactions = self.order_transactions(transactions)
 
@@ -57,7 +72,8 @@ class Builder:
         for transaction in ordered_transactions:
             block.add_transaction(transaction)
         return block
-    
+
+    # order transactions by gas usage
     def order_transactions(self, transactions):
         ordered_transactions = sorted(transactions, key=lambda x: x.gas_usage)
         return ordered_transactions
@@ -82,7 +98,3 @@ class Block:
 
     def get_transactions(self):
         return self.transactions
-
-
-        
-        
