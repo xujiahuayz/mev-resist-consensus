@@ -1,3 +1,6 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
+# make sure User is recognized
+
 import numpy as np
 import pandas as pd
 
