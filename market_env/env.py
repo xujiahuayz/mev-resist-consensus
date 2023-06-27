@@ -32,10 +32,9 @@ class ChainEnv:
         self.blocks = blocks
 
 class User:
-    def __init__(self, user_id, env: ChainEnv, name: str):
+    def __init__(self, user_id, env: ChainEnv):
         self.user_id = user_id
         self.env = env
-        self.env.users[name] = self
 
     # users initiate transactions to a recipient
     def create_transaction(self, transaction_id, amount, recipient):
