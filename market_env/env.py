@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 
+
 class ChainEnv:
     def __init__(
         self,
@@ -31,6 +32,7 @@ class ChainEnv:
         self.mempools = mempools
         self.blocks = blocks
 
+
 class User:
     def __init__(self, user_id, env: ChainEnv):
         self.user_id = user_id
@@ -40,10 +42,11 @@ class User:
     def create_transaction(self, transaction_id, amount, recipient):
         transaction = Transaction(transaction_id, amount, recipient)
         return transaction
-    
+
     # users send transactions to mempool
     def send_transaction(self, transaction):
         self.env.mempools.add_transaction(transaction)
+
 
 class Proposer:
     def __init__(self, proposer_id):
@@ -53,6 +56,7 @@ class Proposer:
     def select_block(self, block_id, builder_blocks):
         selected_block = max(builder_blocks, key=lambda block: block.get_pay())
         return selected_block
+
 
 class Builder:
     def __init__(self, builder_id):
@@ -80,6 +84,7 @@ class Builder:
         ordered_transactions = sorted(transactions, key=lambda x: x.gas_usage)
         return ordered_transactions
 
+
 class Mempool:
     def __init__(self):
         self.transactions = []
@@ -89,6 +94,7 @@ class Mempool:
 
     def get_transactions(self):
         return self.transactions
+
 
 class Block:
     def __init__(self, block_id):
