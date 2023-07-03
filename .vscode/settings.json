@@ -1,5 +1,8 @@
 {
   "editor.formatOnSave": true,
+  "python.linting.pylintArgs": [
+    "--disable=C0111"
+  ],
   "editor.formatOnSaveMode": "file",
   "python.formatting.provider": "none",
   "python.linting.enabled": true,
