@@ -59,3 +59,8 @@ pip install toml
 ```bash
 pip install -e ".[dev]"
 ```
+
+#### Install pre-commit
+```bash
+pre-commit install
+```
