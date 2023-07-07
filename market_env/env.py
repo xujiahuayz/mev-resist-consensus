@@ -86,13 +86,13 @@ class Builder:
     # select which transactions to include in the block base on gas fee and cannot exceed gas limit.
     # sorts the transactions based on gas fee in descending order and selects transactions until the gas limit is reached.
     def select_transactions(
-        self, transactions: List[Transaction], gas_limit: int
-    ) -> List[Transaction]:
+        self, transactions: List["Transaction"], gas_limit: int
+    ) -> List["Transaction"]:
         sorted_transactions = sorted(
             transactions, key=lambda x: x.gas_fee, reverse=True
         )
 
-        selected_transactions: List[Transaction] = []
+        selected_transactions: List["Transaction"] = []
         gas_used = 0
         for transaction in sorted_transactions:
             if gas_used + transaction.gas_usage <= gas_limit:
@@ -104,24 +104,25 @@ class Builder:
         return selected_transactions
 
 
+# transactions added are stored into a list called transaction
 class Mempool:
     def __init__(self) -> None:
-        self.transactions: List[Transaction] = []
+        self.transactions: List["Transaction"] = []
 
-    def add_transaction(self, transaction: Transaction) -> None:
+    def add_transaction(self, transaction: "Transaction") -> None:
         self.transactions.append(transaction)
 
-    def get_transactions(self) -> List[Transaction]:
+    def get_transactions(self) -> List["Transaction"]:
         return self.transactions
 
 
 class Block:
     def __init__(self, block_id) -> None:
         self.block_id = block_id
-        self.transactions: List[Transaction] = []
+        self.transactions: List["Transaction"] = []
 
     def add_transaction(self, transaction: Transaction) -> None:
         self.transactions.append(transaction)
 
-    def get_transactions(self) -> List[Transaction]:
+    def get_transactions(self) -> List["Transaction"]:
         return self.transactions
