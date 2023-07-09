@@ -2,6 +2,8 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
+from __future__ import annotations
+
 from typing import List
 import numpy as np
 import pandas as pd
@@ -40,9 +42,9 @@ class User:
         self.user_id = user_id
         self.env = env
 
-    # users initiate transactions to a recipient
-    def create_transaction(self, transaction_id, amount, recipient) -> "Transaction":
-        transaction = Transaction(transaction_id, amount, recipient)
+    # users initiate transactions to a recipient, the transaction would attach a gas fee
+    def create_transaction(self, transaction_id, amount, recipient, gas) -> Transaction:
+        transaction = Transaction(transaction_id, amount, recipient, gas)
         return transaction
 
     # users send transactions to mempool
@@ -55,9 +57,18 @@ class Proposer:
         self.proposer_id = proposer_id
 
     # select the block with the highest pay
-    def select_block(self, block_id, builder_blocks) -> "Block":
+    def select_block(self, block_id, builder_blocks) -> Block:
         selected_block = max(builder_blocks, key=lambda block: block.get_pay())
         return selected_block
+
+    # Randomly select a builder
+    def select_proposer(self, state: ChainEnv) -> Builder:
+        if state.chosen_builder_index == -1:
+            selected_builder = np.random.choice(list(state.builders.values()))
+        else:
+            selected_builder = state.builders[state.chosen_builder_index]
+
+        return selected_builder
 
 
 class Builder:
@@ -68,8 +79,16 @@ class Builder:
     def set_mempool(self, mempool) -> None:
         self.mempool = mempool
 
+    # publish an exec header, contains exec block hash, bid, and signature
+    def publish_exec_header(self, exec_header: ExecHeader) -> None:
+        pass
+
+    # Publish the intermediate block
+    def publish_intermediate_block(self, intermediate_block: IntermediateBlock) -> None:
+        pass
+
     # check mempoool, order the transactions, and build the block
-    def build_block(self, block_id) -> "Block":
+    def build_block(self, block_id: str, gas_limit: int) -> Block:
         if self.mempool is None:
             raise ValueError("Mempool not set for the builder.")
 
@@ -79,16 +98,37 @@ class Builder:
         block = Block(block_id)
         for transaction in ordered_transactions:
             block.add_transaction(transaction)
+
+        state = self.env  # Assuming env is an instance of ChainEnv
+        if state.chosen_builder_index != -1:
+            if state.chosen_builder_index == self.builder_id:
+                intermediate_block = IntermediateBlock(...)
+                self.publish_intermediate_block(intermediate_block)
+
         return block
 
-    # order transactions by gas usage
-    def order_transactions(
-        self, transactions: List["Transaction"]
+    # select which transactions to include in the block base on gas fee and cannot exceed gas limit.
+    # sorts the transactions based on gas fee in descending order and selects transactions until the gas limit is reached.
+    def select_transactions(
+        self, transactions: List["Transaction"], gas_limit: int
     ) -> List["Transaction"]:
-        ordered_transactions = sorted(transactions, key=lambda x: x.gas_usage)
-        return ordered_transactions
+        sorted_transactions = sorted(
+            transactions, key=lambda x: x.gas_fee, reverse=True
+        )
+
+        selected_transactions: List["Transaction"] = []
+        gas_used = 0
+        for transaction in sorted_transactions:
+            if gas_used + transaction.gas_usage <= gas_limit:
+                selected_transactions.append(transaction)
+                gas_used += transaction.gas_usage
+            else:
+                break
+
+        return selected_transactions
 
 
+# transactions added are stored into a list called transaction
 class Mempool:
     def __init__(self) -> None:
         self.transactions: List["Transaction"] = []
@@ -105,7 +145,7 @@ class Block:
         self.block_id = block_id
         self.transactions: List["Transaction"] = []
 
-    def add_transaction(self, transaction: "Transaction") -> None:
+    def add_transaction(self, transaction: Transaction) -> None:
         self.transactions.append(transaction)
 
     def get_transactions(self) -> List["Transaction"]:
