@@ -61,6 +61,15 @@ class Proposer:
         selected_block = max(builder_blocks, key=lambda block: block.get_pay())
         return selected_block
 
+    # Randomly select a builder
+    def select_proposer(self, state: ChainEnv) -> Builder:
+        if state.chosen_builder_index == -1:
+            selected_builder = np.random.choice(list(state.builders.values()))
+        else:
+            selected_builder = state.builders[state.chosen_builder_index]
+
+        return selected_builder
+
 
 class Builder:
     def __init__(self, builder_id) -> None:
@@ -69,6 +78,14 @@ class Builder:
 
     def set_mempool(self, mempool) -> None:
         self.mempool = mempool
+
+    # publish an exec header, contains exec block hash, bid, and signature
+    def publish_exec_header(self, exec_header: ExecHeader) -> None:
+        pass
+
+    # Publish the intermediate block
+    def publish_intermediate_block(self, intermediate_block: IntermediateBlock) -> None:
+        pass
 
     # check mempoool, order the transactions, and build the block
     def build_block(self, block_id: str, gas_limit: int) -> Block:
@@ -81,6 +98,13 @@ class Builder:
         block = Block(block_id)
         for transaction in ordered_transactions:
             block.add_transaction(transaction)
+
+        state = self.env  # Assuming env is an instance of ChainEnv
+        if state.chosen_builder_index != -1:
+            if state.chosen_builder_index == self.builder_id:
+                intermediate_block = IntermediateBlock(...)
+                self.publish_intermediate_block(intermediate_block)
+
         return block
 
     # select which transactions to include in the block base on gas fee and cannot exceed gas limit.
