@@ -56,12 +56,12 @@ class Proposer:
     def __init__(self, proposer_id) -> None:
         self.proposer_id = proposer_id
 
-    # select the block with the highest pay
+    # select the exec block header with the highest pay
     def select_block(self, block_id, builder_blocks) -> Block:
         selected_block = max(builder_blocks, key=lambda block: block.get_pay())
         return selected_block
 
-    # Randomly select a builder
+    # or Randomly select a builder?
     def select_proposer(self, state: ChainEnv) -> Builder:
         if state.chosen_builder_index == -1:
             selected_builder = np.random.choice(list(state.builders.values()))
@@ -83,7 +83,7 @@ class Builder:
     def publish_exec_header(self, exec_header: ExecHeader) -> None:
         pass
 
-    # Publish the intermediate block
+    # Publish the intermediate block if the header has been selected, this block should be stored after the previous blocks in the class block
     def publish_intermediate_block(self, intermediate_block: IntermediateBlock) -> None:
         pass
 
@@ -144,9 +144,3 @@ class Block:
     def __init__(self, block_id) -> None:
         self.block_id = block_id
         self.transactions: List["Transaction"] = []
-
-    def add_transaction(self, transaction: Transaction) -> None:
-        self.transactions.append(transaction)
-
-    def get_transactions(self) -> List["Transaction"]:
-        return self.transactions
