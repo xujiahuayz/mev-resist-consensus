@@ -1,0 +1,88 @@
+<mxfile host="app.diagrams.net" modified="2023-07-23T11:00:41.208Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36" etag="hdtMhF0n7Rv4jMClGtle" version="21.5.0" type="github">
+  <diagram name="Page-1" id="gS1lGw4ghUpdOXam-v53">
+    <mxGraphModel dx="1003" dy="622" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-3" value="Mempool" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="230" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-4" value="Builder" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-5" value="Proposer" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-6" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="120" y="240" as="sourcePoint" />
+            <mxPoint x="280" y="239.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-8" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="210" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-10" value="Transactions are sent to mempool by users with gas fee" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="120" y="185" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-11" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="300" y="260" as="sourcePoint" />
+            <mxPoint x="428" y="260.52" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-12" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="210" width="20" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-13" value="Build exec block body by gas fee" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="304" y="211" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-14" value="Send a header with bid" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="454" y="232" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-15" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="280" as="sourcePoint" />
+            <mxPoint x="578" y="280.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-16" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="260" width="20" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-17" value="" style="endArrow=classic;html=1;rounded=0;exitX=-0.137;exitY=0.58;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="577.63" y="340.00000000000006" as="sourcePoint" />
+            <mxPoint x="450.37" y="340.8" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-18" value="Select the winning header" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="454" y="290" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-19" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" target="BJs5YMrsWI-7I0nCcWpp-21">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="440" as="sourcePoint" />
+            <mxPoint x="710" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-20" value="Block" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="680" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-21" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="730" y="410" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-22" value="The winner of the header publish the intermediate block and added to the&amp;nbsp; blockchian" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="480" y="443" width="180" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-23" value="Pay for the right to order transactions" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="454" y="350" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-24" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="398" as="sourcePoint" />
+            <mxPoint x="578" y="398.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
