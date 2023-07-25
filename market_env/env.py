@@ -78,11 +78,12 @@ class Builder:
     def set_mempool(self, mempool) -> None:
         self.mempool = mempool
 
-    # publish an exec header, contains exec block hash, bid, and signature
+    # publish an exec header to the proposer, contains exec block hash, bid, and signature
     def publish_exec_header(self, exec_header: ExecHeader) -> None:
         pass
 
-    # Publish the intermediate block if the header has been selected, this block should be stored after the previous blocks in the class block
+    # Publish the intermediate block if the header has been selected, this block should be stored after
+    # the previous blocks in the class block
     def publish_intermediate_block(self, intermediate_block: IntermediateBlock) -> None:
         pass
 
@@ -95,8 +96,15 @@ class Builder:
         ordered_transactions = self.order_transactions(transactions)
 
         block = Block(block_id)
+        gas_used = 0
+
         for transaction in ordered_transactions:
-            block.add_transaction(transaction)
+            # Check if adding the transaction would exceed the gas limit
+            if gas_used + transaction.gas_usage <= gas_limit:
+                block.add_transaction(transaction)
+                gas_used += transaction.gas_usage
+            else:
+                break
 
         state = self.env  # Assuming env is an instance of ChainEnv
         if state.chosen_builder_index != -1:
@@ -107,7 +115,8 @@ class Builder:
         return block
 
     # select which transactions to include in the block base on gas fee and cannot exceed gas limit.
-    # sorts the transactions based on gas fee in descending order and selects transactions until the gas limit is reached.
+    # sorts the transactions based on gas fee in descending order and selects transactions until the
+    # gas limit is reached.
     def select_transactions(
         self, transactions: list[Transaction], gas_limit: int
     ) -> list[Transaction]:
@@ -143,3 +152,7 @@ class Block:
     def __init__(self, block_id) -> None:
         self.block_id = block_id
         self.transactions: list[Transaction] = []
+
+
+class Transaction:
+    pass
