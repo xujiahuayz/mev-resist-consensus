@@ -9,7 +9,7 @@ class ChainEnv:
         users: dict[str, User] | None = None,
         proposers: dict[str, Proposer] | None = None,
         builders: dict[str, Builder] | None = None,
-        mempool: Mempool | None = None,
+        mempools: Mempool | None = None,
         blocks: Block | None = None,
         chains: Chain | None = None,
     ):
@@ -88,6 +88,10 @@ class Builder:
         self.builder_id = builder_id
         self.mempool = None
 
+    def order_transactions(transactions):
+        ordered_transactions = sorted(transactions, key=lambda x: x.gas, reverse=True)
+        return ordered_transactions
+
     def build_block(self, block_id: str, gas_limit: int) -> Block:
         if self.mempool is None:
             raise ValueError("Mempool empty")
@@ -108,13 +112,35 @@ class Builder:
 
         return block
 
-    def order_transacitons(transaction_id, gas):
+    def publish_header(block):
         pass
 
 
 class Block:
-    pass
+    def __init__(
+        self,
+        transaction_id: str,
+        gas: int,
+        builder_id: str,
+        timestamp: int,
+        user_id: str,
+        fee_recipient: str,
+        block_id: str,
+        header_id: str,
+    ) -> None:
+        self.transaction_id = transaction_id
+        self.gas = gas
+        self.builder_id = builder_id
+        self.timestamp = timestamp
+        self.user_id = user_id
+        self.fee_recipient = fee_recipient
+        self.block_id = block_id
+        self.header_id = header_id
+
+    def get_total_gas(self):
+        return sum(transaction.gas for transaction in self.transaction_id)
 
 
 class Chain:
-    pass
+    def __init__(self, block_id: str) -> None:
+        self.block_id = block_id
