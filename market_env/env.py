@@ -56,18 +56,9 @@ class Proposer:
         self.proposer_id = proposer_id
 
     # select the exec block header with the highest pay
-    def select_block(self, block_id, builder_blocks) -> Block:
-        selected_block = max(builder_blocks, key=lambda block: block.get_pay())
-        return selected_block
-
-    # or Randomly select a builder?
-    def select_proposer(self, state: ChainEnv) -> Builder:
-        if state.chosen_builder_index == -1:
-            selected_builder = np.random.choice(list(state.builders.values()))
-        else:
-            selected_builder = state.builders[state.chosen_builder_index]
-
-        return selected_builder
+    def select_header(self, header_id, builder_blocks) -> Block:
+        selected_header = max(builder_blocks, key=lambda block: block.get_pay())
+        return selected_header
 
 
 class Builder:
@@ -77,15 +68,6 @@ class Builder:
 
     def set_mempool(self, mempool) -> None:
         self.mempool = mempool
-
-    # publish an exec header to the proposer, contains exec block hash, bid, and signature
-    def publish_exec_header(self, exec_header: ExecHeader) -> None:
-        pass
-
-    # Publish the intermediate block if the header has been selected, this block should be stored after
-    # the previous blocks in the class block
-    def publish_intermediate_block(self, intermediate_block: IntermediateBlock) -> None:
-        pass
 
     # check mempoool, order the transactions, and build the block
     def build_block(self, block_id: str, gas_limit: int) -> Block:
@@ -135,6 +117,15 @@ class Builder:
 
         return selected_transactions
 
+    # publish an exec header to the proposer, contains exec block hash, bid, and signature
+    def publish_header(self, heade_id: ExecHeader) -> None:
+        pass
+
+    # Publish the intermediate block if the header has been selected, this block should be stored after
+    # the previous blocks in the class block
+    def publish_intermediate(self, intermediate_block: IntermediateBlock) -> None:
+        pass
+
 
 # transactions added are stored into a list called transaction
 class Mempool:
@@ -153,6 +144,17 @@ class Block:
         self.block_id = block_id
         self.transactions: list[Transaction] = []
 
+    def add_intermediate(self, intermediate_block: IntermediateBlock) -> None:
+        pass
+
 
 class Transaction:
+    pass
+
+
+class ExecHeader:
+    pass
+
+
+class IntermediateBlock:
     pass
