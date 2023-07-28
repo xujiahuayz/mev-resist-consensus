@@ -4,9 +4,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-import pandas as pd
-
 
 class ChainEnv:
     def __init__(
@@ -16,6 +13,7 @@ class ChainEnv:
         builders: dict[str, Builder] | None = None,
         mempools: Mempool | None = None,
         blocks: Block | None = None,
+        chains: Chain | None = None,
     ):
 
         if users is None:
@@ -28,36 +26,49 @@ class ChainEnv:
             mempools = []
         if blocks is None:
             blocks = []
+        if chains is None:
+            chains = []
 
         self.users = users
         self.proposers = proposers
         self.builders = builders
         self.mempools = mempools
         self.blocks = blocks
+        self.chains = chains
 
 
 class User:
-    def __init__(self, user_id, env: ChainEnv) -> None:
+    def __init__(self, user_id, env: ChainEnv):
         self.user_id = user_id
         self.env = env
 
-    # users initiate transactions to a recipient, the transaction would attach a gas fee
-    def create_transaction(self, transaction_id, amount, recipient, gas) -> Transaction:
-        transaction = Transaction(transaction_id, amount, recipient, gas)
-        return transaction
 
-    # users send transactions to mempool
-    def send_transaction(self, transaction) -> None:
-        self.env.mempools.add_transaction(transaction)
+class Mempool:
+    def __init__(
+        self, transaction_id, amount, sender, recipient, gas, gas_price, timestamp
+    ) -> None:
+        self.transaction_id = transaction_id
+        self.amount = amount
+        self.sender = sender
+        self.recipient = recipient
+        self.gas = gas
+        self.gas_price = gas_price
+        self.timestamp = timestamp
 
 
 class Proposer:
-    def __init__(self, proposer_id) -> None:
+    def __init__(self, proposer_id, fee_recipent) -> None:
         self.proposer_id = proposer_id
+        self.fee_recipent = fee_recipent
 
-    # select the exec block header with the highest pay
-    def select_header(self, header_id, builder_blocks) -> Block:
-        selected_header = max(builder_blocks, key=lambda block: block.get_pay())
+    def select_header(self, blocks: list) -> dict:
+        if not blocks:
+            return None
+
+        headers = [Block.get_header() in Block]
+
+        selected_header = max(headers, key=lambda x: x["bid"])
+        self.selected_header = selected_header
         return selected_header
 
 
@@ -66,13 +77,13 @@ class Builder:
         self.builder_id = builder_id
         self.mempool = None
 
-    def set_mempool(self, mempool) -> None:
-        self.mempool = mempool
+    def order_transactions(self, transactions):
+        ordered_transactions = sorted(transactions, key=lambda x: x.gas, reverse=True)
+        return ordered_transactions
 
-    # check mempoool, order the transactions, and build the block
     def build_block(self, block_id: str, gas_limit: int) -> Block:
         if self.mempool is None:
-            raise ValueError("Mempool not set for the builder.")
+            raise ValueError("Mempool empty")
 
         transactions = self.mempool.get_transactions()
         ordered_transactions = self.order_transactions(transactions)
@@ -82,79 +93,56 @@ class Builder:
 
         for transaction in ordered_transactions:
             # Check if adding the transaction would exceed the gas limit
-            if gas_used + transaction.gas_usage <= gas_limit:
+            if gas_used + transaction.gas <= gas_limit:
                 block.add_transaction(transaction)
-                gas_used += transaction.gas_usage
+                gas_used += transaction.gas
             else:
                 break
-
-        state = self.env  # Assuming env is an instance of ChainEnv
-        if state.chosen_builder_index != -1:
-            if state.chosen_builder_index == self.builder_id:
-                intermediate_block = IntermediateBlock(...)
-                self.publish_intermediate_block(intermediate_block)
 
         return block
 
-    # select which transactions to include in the block base on gas fee and cannot exceed gas limit.
-    # sorts the transactions based on gas fee in descending order and selects transactions until the
-    # gas limit is reached.
-    def select_transactions(
-        self, transactions: list[Transaction], gas_limit: int
-    ) -> list[Transaction]:
-        sorted_transactions = sorted(
-            transactions, key=lambda x: x.gas_fee, reverse=True
-        )
-
-        selected_transactions: list[Transaction] = []
-        gas_used = 0
-        for transaction in sorted_transactions:
-            if gas_used + transaction.gas_usage <= gas_limit:
-                selected_transactions.append(transaction)
-                gas_used += transaction.gas_usage
-            else:
-                break
-
-        return selected_transactions
-
-    # publish an exec header to the proposer, contains exec block hash, bid, and signature
-    def publish_header(self, heade_id: ExecHeader) -> None:
-        pass
-
-    # Publish the intermediate block if the header has been selected, this block should be stored after
-    # the previous blocks in the class block
-    def publish_intermediate(self, intermediate_block: IntermediateBlock) -> None:
-        pass
-
-
-# transactions added are stored into a list called transaction
-class Mempool:
-    def __init__(self) -> None:
-        self.transactions: list[Transaction] = []
-
-    def add_transaction(self, transaction: list[Transaction]) -> None:
-        self.transactions.append(transaction)
-
-    def get_transactions(self) -> list[Transaction]:
-        return self.transactions
-
 
 class Block:
-    def __init__(self, block_id) -> None:
+    def __init__(
+        self,
+        transaction_id: str,
+        gas: float,
+        gas_price: float,
+        builder_id: str,
+        timestamp: int,
+        user_id: str,
+        fee_recipient: str,
+        block_id: str,
+        header_id: str,
+        bid: float,
+    ) -> None:
+        self.transaction_id = transaction_id
+        self.gas = gas
+        self.gas_price = gas_price
+        self.builder_id = builder_id
+        self.timestamp = timestamp
+        self.user_id = user_id
+        self.fee_recipient = fee_recipient
         self.block_id = block_id
-        self.transactions: list[Transaction] = []
+        self.header_id = header_id
+        self.bid = bid
 
-    def add_intermediate(self, intermediate_block: IntermediateBlock) -> None:
-        pass
+    def get_total_gasPrice(self):
+        return sum(transaction.gas_price for transaction in self.transaction)
+
+    def get_header(self):
+        total_gas_price = self.get_total_gas()
+        header = {
+            "header_id": self.header_id,
+            "timestamp": self.timestamp,
+            "total_gasPrice": total_gas_price,
+            "fee_recipient": self.fee_recipient,
+            "builder_id": self.builder_id,
+            "bid": self.bid,
+        }
+        return header
 
 
-class Transaction:
-    pass
-
-
-class ExecHeader:
-    pass
-
-
-class IntermediateBlock:
-    pass
+class Chain:
+    def __init__(self, block_id: str) -> None:
+        self.block_id = block_id
