@@ -7,19 +7,44 @@
 
 from __future__ import annotations
 
-class User:
+
+class Chain:
+    """A chain that stores blocks."""
+    def __init__(self):
+        self.blocks: list[str] = []
+
+    def add_block(self, block: str):
+        self.blocks.append(block)
+
+class Node:
+    """Nodes include proposers, builders, and users."""
+    def __init__(self):
+        self.mempool = Mempool()
+
+    def validate_transaction(self, transaction):
+        return transaction.amount > 0 and transaction.gas_price > 0 and transaction.gas > 0
+
+    def receive_transaction(self, transaction):
+        if self.validate_transaction(transaction):
+            self.mempool.add_transaction(transaction)
+            self.broadcast_transaction(transaction)
+
+    def broadcast_transaction(self, transaction):
+        for node in self.peers:
+            node.receive_transaction(transaction)
+
+class User(Node):
     """A user with user id that can create transactions."""
-    def __init__(self, user_id: str):
+    def __init__(self, user_id):
+        super().__init__()
         self.user_id = user_id
 
-    def create_transaction(
-        self, transaction_id: int, recipient: str, amount: float, gas_price: float,
-        gas: int, timestamp: int, mempool: 'Mempool'
-    ):
+    def create_transaction(self, transaction_id: int, recipient: str, amount: float, 
+                           gas_price: float, gas: int, timestamp: int) -> None:
         transaction = Transaction(
             transaction_id, self.user_id, recipient, amount, gas_price, gas, timestamp
         )
-        mempool.add_transaction(transaction)
+        self.receive_transaction(transaction)
 
 
 class Transaction:
@@ -49,20 +74,21 @@ class Mempool:
         self.transactions.append(transaction)
 
 
-class Builder:
+class Builder(Node):
     """A builder with builder id and gas limit that can build blocks."""
     def __init__(self, builder_id: str, gas_limit: int):
+        super().__init__()
         self.builder_id = builder_id
         self.gas_limit = gas_limit
 
-    def build_block(self, mempool: 'Mempool') -> ('Block', 'Header'):
+    def build_block(self):
         """
         Build a block from the mempool, and return the block and its header. 
         The ordering is based on gas price paied for the transaction.
         Add transactions to the block until the gas limit is reached.
         """
         sorted_transactions = sorted(
-            mempool.transactions, key=lambda t: t.gas_price, reverse=True
+            self.mempool.transactions, key=lambda t: t.gas_price, reverse=True
         )
         selected_transactions = []
         gas_used = 0
@@ -82,7 +108,7 @@ class Block:
     def __init__(self, transactions: list[Transaction]):
         self.transactions = transactions
 
-    def extract_header(self, builder_id: str) -> 'Header':
+    def extract_header(self, builder_id: str) -> Header:
         total_gas_price = sum(t.gas_price for t in self.transactions)
         header_id = 1  # Use a simple integer as header_id for simplicity
         return Header(header_id, 1, total_gas_price, builder_id)
@@ -97,40 +123,34 @@ class Header:
         self.builder_id = builder_id
 
 
-class Proposer:
+class Proposer(Node):
     """A proposer with signature and fee recipient that can receive bids, 
     sign and publish blocks."""
     def __init__(self, signature: str, fee_recipient: str):
+        super().__init__()
         self.chain = Chain()
         self.signature = signature
         self.fee_recipient = fee_recipient
         self.highest_bid = None
-        self.winning_builder = None
+        self.winning_builder = None 
         self.winning_header = None
 
-    def receive_bid(self, header: 'Header', bid: float, builder: 'Builder'):
+    def receive_bid(self, header: Header, bid: float, builder: Builder):
         if self.highest_bid is None or bid > self.highest_bid:
             self.highest_bid = bid
             self.winning_builder = builder
             self.winning_header = header
 
-    def publish_block(self, mempool: 'Mempool'):
-        block, _ = self.winning_builder.build_block(mempool)
+    def publish_block(self):
+        block, _ = self.winning_builder.build_block()
         signed_block = self.sign_block(block)
         self.chain.add_block(signed_block)
 
-    def sign_block(self, block):
+    def sign_block(self, block: Block) -> str:
         # Signing process is simplified
         return f"Block id: {block.header_id}, Signed by: {self.signature}"
 
 
-class Chain:
-    """A chain that stores blocks."""
-    def __init__(self):
-        self.blocks: list[str] = []
-
-    def add_block(self, block: str):
-        self.blocks.append(block)
 
 
 # if __name__ == "__main__":
