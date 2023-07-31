@@ -13,7 +13,8 @@ class User:
         self.user_id = user_id
 
     def create_transaction(
-        self, transaction_id: int, recipient: str, amount: float, gas_price: float, gas: int, timestamp: int, mempool: 'Mempool'
+        self, transaction_id: int, recipient: str, amount: float, gas_price: float,
+        gas: int, timestamp: int, mempool: 'Mempool'
     ):
         transaction = Transaction(
             transaction_id, self.user_id, recipient, amount, gas_price, gas, timestamp
@@ -23,7 +24,8 @@ class User:
 
 class Transaction:
     def __init__(
-        self, transaction_id: int, sender: str, recipient: str, amount: float, gas_price: float, gas: int, timestamp: int
+        self, transaction_id: int, sender: str, recipient: str, amount: float,
+        gas_price: float, gas: int, timestamp: int
     ):
         self.transaction_id = transaction_id
         self.amount = amount
@@ -88,6 +90,8 @@ class Proposer:
         self.signature = signature
         self.fee_recipient = fee_recipient
         self.highest_bid = None
+        self.winning_builder = None
+        self.winning_header = None
 
     def receive_bid(self, header: 'Header', bid: float, builder: 'Builder'):
         if self.highest_bid is None or bid > self.highest_bid:
