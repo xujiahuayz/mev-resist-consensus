@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 class User:
+    """A user with user id that can create transactions."""
     def __init__(self, user_id: str):
         self.user_id = user_id
 
@@ -22,6 +23,10 @@ class User:
 
 
 class Transaction:
+    """
+    A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp. 
+    For storage simplicity, we use a simple integer as transaction id.
+    """
     def __init__(
         self, transaction_id: int, sender: str, recipient: str, amount: float,
         gas_price: float, gas: int, timestamp: int
@@ -36,19 +41,26 @@ class Transaction:
 
 
 class Mempool:
+    """A mempool that stores transactions."""
     def __init__(self):
-        self.transactions: List[Transaction] = []
+        self.transactions: list[Transaction] = []
 
     def add_transaction(self, transaction: Transaction):
         self.transactions.append(transaction)
 
 
 class Builder:
+    """A builder with builder id and gas limit that can build blocks."""
     def __init__(self, builder_id: str, gas_limit: int):
         self.builder_id = builder_id
         self.gas_limit = gas_limit
 
     def build_block(self, mempool: 'Mempool') -> ('Block', 'Header'):
+        """
+        Build a block from the mempool, and return the block and its header. 
+        The ordering is based on gas price paied for the transaction.
+        Add transactions to the block until the gas limit is reached.
+        """
         sorted_transactions = sorted(
             mempool.transactions, key=lambda t: t.gas_price, reverse=True
         )
@@ -66,7 +78,8 @@ class Builder:
 
 
 class Block:
-    def __init__(self, transactions: List[Transaction]):
+    """A block with the list of transactions packed by builder."""
+    def __init__(self, transactions: list[Transaction]):
         self.transactions = transactions
 
     def extract_header(self, builder_id: str) -> 'Header':
@@ -76,6 +89,7 @@ class Block:
 
 
 class Header:
+    """Header information stored."""
     def __init__(self, header_id: int, timestamp: int, total_gas_price: float, builder_id: str):
         self.header_id = header_id
         self.timestamp = timestamp
@@ -84,6 +98,7 @@ class Header:
 
 
 class Proposer:
+    """A proposer with signature and fee recipient that can receive bids, sign and publish blocks."""
     def __init__(self, signature: str, fee_recipient: str):
         self.chain = Chain()
         self.signature = signature
@@ -109,8 +124,9 @@ class Proposer:
 
 
 class Chain:
+    """A chain that stores blocks."""
     def __init__(self):
-        self.blocks: List[str] = []
+        self.blocks: list[str] = []
 
     def add_block(self, block: str):
         self.blocks.append(block)
