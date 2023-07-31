@@ -98,7 +98,8 @@ class Header:
 
 
 class Proposer:
-    """A proposer with signature and fee recipient that can receive bids, sign and publish blocks."""
+    """A proposer with signature and fee recipient that can receive bids, 
+    sign and publish blocks."""
     def __init__(self, signature: str, fee_recipient: str):
         self.chain = Chain()
         self.signature = signature
