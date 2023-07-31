@@ -6,7 +6,6 @@
 
 
 from __future__ import annotations
-from typing import List
 
 class User:
     def __init__(self, user_id: str):
