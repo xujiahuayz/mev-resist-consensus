@@ -111,28 +111,28 @@ class Chain:
         self.blocks.append(block)
 
 
-if __name__ == "__main__":
-    # Create a mempool
-    mempool = Mempool()
+# if __name__ == "__main__":
+#     # Create a mempool
+#     mempool = Mempool()
 
-    # Create users and transactions
-    user1 = User("User1")
-    user2 = User("User2")
-    user1.create_transaction(1, "User2", 50, 5, 10, 1, mempool)
-    user2.create_transaction(2, "User1", 100, 10, 20, 2, mempool)
+#     # Create users and transactions
+#     user1 = User("User1")
+#     user2 = User("User2")
+#     user1.create_transaction(1, "User2", 50, 5, 10, 1, mempool)
+#     user2.create_transaction(2, "User1", 100, 10, 20, 2, mempool)
 
-    # Create a builder and a block
-    builder = Builder("Builder1", 30)
-    block, header = builder.build_block(mempool)
-    print("Header ID: ", header.header_id)
+#     # Create a builder and a block
+#     builder = Builder("Builder1", 30)
+#     block, header = builder.build_block(mempool)
+#     print("Header ID: ", header.header_id)
 
-    # Create a proposer and have them receive a bid
-    proposer = Proposer("Signature1", "FeeRecipient1")
-    proposer.receive_bid(header, 200, builder)
+#     # Create a proposer and have them receive a bid
+#     proposer = Proposer("Signature1", "FeeRecipient1")
+#     proposer.receive_bid(header, 200, builder)
 
-    # Have the proposer publish the block
-    proposer.publish_block(mempool)
+#     # Have the proposer publish the block
+#     proposer.publish_block(mempool)
 
-    # Check the blocks in the chain
-    for block in proposer.chain.blocks:
-        print(block)
+#     # Check the blocks in the chain
+#     for block in proposer.chain.blocks:
+#         print(block)
