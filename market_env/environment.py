@@ -1,6 +1,9 @@
 # pylint: disable=missing-module-docstring
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
+# pylint: disable=R0913
+# pylint: disable=too-few-public-methods
+
 
 from __future__ import annotations
 from typing import List
@@ -10,8 +13,7 @@ class User:
         self.user_id = user_id
 
     def create_transaction(
-        self, transaction_id: int, recipient: str, amount: float, 
-        gas_price: float, gas: int, timestamp: int, mempool: 'Mempool'
+        self, transaction_id: int, recipient: str, amount: float, gas_price: float, gas: int, timestamp: int, mempool: 'Mempool'
     ):
         transaction = Transaction(
             transaction_id, self.user_id, recipient, amount, gas_price, gas, timestamp
@@ -21,8 +23,7 @@ class User:
 
 class Transaction:
     def __init__(
-        self, transaction_id: int, sender: str, recipient: str, amount: float,
-        gas_price: float, gas: int, timestamp: int
+        self, transaction_id: int, sender: str, recipient: str, amount: float, gas_price: float, gas: int, timestamp: int
     ):
         self.transaction_id = transaction_id
         self.amount = amount
@@ -86,9 +87,10 @@ class Proposer:
         self.chain = Chain()
         self.signature = signature
         self.fee_recipient = fee_recipient
+        self.highest_bid = None
 
     def receive_bid(self, header: 'Header', bid: float, builder: 'Builder'):
-        if not hasattr(self, "highest_bid") or bid > self.highest_bid:
+        if self.highest_bid is None or bid > self.highest_bid:
             self.highest_bid = bid
             self.winning_builder = builder
             self.winning_header = header
@@ -98,9 +100,9 @@ class Proposer:
         signed_block = self.sign_block(block)
         self.chain.add_block(signed_block)
 
-    def sign_block(self, block: 'Block') -> str:
+    def sign_block(self, block):
         # Signing process is simplified
-        return f"Block id: {self.winning_header.header_id}, Signed by: {self.signature}"
+        return f"Block id: {block.header_id}, Signed by: {self.signature}"
 
 
 class Chain:
