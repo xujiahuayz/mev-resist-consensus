@@ -9,17 +9,45 @@ from __future__ import annotations
 
 
 class Chain:
-    """A chain that stores blocks."""
-    def __init__(self):
+    def __init__(
+        self,
+        users: dict[str, User] = None,
+        builders: dict[str, Builder] = None,
+        proposers: dict[str, Proposer] = None,
+        mempools: dict[str, Mempool] = None,
+    ):
+        if users is None:
+            users = {}
+        if builders is None:
+            builders = {}
+        if proposers is None:
+            proposers = {}
+        if mempools is None:
+            mempools = {}
+
+        self.users = users
+        self.builders = builders
+        self.proposers = proposers
+        self.mempools = mempools
         self.blocks: list[str] = []
 
     def add_block(self, block: str):
         self.blocks.append(block)
+        self.update_mempools(block)
+
+    def update_mempools(self, block: str):
+        # Assuming block.transactions is a list of transaction ids
+        for mempool in self.mempools.values():
+            mempool.transactions = [t for t in mempool.transactions if t.transaction_id not in block.transactions]
 
 class Node:
     """Nodes include proposers, builders, and users."""
     def __init__(self):
         self.mempool = Mempool()
+
+    def add_peer(self, peer):
+        """Add a peer node to the node's peer list."""
+        self.peers.append(peer)
 
     def validate_transaction(self, transaction):
         return transaction.amount > 0 and transaction.gas_price > 0 and transaction.gas > 0
@@ -148,33 +176,45 @@ class Proposer(Node):
 
     def sign_block(self, block: Block) -> str:
         # Signing process is simplified
-        return f"Block id: {block.header_id}, Signed by: {self.signature}"
+        return f"Block id: {block.header.header_id}, Signed by: {self.signature}"
 
 
 
 
 # if __name__ == "__main__":
-#     # Create a mempool
-#     mempool = Mempool()
-
-#     # Create users and transactions
+#     # Create users, builder, and proposer
 #     user1 = User("User1")
 #     user2 = User("User2")
-#     user1.create_transaction(1, "User2", 50, 5, 10, 1, mempool)
-#     user2.create_transaction(2, "User1", 100, 10, 20, 2, mempool)
-
-#     # Create a builder and a block
 #     builder = Builder("Builder1", 30)
-#     block, header = builder.build_block(mempool)
-#     print("Header ID: ", header.header_id)
-
-#     # Create a proposer and have them receive a bid
 #     proposer = Proposer("Signature1", "FeeRecipient1")
+
+#     # Interconnect the nodes as peers
+#     user1.add_peer(user2)
+#     user1.add_peer(builder)
+#     user1.add_peer(proposer)
+#     user2.add_peer(user1)
+#     user2.add_peer(builder)
+#     user2.add_peer(proposer)
+#     builder.add_peer(user1)
+#     builder.add_peer(user2)
+#     builder.add_peer(proposer)
+#     proposer.add_peer(user1)
+#     proposer.add_peer(user2)
+#     proposer.add_peer(builder)
+
+#     # Create transactions
+#     user1.create_transaction(1, "User2", 50, 5, 10, 1)
+#     user2.create_transaction(2, "User1", 100, 10, 20, 2)
+
+#     # Builder builds a block and sends bid to proposer
+#     block, header = builder.build_block()
 #     proposer.receive_bid(header, 200, builder)
 
-#     # Have the proposer publish the block
-#     proposer.publish_block(mempool)
+#     # Proposer publishes the block
+#     proposer.publish_block()
 
 #     # Check the blocks in the chain
 #     for block in proposer.chain.blocks:
 #         print(block)
+
+
