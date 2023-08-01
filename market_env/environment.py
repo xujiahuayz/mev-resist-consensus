@@ -38,12 +38,14 @@ class Chain:
     def update_mempools(self, block: str):
         # Assuming block.transactions is a list of transaction ids
         for mempool in self.mempools.values():
-            mempool.transactions = [t for t in mempool.transactions if t.transaction_id not in block.transactions]
+            mempool.transactions = [t for t in mempool.transactions if t.transaction_id 
+                                    not in block.transactions]
 
 class Node:
     """Nodes include proposers, builders, and users."""
-    def __init__(self):
+    def __init__(self, peers: list[Node] = None):
         self.mempool = Mempool()
+        self.peers = peers if peers is not None else []
 
     def add_peer(self, peer):
         """Add a peer node to the node's peer list."""
@@ -160,7 +162,7 @@ class Proposer(Node):
         self.signature = signature
         self.fee_recipient = fee_recipient
         self.highest_bid = None
-        self.winning_builder = None 
+        self.winning_builder = None
         self.winning_header = None
 
     def receive_bid(self, header: Header, bid: float, builder: Builder):
@@ -216,5 +218,3 @@ class Proposer(Node):
 #     # Check the blocks in the chain
 #     for block in proposer.chain.blocks:
 #         print(block)
-
-
