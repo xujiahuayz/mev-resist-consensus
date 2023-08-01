@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import random
+import time
 
 class Chain:
     def __init__(
@@ -154,6 +156,7 @@ class Block:
     def __init__(self, transactions: list[Transaction], header_id: int) -> None:
         self.transactions = transactions
         self.header_id = header_id
+        self.signature = None
 
     def extract_header(self, builder_id: str) -> Header:
         """Extract header information from the block."""
@@ -192,45 +195,53 @@ class Proposer(Node):
         signed_block = self.sign_block(block)
         self.chain.add_block(signed_block)
 
-    def sign_block(self, block: Block) -> str:
+    def sign_block(self, block: Block) -> Block:
         # Signing process is simplified
-        return f"Block id: {block.header.header_id}, Signed by: {self.signature}"
+        block.signature = f"Block id: {block.header_id}, Signed by: {self.signature}"
+        return block
 
 
 
+if __name__ == "__main__":
+    # Initialize chain, builders, and proposers
+    chain = Chain()
+    builders = [Builder(f"builder_{i}", 1000, chain) for i in range(2)]
+    proposers = [Proposer(f"signature_{i}", f"fee_recipient_{i}") for i in range(2)]
+    
+    # Initialize users and generate random transactions
+    users = [User(f"user_{i}") for i in range(10)]
+    for i, user in enumerate(users):
+        for j in range(random.randint(1, 5)):  # Random number of transactions per user
+            transaction_id = i * 10 + j
+            recipient = random.choice(users).user_id
+            amount = random.uniform(1, 100)
+            gas_price = random.uniform(1, 10)
+            gas = random.randint(1, 100)
+            timestamp = int(time.time())
+            user.create_transaction(transaction_id, recipient, amount, gas_price, gas, timestamp)
+    
+    # Builders build blocks from their mempool and bid to proposers
+    for builder in builders:
+        block, header = builder.build_block()
+        bid = random.uniform(1, 10)  # Random bid
+        for proposer in proposers:
+            proposer.receive_bid(header, bid, builder)
+    
+    # Proposers publish blocks
+    for proposer in proposers:
+        proposer.publish_block()
+    
+    # Print out blocks and their transactions
+    for i, block in enumerate(chain.blocks):
+        print(f"Block {i}:")
+        for transaction in block.transactions:
+            print(
+                f"  Transaction id: {transaction.transaction_id}, "
+                f"Sender: {transaction.sender}, "
+                f"Recipient: {transaction.recipient}, "
+                f"Amount: {transaction.amount}, "
+                f"Gas price: {transaction.gas_price}, "
+                f"Gas: {transaction.gas}, "
+                f"Timestamp: {transaction.timestamp}"
+            )
 
-# if __name__ == "__main__":
-#     # Create users, builder, and proposer
-#     user1 = User("User1")
-#     user2 = User("User2")
-#     builder = Builder("Builder1", 30)
-#     proposer = Proposer("Signature1", "FeeRecipient1")
-
-#     # Interconnect the nodes as peers
-#     user1.add_peer(user2)
-#     user1.add_peer(builder)
-#     user1.add_peer(proposer)
-#     user2.add_peer(user1)
-#     user2.add_peer(builder)
-#     user2.add_peer(proposer)
-#     builder.add_peer(user1)
-#     builder.add_peer(user2)
-#     builder.add_peer(proposer)
-#     proposer.add_peer(user1)
-#     proposer.add_peer(user2)
-#     proposer.add_peer(builder)
-
-#     # Create transactions
-#     user1.create_transaction(1, "User2", 50, 5, 10, 1)
-#     user2.create_transaction(2, "User1", 100, 10, 20, 2)
-
-#     # Builder builds a block and sends bid to proposer
-#     block, header = builder.build_block()
-#     proposer.receive_bid(header, 200, builder)
-
-#     # Proposer publishes the block
-#     proposer.publish_block()
-
-#     # Check the blocks in the chain
-#     for block in proposer.chain.blocks:
-#         print(block)
