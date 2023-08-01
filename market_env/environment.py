@@ -15,7 +15,7 @@ class Chain:
         builders: dict[str, Builder] | None = None,
         proposers: dict[str, Proposer] | None = None,
         mempools: dict[str, Mempool] | None = None,
-    ):
+    ) -> None:
         if users is None:
             users = {}
         if builders is None:
@@ -29,43 +29,55 @@ class Chain:
         self.builders = builders
         self.proposers = proposers
         self.mempools = mempools
-        self.blocks: list[str] = []
+        self.blocks: list[Block] = []
+        self.current_header_id = 0
 
-    def add_block(self, block: str):
+    def add_block(self, block: Block) -> None:
+        """Add a block to the chain."""
         self.blocks.append(block)
+        self.current_header_id += 1
         self.update_mempools(block)
 
-    def update_mempools(self, block: str):
-        # Assuming block.transactions is a list of transaction ids
-        for mempool in self.mempools.values():
-            mempool.transactions = [t for t in mempool.transactions if t.transaction_id
-                                    not in block.transactions]
+    def update_mempools(self, block: Block) -> None:
+        """Transaction should be removed from mempools after being packed into a block."""
+        for transaction in block.transactions:
+            for user in self.users.values():
+                user.mempool.remove_transaction(transaction)
+            for builder in self.builders.values():
+                builder.mempool.remove_transaction(transaction)
+            for proposer in self.proposers.values():
+                proposer.mempool.remove_transaction(transaction)
+
+    def get_next_header_id(self) -> int:
+        """the next header id is the current header id plus 1."""
+        return self.current_header_id + 1
+
 
 class Node:
     """Nodes include proposers, builders, and users."""
-    def __init__(self, peers: list[Node] = None):
-        self.mempool = Mempool()
-        self.peers = peers if peers is not None else []
+    def __init__(self, peers: list[Node] = None) -> None:
+        self.mempool: Mempool = Mempool()
+        self.peers: list[Node] = peers if peers is not None else []
 
-    def add_peer(self, peer):
+    def add_peer(self, peer) -> None:
         """Add a peer node to the node's peer list."""
         self.peers.append(peer)
 
-    def validate_transaction(self, transaction):
+    def validate_transaction(self, transaction) -> bool:
         return transaction.amount > 0 and transaction.gas_price > 0 and transaction.gas > 0
 
-    def receive_transaction(self, transaction):
+    def receive_transaction(self, transaction: Transaction) -> None:
         if self.validate_transaction(transaction):
             self.mempool.add_transaction(transaction)
             self.broadcast_transaction(transaction)
 
-    def broadcast_transaction(self, transaction):
+    def broadcast_transaction(self, transaction: Transaction) -> None:
         for node in self.peers:
             node.receive_transaction(transaction)
 
 class User(Node):
     """A user with user id that can create transactions."""
-    def __init__(self, user_id):
+    def __init__(self, user_id) -> None:
         super().__init__()
         self.user_id = user_id
 
@@ -85,7 +97,7 @@ class Transaction:
     def __init__(
         self, transaction_id: int, sender: str, recipient: str, amount: float,
         gas_price: float, gas: int, timestamp: int
-    ):
+    ) -> None:
         self.transaction_id = transaction_id
         self.amount = amount
         self.gas_price = gas_price
@@ -97,52 +109,56 @@ class Transaction:
 
 class Mempool:
     """A mempool that stores transactions."""
-    def __init__(self):
+    def __init__(self) -> None:
         self.transactions: list[Transaction] = []
 
-    def add_transaction(self, transaction: Transaction):
+    def add_transaction(self, transaction: Transaction) -> None:
         self.transactions.append(transaction)
 
+    def remove_transaction(self, transaction: Transaction) -> None:
+        if transaction in self.transactions:
+            self.transactions.remove(transaction)
 
 class Builder(Node):
     """A builder with builder id and gas limit that can build blocks."""
-    def __init__(self, builder_id: str, gas_limit: int):
+    def __init__(self, builder_id: str, gas_limit: int, chain: Chain) -> None:
         super().__init__()
         self.builder_id = builder_id
         self.gas_limit = gas_limit
+        self.chain = chain 
 
-    def build_block(self):
+    def build_block(self) -> tuple[Block, Header]:
         """
         Build a block from the mempool, and return the block and its header. 
         The ordering is based on gas price paied for the transaction.
         Add transactions to the block until the gas limit is reached.
         """
-        sorted_transactions = sorted(
+        sorted_transactions: list[Transaction] = sorted(
             self.mempool.transactions, key=lambda t: t.gas_price, reverse=True
         )
-        selected_transactions = []
-        gas_used = 0
+        selected_transactions: list[Transaction] = []
+        gas_used: int = 0
         for transaction in sorted_transactions:
             if gas_used + transaction.gas <= self.gas_limit:
                 selected_transactions.append(transaction)
                 gas_used += transaction.gas
             else:
                 break
+        header_id = self.chain.get_next_header_id()
         block = Block(selected_transactions)
         header = block.extract_header(self.builder_id)
         return block, header
 
-
 class Block:
     """A block with the list of transactions packed by builder."""
-    def __init__(self, transactions: list[Transaction]):
+    def __init__(self, transactions: list[Transaction], header_id: int) -> None:
         self.transactions = transactions
+        self.header_id = header_id
 
     def extract_header(self, builder_id: str) -> Header:
+        """Extract header information from the block."""
         total_gas_price = sum(t.gas_price for t in self.transactions)
-        header_id = 1  # Use a simple integer as header_id for simplicity
-        return Header(header_id, 1, total_gas_price, builder_id)
-
+        return Header(self.header_id, 1, total_gas_price, builder_id)
 
 class Header:
     """Header information stored."""
