@@ -11,10 +11,10 @@ from __future__ import annotations
 class Chain:
     def __init__(
         self,
-        users: dict[str, User] = None,
-        builders: dict[str, Builder] = None,
-        proposers: dict[str, Proposer] = None,
-        mempools: dict[str, Mempool] = None,
+        users: dict[str, User] | None = None,
+        builders: dict[str, Builder] | None = None,
+        proposers: dict[str, Proposer] | None = None,
+        mempools: dict[str, Mempool] | None = None,
     ):
         if users is None:
             users = {}
