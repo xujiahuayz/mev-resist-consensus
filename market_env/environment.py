@@ -125,7 +125,7 @@ class Builder(Node):
         super().__init__()
         self.builder_id = builder_id
         self.gas_limit = gas_limit
-        self.chain = chain 
+        self.chain = chain
 
     def build_block(self) -> tuple[Block, Header]:
         """
@@ -145,7 +145,7 @@ class Builder(Node):
             else:
                 break
         header_id = self.chain.get_next_header_id()
-        block = Block(selected_transactions)
+        block = Block(selected_transactions, header_id)
         header = block.extract_header(self.builder_id)
         return block, header
 
