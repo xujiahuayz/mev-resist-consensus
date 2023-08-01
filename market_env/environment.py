@@ -38,7 +38,7 @@ class Chain:
     def update_mempools(self, block: str):
         # Assuming block.transactions is a list of transaction ids
         for mempool in self.mempools.values():
-            mempool.transactions = [t for t in mempool.transactions if t.transaction_id 
+            mempool.transactions = [t for t in mempool.transactions if t.transaction_id
                                     not in block.transactions]
 
 class Node:
@@ -69,7 +69,7 @@ class User(Node):
         super().__init__()
         self.user_id = user_id
 
-    def create_transaction(self, transaction_id: int, recipient: str, amount: float, 
+    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
                            gas_price: float, gas: int, timestamp: int) -> None:
         transaction = Transaction(
             transaction_id, self.user_id, recipient, amount, gas_price, gas, timestamp
