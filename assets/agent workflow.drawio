@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-08-02T11:09:43.727Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="4kHWSV5tGrc3alu4Br81" version="21.6.5" type="github">
+<mxfile host="app.diagrams.net" modified="2023-08-02T11:10:40.686Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="RmsgogbnDSQDKKCZ8VxI" version="21.6.5" type="github">
   <diagram name="Page-1" id="gS1lGw4ghUpdOXam-v53">
     <mxGraphModel dx="795" dy="508" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -7,10 +7,10 @@
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-3" value="Mempool" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="230" y="120" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="BJs5YMrsWI-7I0nCcWpp-4" value="Builder" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-4" value="Builder&amp;nbsp;(Node)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="380" y="120" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="BJs5YMrsWI-7I0nCcWpp-5" value="Proposer" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-5" value="Proposer&amp;nbsp;(Node)" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="530" y="120" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-6" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" edge="1" source="QJzAAvv34o0oOycXektx-2">
@@ -82,7 +82,7 @@
             <mxPoint x="578" y="398.5" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="QJzAAvv34o0oOycXektx-1" value="User" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="QJzAAvv34o0oOycXektx-1" value="User (Node)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="80" y="120" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="QJzAAvv34o0oOycXektx-2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
