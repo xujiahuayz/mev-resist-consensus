@@ -37,8 +37,10 @@ class Chain:
     def add_block(self, block: Block) -> None:
         """Add a block to the chain."""
         self.blocks.append(block)
-        self.current_header_id += 1
+        self.current_header_id = block.header_id
         self.update_mempools(block)
+        print(f"Added block with header ID {block.header_id} to chain")
+        print(f"Current number of blocks in chain: {len(self.blocks)}")
 
     def update_mempools(self, block: Block) -> None:
         """Transaction should be removed from mempools after being packed into a block."""
@@ -52,8 +54,9 @@ class Chain:
 
     def get_next_header_id(self) -> int:
         """the next header id is the current header id plus 1."""
-        return self.current_header_id + 1
-
+        next_header_id = self.current_header_id + 1
+        print(f"Next header ID: {next_header_id}")
+        return next_header_id
 
 class Node:
     """Nodes include proposers, builders, and users."""
@@ -153,6 +156,7 @@ class Builder(Node):
         header_id = self.chain.get_next_header_id()
         block = Block(selected_transactions, header_id)
         header = block.extract_header(self.builder_id)
+        print(f"Builder {self.builder_id} built block with header ID {header_id}")
         return block, header
 
 class Block:
@@ -169,7 +173,7 @@ class Block:
 
 class Header:
     """Header information stored."""
-    def __init__(self, header_id: int, timestamp: int, total_gas_price: float, builder_id: str):
+    def __init__(self, header_id: int, timestamp: int, total_gas_price: float, builder_id: str) -> None:
         self.header_id = header_id
         self.timestamp = timestamp
         self.total_gas_price = total_gas_price
@@ -179,81 +183,32 @@ class Header:
 class Proposer(Node):
     """A proposer with signature and fee recipient that can receive bids, 
     sign and publish blocks."""
-    def __init__(self, signature: str, fee_recipient: str, chain: Chain):
+    def __init__(self, signature: str, fee_recipient: str, chain: Chain) -> None:
         super().__init__()
-        self.chain = Chain()
+        self.chain = chain
         self.signature = signature
         self.fee_recipient = fee_recipient
         self.highest_bid = None
         self.winning_builder = None
         self.winning_header = None
 
-    def receive_bid(self, header: Header, bid: float, builder: Builder):
+    def receive_bid(self, header: Header, bid: float, builder: Builder) -> None:
         if self.highest_bid is None or bid > self.highest_bid:
             self.highest_bid = bid
             self.winning_builder = builder
             self.winning_header = header
 
-    def publish_block(self):
+    def publish_block(self) -> None:
         block, _ = self.winning_builder.build_block()
         signed_block = self.sign_block(block)
         self.chain.add_block(signed_block)
+        print(f"Proposer published block with header ID {block.header_id}")
 
     def sign_block(self, block: Block) -> Block:
         # Signing process is simplified
         block.signature = f"Block id: {block.header_id}, Signed by: {self.signature}"
         return block
 
-
-
-# if __name__ == "__main__":
-#     # Initialize chain, builders, and proposers
-#     chain = Chain()
-#     builders = [Builder(f"builder_{i}", 1000, chain) for i in range(2)]
-#     proposers = [Proposer(f"signature_{i}", f"fee_recipient_{i}", chain) for i in range(2)]
-#     for proposer in proposers:
-#         proposer.chain = chain
-
-#     # Initialize Users and generate random transactions
-#     users = [User(f"user_{i}") for i in range(10)]
-#     for user in users:
-#         for builder in builders:
-#             user.add_peer(builder)
-
-#     for i, user in enumerate(users):
-#         for j in range(random.randint(1, 5)):  # Random number of transactions per user
-#             transaction_id = i * 10 + j
-#             recipient = f"user_{random.randint(0, 9)}"
-#             amount = random.uniform(1, 1000)
-#             gas_price = random.uniform(1, 100)
-#             gas = random.randint(1000, 10000)
-#             timestamp = int(time.time())
-#             user.create_transaction(transaction_id, recipient, amount, gas_price, gas, timestamp)
-
-#     for builder in builders:
-#         block, header = builder.build_block()
-#         # Bid is less than the total gas fee, between 50-100% of the total gas fee.
-#         bid = header.total_gas_price * random.uniform(0.5, 1)  
-#         for proposer in proposers:
-#             proposer.receive_bid(header, bid, builder)
-    
-#     # Proposers publish blocks
-#     for proposer in proposers:
-#         proposer.publish_block()
-    
-#     # Print out blocks and their transactions
-#     for i, block in enumerate(chain.blocks):
-#         print(f"Block {i}:")
-#         for transaction in block.transactions:
-#             print(
-#                 f"Transaction id: {transaction.transaction_id}, "
-#                 f"Sender: {transaction.sender}, "
-#                 f"Recipient: {transaction.recipient}, "
-#                 f"Amount: {transaction.amount}, "
-#                 f"Gas price: {transaction.gas_price}, "
-#                 f"Gas: {transaction.gas}, "
-#                 f"Timestamp: {transaction.timestamp}"
-#             )
 
 if __name__ == "__main__":
     # Create chain
@@ -275,9 +230,6 @@ if __name__ == "__main__":
     users = {
         "user1": User("user1"),
         "user2": User("user2"),
-        "user3": User("user3"),
-        "user4": User("user4"),
-        "user5": User("user5"),
     }
 
     # Add peers for all the nodes
