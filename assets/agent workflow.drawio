@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-08-02T11:06:22.333Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="rBAeW7QKqa8OJhU0PHZS" version="21.6.5" type="github">
+<mxfile host="app.diagrams.net" modified="2023-08-02T11:09:43.727Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="4kHWSV5tGrc3alu4Br81" version="21.6.5" type="github">
   <diagram name="Page-1" id="gS1lGw4ghUpdOXam-v53">
     <mxGraphModel dx="795" dy="508" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -37,7 +37,7 @@
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-13" value="Build exec block body by gas fee" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="304" y="211" width="120" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="BJs5YMrsWI-7I0nCcWpp-14" value="Send a header with bid" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-14" value="Send a header with bid to proposer address" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="454" y="232" width="120" height="40" as="geometry" />
         </mxCell>
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-15" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1">
@@ -73,7 +73,7 @@
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-22" value="The winner of the header publish the intermediate block and added to the blockchian" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="480" y="443" width="180" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="BJs5YMrsWI-7I0nCcWpp-23" value="Pay for the right to order transactions" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
+        <mxCell id="BJs5YMrsWI-7I0nCcWpp-23" value="The bid gets included in the block to be published" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="454" y="350" width="120" height="40" as="geometry" />
         </mxCell>
         <mxCell id="BJs5YMrsWI-7I0nCcWpp-24" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1">
