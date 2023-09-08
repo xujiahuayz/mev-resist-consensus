@@ -3,7 +3,7 @@
 [![python](https://img.shields.io/badge/Python-v3.11.3-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![build status](https://github.com/pre-commit/pre-commit/actions/workflows/main.yml/badge.svg)](https://github.com/xujiahuayz/pbs/actions/workflows/pylint.yml)
 
-The repository models and simulates a new mEV-resistant consensus mechanism.
+The repository simulates MEV attacks and models a new MEV-resistant consensus mechanism.
 
 ## Setup
 
