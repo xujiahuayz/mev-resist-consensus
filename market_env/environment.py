@@ -89,9 +89,9 @@ class User(Node):
         self.user_id = user_id
 
     def create_transaction(self, transaction_id: int, recipient: str, amount: float,
-                           gas_price: float, gas: int, timestamp: int) -> None:
+                            base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
         transaction = Transaction(
-            transaction_id, self.user_id, recipient, amount, gas_price, gas, timestamp
+            transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
         )
         transaction.broadcasted.append(self)
         self.receive_transaction(transaction)
@@ -104,15 +104,17 @@ class Transaction:
     """
     def __init__(
         self, transaction_id: int, sender: str, recipient: str, amount: float,
-        gas_price: float, gas: int, timestamp: int
+        base_fee: float, priority_fee: float, gas: int, timestamp: int
     ) -> None:
         self.transaction_id = transaction_id
         self.amount = amount
-        self.gas_price = gas_price
+        self.base_fee = base_fee
+        self.priority_fee = priority_fee
         self.sender = sender
         self.recipient = recipient
         self.timestamp = timestamp
         self.gas = gas
+        self.transaction_fee = self.gas * (self.base_fee + self.priority_fee)
         self.broadcasted = []
 
 
@@ -128,7 +130,20 @@ class Mempool:
         if transaction in self.transactions:
             self.transactions.remove(transaction)
 
-class Builder(Node):
+class Account:
+    def __init__(self, initial_balance):
+        self.balance = initial_balance
+
+    def deposit(self, amount):
+        self.balance += amount
+
+    def withdraw(self, amount):
+        if self.balance < amount:
+            print("Insufficient funds")
+            return
+        self.balance -= amount
+
+class Builder(Node, Account):
     """A builder with builder id and gas limit that can build blocks."""
     def __init__(self, builder_id: str, gas_limit: int, chain: Chain) -> None:
         super().__init__()
@@ -160,6 +175,12 @@ class Builder(Node):
         header = block.extract_header(self.builder_id)
         print(f"Builder {self.builder_id} built block with header ID {header_id}")
         return block, header
+    
+    # Example bidding strategy: 10% of total transaction fees
+    def build_block_and_bid(self):
+        block, header = self.build_block()
+        bid = sum(t.transaction_fee for t in block.transactions) * 0.1  
+        return block, header, bid
 
 class Block:
     """A block with the list of transactions packed by builder."""
@@ -183,7 +204,7 @@ class Header:
         self.builder_id = builder_id
 
 
-class Proposer(Node):
+class Proposer(Node, Account):
     """A proposer with signature and fee recipient that can receive bids, 
     sign and publish blocks."""
     def __init__(self, signature: str, fee_recipient: str, chain: Chain) -> None:
