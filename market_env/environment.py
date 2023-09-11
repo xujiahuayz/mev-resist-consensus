@@ -39,8 +39,6 @@ class Chain:
         self.blocks.append(block)
         self.current_header_id = block.header_id
         self.update_mempools(block)
-        print(f"Added block with header ID {block.header_id} to chain")
-        print(f"Current number of blocks in chain: {len(self.blocks)}")
 
     def update_mempools(self, block: Block) -> None:
         """Transaction should be removed from mempools after being packed into a block."""
@@ -53,10 +51,10 @@ class Chain:
                 proposer.mempool.remove_transaction(transaction)
 
     def get_next_header_id(self) -> int:
-        """the next header id is the current header id plus 1."""
-        next_header_id = self.current_header_id + 1
-        print(f"Next header ID: {next_header_id}")
-        return next_header_id
+        """The next header ID is the current header ID plus 1."""
+        self.current_header_id += 1
+        print(f"Next header ID: {self.current_header_id}")
+        return self.current_header_id
 
 class Node:
     """Nodes include proposers, builders, and users."""
@@ -203,7 +201,6 @@ class Header:
         self.total_gas_price = total_gas_price
         self.builder_id = builder_id
 
-
 class Proposer(Node, Account):
     """A proposer with signature and fee recipient that can receive bids, 
     sign and publish blocks."""
@@ -234,40 +231,44 @@ class Proposer(Node, Account):
         return block
 
 
-if __name__ == '__main__':
-    # Initialize the chain
-    chain = Chain()
+if __name__ == "__main__":
+    # Initialize chain
+    my_chain = Chain()
 
-    # Initialize a user, builder, and proposer
-    user1 = User("user1")
-    builder1 = Builder("builder1", 10000, chain)
-    proposer1 = Proposer("signature1", "fee_recipient1", chain)
+    # Initialize builder with initial balance of 1000
+    my_builder = Builder("builder1", 10000, my_chain)
+    my_builder.balance = 1000  # Initial balance
 
-    # Add nodes to their peers
-    user1.add_peer(builder1)
-    user1.add_peer(proposer1)
-    builder1.add_peer(user1)
-    builder1.add_peer(proposer1)
-    proposer1.add_peer(user1)
-    proposer1.add_peer(builder1)
+    # Initialize proposer with initial balance of 500
+    my_proposer = Proposer("signature1", "fee_recipient1", my_chain)
+    my_proposer.balance = 500  # Initial balance
+
+    # Initialize user
+    my_user = User("user1")
+    my_user.balance = 200  # Initial balance
 
     # User creates a transaction
-    user1.create_transaction(
-        transaction_id=1, recipient="user2", amount=10.0,
-        base_fee=1.0, priority_fee=0.5, gas=20, timestamp=int(time.time())
+    my_user.create_transaction(
+        transaction_id=1, recipient="user2", amount=10, base_fee=1, priority_fee=2, gas=100, timestamp=int(time.time())
     )
 
-    # Builder builds block and bids
-    block, header, bid = builder1.build_block_and_bid()
+    # Builder builds a block
+    new_block, new_header = my_builder.build_block()
 
-    # Proposer receives the bid and header
-    proposer1.receive_bid(header, bid, builder1)
+    # Builder bids for the block
+    _, _, bid = my_builder.build_block_and_bid()
+
+    # Proposer receives the bid
+    my_proposer.receive_bid(new_header, bid, my_builder)
 
     # Proposer publishes the block
-    proposer1.publish_block()
+    my_proposer.publish_block()
 
-    # Print the length of chain to validate
-    print(f"Final number of blocks in chain: {len(chain.blocks)}")
+    # Check final chain status
+    print(f"Final number of blocks in chain: {len(my_chain.blocks)}")
+    print(f"Transactions in the last block: {[t.transaction_id for t in my_chain.blocks[-1].transactions]}")
 
-    # Print the transactions in the last block to validate
-    print(f"Transactions in the last block: {[t.transaction_id for t in chain.blocks[-1].transactions]}")
+    # Display balances
+    print(f"Builder's final balance: {my_builder.balance}")
+    print(f"Proposer's final balance: {my_proposer.balance}")
+    print(f"User's final balance: {my_user.balance}")
