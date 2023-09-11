@@ -69,7 +69,7 @@ class Node:
         self.peers.append(peer)
 
     def validate_transaction(self, transaction) -> bool:
-        return transaction.amount > 0 and transaction.gas_price > 0 and transaction.gas > 0
+        return transaction.amount > 0 and transaction.transaction_fee > 0 and transaction.gas > 0
 
     def receive_transaction(self, transaction: Transaction) -> None:
         if self.validate_transaction(transaction):
@@ -154,12 +154,12 @@ class Builder(Node, Account):
 
     def build_block(self) -> tuple[Block, Header]:
         """
-        Build a block from the mempool, and return the block and its header. 
-        The ordering is based on gas price paied for the transaction.
+        Build a block from the mempool, and return the block and its header.
+        The ordering is based on the transaction fee paid for the transaction.
         Add transactions to the block until the gas limit is reached.
         """
         sorted_transactions: list[Transaction] = sorted(
-            self.mempool.transactions, key=lambda t: t.gas_price, reverse=True
+            self.mempool.transactions, key=lambda t: t.transaction_fee, reverse=True
         )
         selected_transactions: list[Transaction] = []
         gas_used: int = 0
@@ -175,7 +175,7 @@ class Builder(Node, Account):
         header = block.extract_header(self.builder_id)
         print(f"Builder {self.builder_id} built block with header ID {header_id}")
         return block, header
-    
+
     # Example bidding strategy: 10% of total transaction fees
     def build_block_and_bid(self):
         block, header = self.build_block()
@@ -191,8 +191,8 @@ class Block:
 
     def extract_header(self, builder_id: str) -> Header:
         """Extract header information from the block."""
-        total_gas_price = sum(t.gas_price for t in self.transactions)
-        return Header(self.header_id, 1, total_gas_price, builder_id)
+        total_transaction_fee = sum(t.transaction_fee for t in self.transactions)
+        return Header(self.header_id, 1, total_transaction_fee, builder_id)
 
 class Header:
     """Header information stored."""
@@ -234,73 +234,40 @@ class Proposer(Node, Account):
         return block
 
 
-if __name__ == "__main__":
-    # Create chain
+if __name__ == '__main__':
+    # Initialize the chain
     chain = Chain()
 
-    # Create builders
-    builders = {
-        "builder1": Builder("builder1", 10000, chain),
-        "builder2": Builder("builder2", 10000, chain),
-        "builder3": Builder("builder3", 10000, chain),
-        "builder4": Builder("builder4", 10000, chain),
-    }
+    # Initialize a user, builder, and proposer
+    user1 = User("user1")
+    builder1 = Builder("builder1", 10000, chain)
+    proposer1 = Proposer("signature1", "fee_recipient1", chain)
 
-    # Create proposers
-    proposers = {
-        "proposer1": Proposer("proposer1_signature", "fee_recipient1", chain),
-        "proposer2": Proposer("proposer2_signature", "fee_recipient2", chain),
-        "proposer3": Proposer("proposer3_signature", "fee_recipient3", chain),
-        "proposer4": Proposer("proposer4_signature", "fee_recipient4", chain),
-    }
+    # Add nodes to their peers
+    user1.add_peer(builder1)
+    user1.add_peer(proposer1)
+    builder1.add_peer(user1)
+    builder1.add_peer(proposer1)
+    proposer1.add_peer(user1)
+    proposer1.add_peer(builder1)
 
-    # Create users
-    users = {
-        "user1": User("user1"),
-        "user2": User("user2"),
-        "user3": User("user3"),
-        "user4": User("user4"),
-        "user5": User("user5"),
-        "user6": User("user6"),
-    }
+    # User creates a transaction
+    user1.create_transaction(
+        transaction_id=1, recipient="user2", amount=10.0,
+        base_fee=1.0, priority_fee=0.5, gas=20, timestamp=int(time.time())
+    )
 
-    # Add peers for all the nodes
-    nodes = list(users.values()) + list(builders.values()) + list(proposers.values())
-    for node in nodes:
-        node.peers = [n for n in nodes if n is not node]
+    # Builder builds block and bids
+    block, header, bid = builder1.build_block_and_bid()
 
-    # Transactions
-    for i in range(50):
-        user = random.choice(list(users.values()))
-        recipient = random.choice([u for u in users.values() if u is not user]).user_id
-        user.create_transaction(i, recipient, random.uniform(1, 100), random.uniform(1, 10),
-                                random.randint(1, 500), int(time.time()))
+    # Proposer receives the bid and header
+    proposer1.receive_bid(header, bid, builder1)
 
-    # Builders build blocks and make bids to proposers
-    for builder in builders.values():
-        block, header = builder.build_block()
-        for proposer in proposers.values():
-            proposer.receive_bid(header, random.uniform(1, 10), builder)
+    # Proposer publishes the block
+    proposer1.publish_block()
 
-    # Proposers publish blocks
-    for proposer in proposers.values():
-        proposer.publish_block()
+    # Print the length of chain to validate
+    print(f"Final number of blocks in chain: {len(chain.blocks)}")
 
-    # Display the number of transactions packed by each builder
-        for builder in builders.values():
-            print(f"Builder {builder.builder_id} packed {builder.transaction_count} transactions")
-
-    # Print the ending result of the blocks
-    for i, block in enumerate(chain.blocks):
-        print(f"Block {i+1}:")
-        print(f"  - Header ID: {block.header_id}")
-        print(f"  - Signature: {block.signature}")
-
-        for transaction in block.transactions:
-            print(f"    - Transaction ID: {transaction.transaction_id}")
-            print(f"      - Sender: {transaction.sender}")
-            print(f"      - Recipient: {transaction.recipient}")
-            print(f"      - Amount: {transaction.amount}")
-            print(f"      - Gas price: {transaction.gas_price}")
-            print(f"      - Gas: {transaction.gas}")
-            print(f"      - Timestamp: {transaction.timestamp}")
+    # Print the transactions in the last block to validate
+    print(f"Transactions in the last block: {[t.transaction_id for t in chain.blocks[-1].transactions]}")
