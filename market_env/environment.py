@@ -55,7 +55,7 @@ class Chain:
         self.current_header_id += 1
         print(f"Next header ID: {self.current_header_id}")
         return self.current_header_id
-    
+
     def find_block_by_header(self, header: Header) -> Block:
         """Find and return the block corresponding to the given header."""
         for block in self.blocks:
@@ -66,7 +66,7 @@ class Chain:
     def select_proposer(self) -> Proposer:
         """Select a proposer randomly."""
         return random.choice(list(self.proposers.values()))
-    
+
     def reset_proposers(self) -> None:
         """Reset proposers."""
         for proposer in self.proposers.values():
@@ -97,7 +97,7 @@ class Node:
 
 class Transaction:
     """
-    A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp. 
+    A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp.
     For storage simplicity, we use a simple integer as transaction id.
     """
     def __init__(
@@ -156,7 +156,7 @@ class Header:
     def __init__(self, header_id: int, timestamp: int, total_fee: float, builder_id: str) -> None:
         self.header_id = header_id
         self.timestamp = timestamp
-        self.total_fee = total_fee  
+        self.total_fee = total_fee
         self.builder_id = builder_id
 
 class User(Node):
@@ -180,7 +180,7 @@ class Builder(Node, Account):
         self.builder_id = builder_id
         self.gas_limit = gas_limit
         self.chain = chain
-        self.transaction_count = 0 
+        self.transaction_count = 0
 
     def build_block(self) -> tuple[Block, Header]:
         """
@@ -195,7 +195,7 @@ class Builder(Node, Account):
             key=lambda t: t.gas * (t.base_fee + t.priority_fee),
             reverse=True
         )
-        
+
         selected_transactions: list[Transaction] = []
         gas_used: int = 0
 
@@ -209,25 +209,25 @@ class Builder(Node, Account):
 
         # Calculate total transaction fee for the block
         total_fee = sum(t.gas * (t.base_fee + t.priority_fee) for t in selected_transactions)
-        
+
         header_id = self.chain.get_next_header_id()
         block = Block(selected_transactions, header_id)
-        
+
         # Extract block header, including the total transaction fee
         header = block.extract_header(self.builder_id, total_fee)  # total_fee parameter added
-        
+
         print(f"Builder {self.builder_id} built block with header ID {header_id}")
-        
+
         return block, header
 
     # Example bidding strategy: 10% of total transaction fees
     def build_block_and_bid(self):
         block, header = self.build_block()
-        bid = sum(t.transaction_fee for t in block.transactions) * 0.1  
+        bid = sum(t.transaction_fee for t in block.transactions) * 0.1
         return block, header, bid
 
 class Proposer(Node, Account):
-    """A proposer with signature and fee recipient that can receive bids, 
+    """A proposer with signature and fee recipient that can receive bids,
     sign and publish blocks."""
     def __init__(self, chain: Chain) -> None:
         super().__init__()
@@ -235,7 +235,7 @@ class Proposer(Node, Account):
         self.candidate_headers = []
         self.winning_builder = None
         self.winning_header = None
-        self.builder_bids = {} 
+        self.builder_bids = {}
 
     def receive_header(self, header: Header, builder_id: str) -> None:
         """Receive a header from a builder."""
@@ -248,7 +248,7 @@ class Proposer(Node, Account):
         selected_builder = None
 
         for header, builder_id in self.candidate_headers:
-            total_fee = header.total_fee  
+            total_fee = header.total_fee
             bid = self.builder_bids.get(builder_id, 0)
 
             profit = total_fee - bid
@@ -269,7 +269,7 @@ class Proposer(Node, Account):
 
                 # Pay the builder the bid amount
                 bid_to_pay: float = self.builder_bids.get(self.winning_builder, 0)
-                
+
                 if self.balance >= bid_to_pay:  # Make sure Proposer has enough balance
                     self.balance -= bid_to_pay  # Deduct from Proposer's balance
                     self.winning_builder.balance += bid_to_pay  # Add to Builder's balance
