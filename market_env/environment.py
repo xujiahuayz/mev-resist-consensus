@@ -3,12 +3,12 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=R0913
 # pylint: disable=too-few-public-methods
+# pylint: disable=too-many-instance-attributes
 
 
 from __future__ import annotations
 
 import random
-import time
 
 class Chain:
     def __init__(
@@ -147,9 +147,9 @@ class Block:
         self.header_id = header_id
         self.signature = None
 
-    def extract_header(self, builder_id: str, total_fee: int) -> Header:  # total_fee parameter added
+    def extract_header(self, builder_id: str, total_fee: int) -> Header:
         """Extract header information from the block."""
-        return Header(self.header_id, 1, total_fee, builder_id)  # total_fee used here
+        return Header(self.header_id, 1, total_fee, builder_id)
 
 class Header:
     """Header information stored."""
@@ -214,7 +214,7 @@ class Builder(Node, Account):
         block = Block(selected_transactions, header_id)
 
         # Extract block header, including the total transaction fee
-        header = block.extract_header(self.builder_id, total_fee)  # total_fee parameter added
+        header = block.extract_header(self.builder_id, total_fee)
 
         print(f"Builder {self.builder_id} built block with header ID {header_id}")
 
@@ -292,4 +292,3 @@ class Proposer(Node, Account):
 
 if __name__ == "__main__":
     pass
-
