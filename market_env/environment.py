@@ -55,7 +55,22 @@ class Chain:
         self.current_header_id += 1
         print(f"Next header ID: {self.current_header_id}")
         return self.current_header_id
+    
+    def find_block_by_header(self, header: Header) -> Block:
+        """Find and return the block corresponding to the given header."""
+        for block in self.blocks:
+            if block.header_id == header.header_id:
+                return block
+        return None
 
+    def select_proposer(self) -> Proposer:
+        """Select a proposer randomly."""
+        return random.choice(list(self.proposers.values()))
+    
+    def reset_proposers(self) -> None:
+        """Reset proposers."""
+        for proposer in self.proposers.values():
+            proposer.reset()
 class Node:
     """Nodes include proposers, builders, and users."""
     def __init__(self, peers: list[Node] = None) -> None:
@@ -80,21 +95,6 @@ class Node:
                 transaction.broadcasted.append(node)
                 node.receive_transaction(transaction)
 
-class User(Node):
-    """A user with user id that can create transactions."""
-    def __init__(self, user_id) -> None:
-        super().__init__()
-        self.user_id = user_id
-
-    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
-                            base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-        transaction = Transaction(
-            transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
-        )
-        transaction.broadcasted.append(self)
-        self.receive_transaction(transaction)
-
-
 class Transaction:
     """
     A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp. 
@@ -115,7 +115,6 @@ class Transaction:
         self.transaction_fee = self.gas * (self.base_fee + self.priority_fee)
         self.broadcasted = []
 
-
 class Mempool:
     """A mempool that stores transactions."""
     def __init__(self) -> None:
@@ -129,17 +128,50 @@ class Mempool:
             self.transactions.remove(transaction)
 
 class Account:
-    def __init__(self, initial_balance):
+    def __init__(self, initial_balance: float) -> None:
         self.balance = initial_balance
 
-    def deposit(self, amount):
+    def deposit(self, amount: float) -> None:
         self.balance += amount
 
-    def withdraw(self, amount):
+    def withdraw(self, amount: float) -> None:
         if self.balance < amount:
             print("Insufficient funds")
             return
         self.balance -= amount
+
+class Block:
+    """A block with the list of transactions packed by builder."""
+    def __init__(self, transactions: list[Transaction], header_id: int) -> None:
+        self.transactions = transactions
+        self.header_id = header_id
+        self.signature = None
+
+    def extract_header(self, builder_id: str, total_fee: int) -> Header:  # total_fee parameter added
+        """Extract header information from the block."""
+        return Header(self.header_id, 1, total_fee, builder_id)  # total_fee used here
+
+class Header:
+    """Header information stored."""
+    def __init__(self, header_id: int, timestamp: int, total_fee: float, builder_id: str) -> None:
+        self.header_id = header_id
+        self.timestamp = timestamp
+        self.total_fee = total_fee  
+        self.builder_id = builder_id
+
+class User(Node):
+    """A user with user id that can create transactions."""
+    def __init__(self, user_id) -> None:
+        super().__init__()
+        self.user_id = user_id
+
+    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
+                            base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
+        transaction = Transaction(
+            transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
+        )
+        transaction.broadcasted.append(self)
+        self.receive_transaction(transaction)
 
 class Builder(Node, Account):
     """A builder with builder id and gas limit that can build blocks."""
@@ -153,25 +185,39 @@ class Builder(Node, Account):
     def build_block(self) -> tuple[Block, Header]:
         """
         Build a block from the mempool, and return the block and its header.
-        The ordering is based on the transaction fee paid for the transaction.
+        The ordering is based on the total transaction fee paid for the transaction.
         Add transactions to the block until the gas limit is reached.
         """
+
+        # Sort transactions by total transaction fee in descending order
         sorted_transactions: list[Transaction] = sorted(
-            self.mempool.transactions, key=lambda t: t.transaction_fee, reverse=True
+            self.mempool.transactions,
+            key=lambda t: t.gas * (t.base_fee + t.priority_fee),
+            reverse=True
         )
+        
         selected_transactions: list[Transaction] = []
         gas_used: int = 0
+
         for transaction in sorted_transactions:
             if gas_used + transaction.gas <= self.gas_limit:
                 selected_transactions.append(transaction)
                 gas_used += transaction.gas
-                self.transaction_count += 1 
+                self.transaction_count += 1
             else:
                 break
+
+        # Calculate total transaction fee for the block
+        total_fee = sum(t.gas * (t.base_fee + t.priority_fee) for t in selected_transactions)
+        
         header_id = self.chain.get_next_header_id()
         block = Block(selected_transactions, header_id)
-        header = block.extract_header(self.builder_id)
+        
+        # Extract block header, including the total transaction fee
+        header = block.extract_header(self.builder_id, total_fee)  # total_fee parameter added
+        
         print(f"Builder {self.builder_id} built block with header ID {header_id}")
+        
         return block, header
 
     # Example bidding strategy: 10% of total transaction fees
@@ -180,95 +226,70 @@ class Builder(Node, Account):
         bid = sum(t.transaction_fee for t in block.transactions) * 0.1  
         return block, header, bid
 
-class Block:
-    """A block with the list of transactions packed by builder."""
-    def __init__(self, transactions: list[Transaction], header_id: int) -> None:
-        self.transactions = transactions
-        self.header_id = header_id
-        self.signature = None
-
-    def extract_header(self, builder_id: str) -> Header:
-        """Extract header information from the block."""
-        total_transaction_fee = sum(t.transaction_fee for t in self.transactions)
-        return Header(self.header_id, 1, total_transaction_fee, builder_id)
-
-class Header:
-    """Header information stored."""
-    def __init__(self, header_id: int, timestamp: int, total_gas_price: float,
-                 builder_id: str) -> None:
-        self.header_id = header_id
-        self.timestamp = timestamp
-        self.total_gas_price = total_gas_price
-        self.builder_id = builder_id
-
 class Proposer(Node, Account):
     """A proposer with signature and fee recipient that can receive bids, 
     sign and publish blocks."""
-    def __init__(self, signature: str, fee_recipient: str, chain: Chain) -> None:
+    def __init__(self, chain: Chain) -> None:
         super().__init__()
         self.chain = chain
-        self.signature = signature
-        self.fee_recipient = fee_recipient
-        self.highest_bid = None
+        self.candidate_headers = []
         self.winning_builder = None
         self.winning_header = None
+        self.builder_bids = {} 
 
-    def receive_bid(self, header: Header, bid: float, builder: Builder) -> None:
-        if self.highest_bid is None or bid > self.highest_bid:
-            self.highest_bid = bid
-            self.winning_builder = builder
-            self.winning_header = header
+    def receive_header(self, header: Header, builder_id: str) -> None:
+        """Receive a header from a builder."""
+        self.candidate_headers.append((header, builder_id))
+
+    def select_most_profitable_header(self) -> None:
+        # Find the header with the highest (transaction_fee - bid)
+        max_profit = -1
+        selected_header = None
+        selected_builder = None
+
+        for header, builder_id in self.candidate_headers:
+            total_fee = header.total_fee  
+            bid = self.builder_bids.get(builder_id, 0)
+
+            profit = total_fee - bid
+            if profit > max_profit:
+                max_profit = profit
+                selected_header = header
+                selected_builder = builder_id
+
+        self.winning_header = selected_header
+        self.winning_builder = selected_builder
 
     def publish_block(self) -> None:
-        block, _ = self.winning_builder.build_block()
-        signed_block = self.sign_block(block)
-        self.chain.add_block(signed_block)
-        print(f"Proposer published block with header ID {block.header_id}")
+        if self.winning_header is not None:
+            corresponding_block = self.chain.find_block_by_header(self.winning_header)
 
-    def sign_block(self, block: Block) -> Block:
-        # Signing process is simplified
-        block.signature = f"Block id: {block.header_id}, Signed by: {self.signature}"
-        return block
+            if corresponding_block is not None:
+                self.chain.add_block(corresponding_block, self.winning_header)
 
+                # Pay the builder the bid amount
+                bid_to_pay: float = self.builder_bids.get(self.winning_builder, 0)
+                
+                if self.balance >= bid_to_pay:  # Make sure Proposer has enough balance
+                    self.balance -= bid_to_pay  # Deduct from Proposer's balance
+                    self.winning_builder.balance += bid_to_pay  # Add to Builder's balance
+
+                # Update Proposer's balance with the remaining transaction fee
+                remaining_fee: float = self.winning_header.total_fee - bid_to_pay
+                self.balance += remaining_fee
+
+                print(f"Proposer published block with header ID {self.winning_header.header_id}")
+                print(f"Proposer's final balance: {self.balance}")
+
+    def update_balance(self, total_fee):
+        self.balance += total_fee
+
+    def reset(self) -> None:
+        self.candidate_headers.clear()
+        self.winning_header = None
+        self.winning_builder = None
+        self.builder_bids.clear()
 
 if __name__ == "__main__":
-    # Initialize chain
-    my_chain = Chain()
+    pass
 
-    # Initialize builder with initial balance of 1000
-    my_builder = Builder("builder1", 10000, my_chain)
-    my_builder.balance = 1000  # Initial balance
-
-    # Initialize proposer with initial balance of 500
-    my_proposer = Proposer("signature1", "fee_recipient1", my_chain)
-    my_proposer.balance = 500  # Initial balance
-
-    # Initialize user
-    my_user = User("user1")
-    my_user.balance = 200  # Initial balance
-
-    # User creates a transaction
-    my_user.create_transaction(
-        transaction_id=1, recipient="user2", amount=10, base_fee=1, priority_fee=2, gas=100, timestamp=int(time.time())
-    )
-
-    # Builder builds a block
-    new_block, new_header = my_builder.build_block()
-
-    # Builder bids for the block
-    _, _, bid = my_builder.build_block_and_bid()
-
-    # Proposer receives the bid
-    my_proposer.receive_bid(new_header, bid, my_builder)
-
-    # Proposer publishes the block
-    my_proposer.publish_block()
-
-    # Check final chain status
-    print(f"Final number of blocks in chain: {len(my_chain.blocks)}")
-    print(f"Transactions in the last block: {[t.transaction_id for t in my_chain.blocks[-1].transactions]}")
-
-    # Display balances
-    print(f"Builder's final balance: {my_builder.balance}")
-    print(f"Proposer's final balance: {my_proposer.balance}")
-    print(f"User's final balance: {my_user.balance}")
