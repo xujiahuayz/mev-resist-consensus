@@ -91,6 +91,10 @@ class Node:
             self.broadcast_transaction(transaction)
 
     def broadcast_transaction(self, transaction: Transaction) -> None:
+        """
+            Broadcast a transaction to all peers.
+            YF_note: should be revised to partial broadcast
+        """
         for node in self.peers:
             if node not in transaction.broadcasted:
                 transaction.broadcasted.append(node)
@@ -147,6 +151,8 @@ class Block:
         self.transactions = transactions
         self.header_id = header_id
         self.signature = None
+        # to be modified
+        self.previous_block = None
 
     def extract_header(self, builder_id: str, total_fee: int) -> Header:
         """Extract header information from the block."""
