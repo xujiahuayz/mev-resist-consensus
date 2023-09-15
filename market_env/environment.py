@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import random
+import copy
 
 class Chain:
     def __init__(
@@ -27,10 +28,10 @@ class Chain:
         if mempools is None:
             mempools = {}
 
-        self.users = users
-        self.builders = builders
-        self.proposers = proposers
-        self.mempools = mempools
+        self.users = copy.deepcopy(users)
+        self.builders = copy.deepcopy(builders)
+        self.proposers = copy.deepcopy(proposers)
+        self.mempools = copy.deepcopy(mempools)
         self.blocks: list[Block] = []
         self.current_header_id = 0
 
@@ -297,49 +298,49 @@ if __name__ == "__main__":
     builders = {f'builder_{i}': Builder(f'builder_{i}', 10, chain) for i in range(1, 4)}
     proposers = {f'proposer_{i}': Proposer(chain, f'proposer_{i}') for i in range(1, 4)}
     users = {f'user_{i}': User(f'user_{i}') for i in range(1, 4)}
-    
+
     # Set initialization balances
     initial_builder_balance = 1000
     initial_proposer_balance = 1000
     initial_user_balance = 1000
-    
+
     for builder in builders.values():
         builder.balance = initial_builder_balance
-        
+
     for proposer in proposers.values():
         proposer.balance = initial_proposer_balance
-    
+
     # Initialize transactions
     for i in range(1, 21):
         users['user_1'].create_transaction(i, 'user_2', 10, 1, 1, 10, 1000+i)
-    
+
     # Add to Chain
     chain.builders = builders
     chain.proposers = proposers
     chain.users = users
-    
+
     for _ in range(10):  # Creating 10 blocks
         selected_proposer = chain.select_proposer()
-        
+
         for builder in chain.builders.values():
             block, header, bid = builder.build_block_and_bid()
             selected_proposer.receive_header(header, builder.builder_id)
             selected_proposer.builder_bids[builder.builder_id] = bid
-        
+
         selected_proposer.select_most_profitable_header()
         selected_proposer.publish_block()
         selected_proposer.reset()
-    
+
     print(f"Total number of blocks in chain: {len(chain.blocks)}")
-    
+
     for i, block in enumerate(chain.blocks):
         print(f"Block {i+1} details:")
         print(f"  - Header ID: {block.header_id}")
         print(f"  - Transaction IDs: {[tx.transaction_id for tx in block.transactions]}")
-        
+
     print("Remaining balances:")
     for builder in chain.builders.values():
         print(f"  - {builder.builder_id}: {builder.balance}")
-        
+
     for proposer in chain.proposers.values():
         print(f"  - {proposer.proposer_id}: {proposer.balance}")  # Assuming there's a `proposer_id` attribute similar to `builder_id`.
