@@ -13,7 +13,7 @@ def test_account():
 def test_transaction():
     acc1 = Account("wallet_1", 100) 
     acc2 = Account("wallet_2", 50)
-    acc1.create_transaction(1, acc2, 10, 1, 1, 10, 1234567890)
+    acc1.create_transaction(1, acc2, 10, 1, 2, 3, 1234567890)
     print(acc1.balance)
     print(acc2.balance)
 

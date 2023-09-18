@@ -81,7 +81,7 @@ class Node:
         self.peers.append(peer)
 
     def validate_transaction(self, transaction) -> bool:
-        return transaction.amount > 0 and transaction.transaction_fee > 0 and transaction.gas > 0
+        return transaction.amount > 0 and transaction.transaction_fee > 0
 
     def receive_transaction(self, transaction: Transaction) -> None:
         if self.validate_transaction(transaction):
@@ -90,10 +90,12 @@ class Node:
 
     def broadcast_transaction(self, transaction: Transaction) -> None:
         """
-            Broadcast a transaction to all peers.
-            YF_note: should be revised to partial broadcast
+            Broadcast a transaction to a random 50% of peers.
         """
-        for node in self.peers:
+        random.shuffle(self.peers)
+        num_peers_to_broadcast = len(self.peers) // 2
+        peers_to_broadcast = self.peers[:num_peers_to_broadcast]
+        for node in peers_to_broadcast:
             if node not in transaction.broadcasted:
                 transaction.broadcasted.append(node)
                 node.receive_transaction(transaction)
@@ -144,8 +146,10 @@ class Account:
             return
         self.balance -= amount
 
+    # gas limit is usually 21000 for simple eth transaction
     def create_transaction(self, transaction_id: int, recipient, amount: float,
                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
+        '''Create a transaction and broadcast it to the network. Sender balance is immediately deducted.'''
         total_fee = gas * (base_fee + priority_fee)
         if self.balance < amount + total_fee:
             raise Exception("Insufficient funds")
