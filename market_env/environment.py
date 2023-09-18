@@ -133,8 +133,9 @@ class Mempool:
             self.transactions.remove(transaction)
 
 class Account:
-    def __init__(self, initial_balance: float) -> None:
+    def __init__(self, wallet_id, initial_balance: float) -> None:
         self.balance = initial_balance
+        self.wallet_id = wallet_id
 
     def deposit(self, amount: float) -> None:
         self.balance += amount
@@ -145,40 +146,46 @@ class Account:
             return
         self.balance -= amount
 
+    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
+                            base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
+        transaction = Transaction(
+            transaction_id, self.wallet_id, recipient, amount, base_fee, priority_fee, gas, timestamp
+        )
+        transaction.broadcasted.append(self)
+
 class Block:
     """A block with the list of transactions packed by builder."""
-    def __init__(self, transactions: list[Transaction], header_id: int) -> None:
+    def __init__(self, transactions: list[Transaction], header_id: int, timestamp: int, total_fee: float, builder_id: str) -> None:
         self.transactions = transactions
-        self.header_id = header_id
-        self.signature = None
-        # to be modified
-        self.previous_block = None
-
-    def extract_header(self, builder_id: str, total_fee: int) -> Header:
-        """Extract header information from the block."""
-        return Header(self.header_id, 1, total_fee, builder_id)
-
-class Header:
-    """Header information stored."""
-    def __init__(self, header_id: int, timestamp: int, total_fee: float, builder_id: str) -> None:
         self.header_id = header_id
         self.timestamp = timestamp
         self.total_fee = total_fee
         self.builder_id = builder_id
+        self.signature = None
+        self.previous_block = None
 
-class User(Node):
-    """A user with user id that can create transactions."""
-    def __init__(self, user_id) -> None:
-        super().__init__()
-        self.user_id = user_id
+    def extract_header(self) -> dict:
+        """Extract header information from the block."""
+        return {
+            'header_id': self.header_id,
+            'timestamp': self.timestamp,
+            'total_fee': self.total_fee,
+            'builder_id': self.builder_id,
+        }
+    
+# class User(Node):
+#     """A user with user id that can create transactions."""
+#     def __init__(self, user_id) -> None:
+#         super().__init__()
+#         self.user_id = user_id
 
-    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
-                            base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-        transaction = Transaction(
-            transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
-        )
-        transaction.broadcasted.append(self)
-        self.receive_transaction(transaction)
+#     def create_transaction(self, transaction_id: int, recipient: str, amount: float,
+#                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
+#         transaction = Transaction(
+#             transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
+#         )
+#         transaction.broadcasted.append(self)
+#         self.receive_transaction(transaction)
 
 class Builder(Node, Account):
     """A builder with builder id and gas limit that can build blocks."""
