@@ -14,13 +14,13 @@ import copy
 class Chain:
     def __init__(
         self,
-        users: dict[str, User] | None = None,
+        accounts: dict[str, Account] | None = None,
         builders: dict[str, Builder] | None = None,
         proposers: dict[str, Proposer] | None = None,
         mempools: dict[str, Mempool] | None = None,
     ) -> None:
-        if users is None:
-            users = {}
+        if accounts is None:
+            accounts = {}
         if builders is None:
             builders = {}
         if proposers is None:
@@ -28,7 +28,7 @@ class Chain:
         if mempools is None:
             mempools = {}
 
-        self.users = copy.deepcopy(users)
+        self.accounts = copy.deepcopy(accounts)
         self.builders = copy.deepcopy(builders)
         self.proposers = copy.deepcopy(proposers)
         self.mempools = copy.deepcopy(mempools)
@@ -44,8 +44,6 @@ class Chain:
     def update_mempools(self, block: Block) -> None:
         """Transaction should be removed from mempools after being packed into a block."""
         for transaction in block.transactions:
-            for user in self.users.values():
-                user.mempool.remove_transaction(transaction)
             for builder in self.builders.values():
                 builder.mempool.remove_transaction(transaction)
             for proposer in self.proposers.values():
@@ -57,10 +55,10 @@ class Chain:
         print(f"Next header ID: {self.current_header_id}")
         return self.current_header_id
 
-    def find_block_by_header(self, header: Header) -> Block:
-        """Find and return the block corresponding to the given header."""
+    def find_block_by_header_id(self, header_id: int) -> Block:
+        """Find and return the block corresponding to the given header ID."""
         for block in self.blocks:
-            if block.header_id == header.header_id:
+            if block.header_id == header_id:
                 return block
         return None
 
@@ -146,16 +144,20 @@ class Account:
             return
         self.balance -= amount
 
-    def create_transaction(self, transaction_id: int, recipient: str, amount: float,
+    def create_transaction(self, transaction_id: int, recipient, amount: float,
                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-        transaction = Transaction(
-            transaction_id, self.wallet_id, recipient, amount, base_fee, priority_fee, gas, timestamp
-        )
+        total_fee = gas * (base_fee + priority_fee)
+        if self.balance < amount + total_fee:
+            raise Exception("Insufficient funds")
+        self.balance -= (amount + total_fee)
+        transaction = Transaction(transaction_id, self.wallet_id, recipient.wallet_id, amount, 
+                                  base_fee, priority_fee, gas, timestamp)
         transaction.broadcasted.append(self)
 
 class Block:
     """A block with the list of transactions packed by builder."""
-    def __init__(self, transactions: list[Transaction], header_id: int, timestamp: int, total_fee: float, builder_id: str) -> None:
+    def __init__(self, transactions: list[Transaction], header_id: int, timestamp: int,
+                 total_fee: float, builder_id: str) -> None:
         self.transactions = transactions
         self.header_id = header_id
         self.timestamp = timestamp
@@ -305,55 +307,55 @@ class Proposer(Node, Account):
         self.winning_builder = None
         self.builder_bids.clear()
 
-if __name__ == "__main__":
-    # Initialize chain, builders, proposers, and users
-    chain = Chain()
-    builders = {f'builder_{i}': Builder(f'builder_{i}', 10, chain) for i in range(1, 4)}
-    proposers = {f'proposer_{i}': Proposer(chain, f'proposer_{i}') for i in range(1, 4)}
-    users = {f'user_{i}': User(f'user_{i}') for i in range(1, 4)}
+# if __name__ == "__main__":
+#     # Initialize chain, builders, proposers, and users
+#     chain = Chain()
+#     builders = {f'builder_{i}': Builder(f'builder_{i}', 10, chain) for i in range(1, 4)}
+#     proposers = {f'proposer_{i}': Proposer(chain, f'proposer_{i}') for i in range(1, 4)}
+#     users = {f'user_{i}': User(f'user_{i}') for i in range(1, 4)}
 
-    # Set initialization balances
-    initial_builder_balance = 1000
-    initial_proposer_balance = 1000
-    initial_user_balance = 1000
+#     # Set initialization balances
+#     initial_builder_balance = 1000
+#     initial_proposer_balance = 1000
+#     initial_user_balance = 1000
 
-    for builder in builders.values():
-        builder.balance = initial_builder_balance
+#     for builder in builders.values():
+#         builder.balance = initial_builder_balance
 
-    for proposer in proposers.values():
-        proposer.balance = initial_proposer_balance
+#     for proposer in proposers.values():
+#         proposer.balance = initial_proposer_balance
 
-    # Initialize transactions
-    for i in range(1, 21):
-        users['user_1'].create_transaction(i, 'user_2', 10, 1, 1, 10, 1000+i)
+#     # Initialize transactions
+#     for i in range(1, 21):
+#         users['user_1'].create_transaction(i, 'user_2', 10, 1, 1, 10, 1000+i)
 
-    # Add to Chain
-    chain.builders = builders
-    chain.proposers = proposers
-    chain.users = users
+#     # Add to Chain
+#     chain.builders = builders
+#     chain.proposers = proposers
+#     chain.users = users
 
-    for _ in range(10):  # Creating 10 blocks
-        selected_proposer = chain.select_proposer()
+#     for _ in range(10):  # Creating 10 blocks
+#         selected_proposer = chain.select_proposer()
 
-        for builder in chain.builders.values():
-            block, header, bid = builder.build_block_and_bid()
-            selected_proposer.receive_header(header, builder.builder_id)
-            selected_proposer.builder_bids[builder.builder_id] = bid
+#         for builder in chain.builders.values():
+#             block, header, bid = builder.build_block_and_bid()
+#             selected_proposer.receive_header(header, builder.builder_id)
+#             selected_proposer.builder_bids[builder.builder_id] = bid
 
-        selected_proposer.select_most_profitable_header()
-        selected_proposer.publish_block()
-        selected_proposer.reset()
+#         selected_proposer.select_most_profitable_header()
+#         selected_proposer.publish_block()
+#         selected_proposer.reset()
 
-    print(f"Total number of blocks in chain: {len(chain.blocks)}")
+#     print(f"Total number of blocks in chain: {len(chain.blocks)}")
 
-    for i, block in enumerate(chain.blocks):
-        print(f"Block {i+1} details:")
-        print(f"  - Header ID: {block.header_id}")
-        print(f"  - Transaction IDs: {[tx.transaction_id for tx in block.transactions]}")
+#     for i, block in enumerate(chain.blocks):
+#         print(f"Block {i+1} details:")
+#         print(f"  - Header ID: {block.header_id}")
+#         print(f"  - Transaction IDs: {[tx.transaction_id for tx in block.transactions]}")
 
-    print("Remaining balances:")
-    for builder in chain.builders.values():
-        print(f"  - {builder.builder_id}: {builder.balance}")
+#     print("Remaining balances:")
+#     for builder in chain.builders.values():
+#         print(f"  - {builder.builder_id}: {builder.balance}")
 
-    for proposer in chain.proposers.values():
-        print(f"  - {proposer.proposer_id}: {proposer.balance}")  # Assuming there's a `proposer_id` attribute similar to `builder_id`.
+#     for proposer in chain.proposers.values():
+#         print(f"  - {proposer.proposer_id}: {proposer.balance}")  # Assuming there's a `proposer_id` attribute similar to `builder_id`.
