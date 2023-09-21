@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import random
 import copy
+import time
 
 class Chain:
     def __init__(
@@ -36,13 +37,17 @@ class Chain:
         self.current_header_id = 0
 
     def add_block(self, block: Block) -> None:
-        """Add a block to the chain."""
+        """
+            Add a block to the chain.
+        """
         self.blocks.append(block)
         self.current_header_id = block.header_id
         self.update_mempools(block)
 
     def update_mempools(self, block: Block) -> None:
-        """Transaction should be removed from mempools after being packed into a block."""
+        """
+            Transaction should be removed from mempools after being packed into a block.
+        """
         for transaction in block.transactions:
             for builder in self.builders.values():
                 builder.mempool.remove_transaction(transaction)
@@ -50,34 +55,47 @@ class Chain:
                 proposer.mempool.remove_transaction(transaction)
 
     def get_next_header_id(self) -> int:
-        """The next header ID is the current header ID plus 1."""
+        """
+            The next header ID is the current header ID plus 1.
+        """
         self.current_header_id += 1
         print(f"Next header ID: {self.current_header_id}")
         return self.current_header_id
 
     def find_block_by_header_id(self, header_id: int) -> Block:
-        """Find and return the block corresponding to the given header ID."""
+        """
+            Find and return the block corresponding to the given header ID.
+        """
         for block in self.blocks:
             if block.header_id == header_id:
                 return block
         return None
 
     def select_proposer(self) -> Proposer:
-        """Select a proposer randomly."""
+        """
+            Select a proposer randomly.
+        """
         return random.choice(list(self.proposers.values()))
 
     def reset_proposers(self) -> None:
-        """Reset proposers."""
+        """
+            Reset proposers.
+        """
         for proposer in self.proposers.values():
             proposer.reset()
+
 class Node:
-    """Nodes include proposers, builders, and users."""
+    """
+        Nodes include proposers, builders, and users.
+    """
     def __init__(self, peers: list[Node] = None) -> None:
         self.mempool: Mempool = Mempool()
         self.peers: list[Node] = peers if peers is not None else []
 
     def add_peer(self, peer) -> None:
-        """Add a peer node to the node's peer list."""
+        """
+            Add a peer node to the node's peer list.
+        """
         self.peers.append(peer)
 
     def validate_transaction(self, transaction) -> bool:
@@ -102,8 +120,8 @@ class Node:
 
 class Transaction:
     """
-    A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp.
-    For storage simplicity, we use a simple integer as transaction id.
+        A transaction with transaction id, sender, recipient, amount, gas price, gas, and timestamp.
+        For storage simplicity, we use a simple integer as transaction id.
     """
     def __init__(
         self, transaction_id: int, sender: str, recipient: str, amount: float,
@@ -121,17 +139,24 @@ class Transaction:
         self.broadcasted = []
 
 class Mempool:
-    """A mempool that stores transactions."""
+    """
+        A mempool that stores transactions.
+    """
     def __init__(self) -> None:
         self.transactions: list[Transaction] = []
 
     def add_transaction(self, transaction: Transaction) -> None:
+        """
+            Add a transaction to the mempool.
+        """
         self.transactions.append(transaction)
 
     def remove_transaction(self, transaction: Transaction) -> None:
+        """
+            Remove a transaction from the mempool.
+        """
         if transaction in self.transactions:
             self.transactions.remove(transaction)
-
 class Account:
     def __init__(self, wallet_id, initial_balance: float) -> None:
         self.balance = initial_balance
@@ -149,7 +174,9 @@ class Account:
     # gas limit is usually 21000 for simple eth transaction
     def create_transaction(self, transaction_id: int, recipient, amount: float,
                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-        '''Create a transaction and broadcast it to the network. Sender balance is immediately deducted.'''
+        '''
+            Create a transaction and broadcast it to the network. Sender balance is immediately deducted.
+        '''
         total_fee = gas * (base_fee + priority_fee)
         if self.balance < amount + total_fee:
             raise Exception("Insufficient funds")
@@ -178,20 +205,6 @@ class Block:
             'total_fee': self.total_fee,
             'builder_id': self.builder_id,
         }
-    
-# class User(Node):
-#     """A user with user id that can create transactions."""
-#     def __init__(self, user_id) -> None:
-#         super().__init__()
-#         self.user_id = user_id
-
-#     def create_transaction(self, transaction_id: int, recipient: str, amount: float,
-#                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-#         transaction = Transaction(
-#             transaction_id, self.user_id, recipient, amount, base_fee, priority_fee, gas, timestamp
-#         )
-#         transaction.broadcasted.append(self)
-#         self.receive_transaction(transaction)
 
 class Builder(Node, Account):
     """A builder with builder id and gas limit that can build blocks."""
@@ -202,9 +215,9 @@ class Builder(Node, Account):
         self.chain = chain
         self.transaction_count = 0
 
-    def build_block(self) -> tuple[Block, Header]:
+    def build_block(self) -> Block:
         """
-        Build a block from the mempool, and return the block and its header.
+        Build a block from the mempool, and return the block.
         The ordering is based on the total transaction fee paid for the transaction.
         Add transactions to the block until the gas limit is reached.
         """
@@ -218,7 +231,7 @@ class Builder(Node, Account):
 
         selected_transactions: list[Transaction] = []
         gas_used: int = 0
-
+        
         for transaction in sorted_transactions:
             if gas_used + transaction.gas <= self.gas_limit:
                 selected_transactions.append(transaction)
@@ -227,18 +240,15 @@ class Builder(Node, Account):
             else:
                 break
 
-        # Calculate total transaction fee for the block
         total_fee = sum(t.gas * (t.base_fee + t.priority_fee) for t in selected_transactions)
-
         header_id = self.chain.get_next_header_id()
-        block = Block(selected_transactions, header_id)
+        timestamp = time.time()
+        builder_id = self.builder_id
+        block = Block(selected_transactions, header_id, timestamp, total_fee, builder_id)
 
-        # Extract block header, including the total transaction fee
-        header = block.extract_header(self.builder_id, total_fee)
+        print(f"Builder {self.builder_id} built block with ID {block.header_id}")
 
-        print(f"Builder {self.builder_id} built block with header ID {header_id}")
-
-        return block, header
+        return block
 
     # Example bidding strategy: 10% of total transaction fees
     def build_block_and_bid(self):
