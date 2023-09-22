@@ -174,9 +174,7 @@ class Account:
     # gas limit is usually 21000 for simple eth transaction
     def create_transaction(self, transaction_id: int, recipient, amount: float,
                             base_fee: float, priority_fee: float, gas: int, timestamp: int) -> None:
-        '''
-            Create a transaction and broadcast it to the network. Sender balance is immediately deducted.
-        '''
+        '''Create a transaction and broadcast it to the network. Sender balance is immediately deducted.'''
         total_fee = gas * (base_fee + priority_fee)
         if self.balance < amount + total_fee:
             raise Exception("Insufficient funds")
@@ -262,64 +260,61 @@ class Proposer(Node, Account):
     def __init__(self, chain: Chain, proposer_id: str) -> None:
         super().__init__()
         self.chain = chain
-        self.candidate_headers = []
+        self.candidate_blocks = []
         self.winning_builder = None
-        self.winning_header = None
+        self.winning_block = None
         self.builder_bids = {}
         self.proposer_id = proposer_id
 
-    def receive_header(self, header: Header, builder_id: str) -> None:
-        """Receive a header from a builder."""
-        self.candidate_headers.append((header, builder_id))
+    def receive_block(self, block: Block, builder_id: str) -> None:
+        """Receive a block from a builder."""
+        self.candidate_blocks.append((block, builder_id))
 
-    def select_most_profitable_header(self) -> None:
-        # Find the header with the highest (transaction_fee - bid)
+    def select_most_profitable_block(self) -> None:
+        # Find the block with the highest (transaction_fee - bid)
         max_profit = -1
-        selected_header = None
+        selected_block = None
         selected_builder = None
 
-        for header, builder_id in self.candidate_headers:
-            total_fee = header.total_fee
+        for block, builder_id in self.candidate_blocks:
+            total_fee = block.total_fee
             bid = self.builder_bids.get(builder_id, 0)
 
             profit = total_fee - bid
             if profit > max_profit:
                 max_profit = profit
-                selected_header = header
+                selected_block = block
                 selected_builder = builder_id
 
-        self.winning_header = selected_header
+        self.winning_block = selected_block
         self.winning_builder = selected_builder
 
     def publish_block(self) -> None:
-        if self.winning_header is not None:
-            corresponding_block = self.chain.find_block_by_header(self.winning_header)
+        if self.winning_block is not None:
+            self.chain.add_block(self.winning_block)
 
-            if corresponding_block is not None:
-                self.chain.add_block(corresponding_block, self.winning_header)
+            # Pay the builder the bid amount
+            bid_to_pay: float = self.builder_bids.get(self.winning_builder, 0)
 
-                # Pay the builder the bid amount
-                bid_to_pay: float = self.builder_bids.get(self.winning_builder, 0)
+            if self.balance >= bid_to_pay: 
+                self.balance -= bid_to_pay  
+                self.winning_builder.balance += bid_to_pay  
 
-                if self.balance >= bid_to_pay:  # Make sure Proposer has enough balance
-                    self.balance -= bid_to_pay  # Deduct from Proposer's balance
-                    self.winning_builder.balance += bid_to_pay  # Add to Builder's balance
+            remaining_fee: float = self.winning_block.total_fee - bid_to_pay
+            self.balance += remaining_fee
 
-                # Update Proposer's balance with the remaining transaction fee
-                remaining_fee: float = self.winning_header.total_fee - bid_to_pay
-                self.balance += remaining_fee
-
-                print(f"Proposer published block with header ID {self.winning_header.header_id}")
-                print(f"Proposer's final balance: {self.balance}")
+            print(f"Proposer published block with ID {self.winning_block.header_id}")
+            print(f"Proposer's final balance: {self.balance}")
 
     def update_balance(self, total_fee):
         self.balance += total_fee
 
     def reset(self) -> None:
-        self.candidate_headers.clear()
-        self.winning_header = None
+        self.candidate_blocks.clear()
+        self.winning_block = None
         self.winning_builder = None
         self.builder_bids.clear()
+
 
 # if __name__ == "__main__":
 #     # Initialize chain, builders, proposers, and users
