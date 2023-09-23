@@ -1,6 +1,6 @@
 """This file contains the configuration settings for the market environment."""
 
-from market_env.settings import PROJECT_ROOT
+from blockchain_env.settings import PROJECT_ROOT
 
 DATA_PATH = PROJECT_ROOT / "data"
 FIGURE_PATH = PROJECT_ROOT / "figures"
