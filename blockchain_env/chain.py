@@ -1,6 +1,8 @@
 import copy
 
-from blockchain_env.environment import Proposer, Builder
+from blockchain_env.account import Account
+from blockchain_env.proposer import Proposer
+from blockchain_env.builder import Builder
 from blockchain_env.constants import BASE_FEE
 
 class Transaction:
@@ -30,38 +32,15 @@ class Transaction:
         """
         return self.amount * (self.base_fee + self.priority_fee)
 
-class Account:
-    def __init__(self, address, balance: float):
-        """
-        Initialize a new account.
-        """
-        self.address = address
-        self.balance = balance
-
-    def deposit(self, amount: float):
-        """
-        Deposit amount to the account.
-        """
-        self.balance += amount
-    
-    def withdraw(self, amount: float):
-        """
-        Withdraw amount from the account.
-        """
-        if self.balance < amount:
-            print(f"Insufficient balance. the amount to withdraw is {amount} but address {self.address} only has {self.balance}")
-            return
-        self.balance -= amount
-
 class Block:
     def __init__(self,
         block_id,
         previous_block_id,
         builder_id,
-        proposer_id,
         timestamp: int,
         total_fee: float,
-        transactions: list[Transaction] = [],
+        transactions: list[Transaction] = None,
+        proposer_id = None,
     ):
         """
         Initialize a new block.
@@ -72,15 +51,11 @@ class Block:
         self.proposer_id = proposer_id
         self.timestamp = timestamp
         self.total_fee = total_fee
-        self.transactions = copy.deepcopy(transactions)
+        if transactions == None:
+            self.transactions = []
+        else:
+            self.transactions = copy.deepcopy(transactions)
         self.header = self.extract_header()
-    
-    # def __init__(self, block_id, previous_block_id):
-    #     """
-    #     FOR TESTING ONLY: Initialize a new block.
-    #     """
-    #     self.block_id = block_id
-    #     self.previous_block_id = previous_block_id
 
     def extract_header(self) -> dict:
         """
@@ -93,6 +68,14 @@ class Block:
             "timestamp": self.timestamp,
             "total_fee": self.total_fee,
         }
+    
+    # def __init__(self, block_id, previous_block_id):
+    #     """
+    #     FOR TESTING ONLY: Initialize a new block.
+    #     """
+    #     self.block_id = block_id
+    #     self.previous_block_id = previous_block_id
+
 
 class Chain:
     def __init__(self,
@@ -157,7 +140,7 @@ class Chain:
             if len(block_previous_chain[block_id]) >= len(longest_chain):
                 longest_chain = block_previous_chain[block_id]
         
-        # print(f"Longest chain: {longest_chain}")
+        print(f"Longest chain: {longest_chain}")
         return longest_chain
     
     def find_latest_block(self):
@@ -166,7 +149,7 @@ class Chain:
         """
         longest_chain = self.find_longest_chain()
         if longest_chain:
-            return longest_chain[-1]
+            return longest_chain[0]
         else:
             return None
 

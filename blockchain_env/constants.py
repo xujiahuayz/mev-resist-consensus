@@ -7,3 +7,5 @@ FIGURE_PATH = PROJECT_ROOT / "figures"
 CACHE_PATH = PROJECT_ROOT / ".cache"
 
 BASE_FEE = 0.01
+BUILDER_STRATEGY_LIST = ["greedy", "random", "FCFS"]
+PROPOSER_STRATEGY_LIST = ["greedy", "random", "FCFS"]
