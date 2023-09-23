@@ -1,8 +1,37 @@
-from environment import Node, Mempool, Transaction, Builder, Proposer
 import copy
 
+from blockchain_env.environment import Proposer, Builder
+from blockchain_env.constants import BASE_FEE
+
+class Transaction:
+    def __init__(self,
+        transaction_id,
+        timestamp: int,
+        sender,
+        recipient,
+        amount: float,
+        base_fee: float = BASE_FEE,
+        priority_fee: float = 0,
+    ):
+        """
+        Initialize a new transaction.
+        """
+        self.transaction_id = transaction_id
+        self.timestamp = timestamp
+        self.sender = sender
+        self.recipient = recipient
+        self.amount = amount
+        self.base_fee = base_fee
+        self.priority_fee = priority_fee
+    
+    def calculate_total_fee(self):
+        """
+        Calculate the total fee of the transaction.
+        """
+        return self.amount * (self.base_fee + self.priority_fee)
+
 class Account:
-    def __init__(self, address: str, balance: float):
+    def __init__(self, address, balance: float):
         """
         Initialize a new account.
         """
@@ -26,10 +55,10 @@ class Account:
 
 class Block:
     def __init__(self,
-        block_id: str,
-        previous_block_id: str,
-        builder_id: str,
-        proposer_id: str,
+        block_id,
+        previous_block_id,
+        builder_id,
+        proposer_id,
         timestamp: int,
         total_fee: float,
         transactions: list[Transaction] = [],
@@ -44,6 +73,7 @@ class Block:
         self.timestamp = timestamp
         self.total_fee = total_fee
         self.transactions = copy.deepcopy(transactions)
+        self.header = self.extract_header()
     
     # def __init__(self, block_id, previous_block_id):
     #     """
@@ -52,13 +82,23 @@ class Block:
     #     self.block_id = block_id
     #     self.previous_block_id = previous_block_id
 
+    def extract_header(self) -> dict:
+        """
+        Extract the header of the block.
+        """
+        return {
+            "block_id": self.block_id,
+            "previous_block_id": self.previous_block_id,
+            "builder_id": self.builder_id,
+            "timestamp": self.timestamp,
+            "total_fee": self.total_fee,
+        }
 
 class Chain:
-    
     def __init__(self,
         accounts: list[Account] = [],
         proposers: list[Proposer] = [],
-        nodes: list[Node] = [],
+        builders: list[Builder] = [],
         blocks: list[Block] = [],
     ):
         """
@@ -67,7 +107,7 @@ class Chain:
         """
         self.accounts = copy.deepcopy(accounts)
         self.proposers = copy.deepcopy(proposers)
-        self.nodes = copy.deepcopy(nodes)
+        self.builders = copy.deepcopy(builders)
         self.blocks = copy.deepcopy(blocks)
     
     def add_block(self, block: Block):
@@ -129,3 +169,6 @@ class Chain:
             return longest_chain[-1]
         else:
             return None
+
+if __name__ == "__main__":
+    pass
