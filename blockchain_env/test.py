@@ -1,4 +1,5 @@
-from environment import Chain, Account, Node, Mempool, Transaction, Builder, Proposer
+from blockchain_env.environment import Account, Node, Mempool, Transaction, Builder, Proposer
+from blockchain_env.chain import Block, Chain
 import time
 
 def test_chain():
@@ -90,6 +91,21 @@ def test_builder():
     print(f"Built block header ID: {block.header_id}")
     print(f"Total transaction fee of block: {block.total_fee}")
 
+def test_find_latest_block():
+    chain1 = Chain(
+        blocks=[Block(1, 0), Block(2, 1), Block(3, 2), Block(0, None), Block(4, 3), Block(5, 4), Block(102, 101), Block(100, 2), Block(101, 100),
+                Block(1002, 101), Block(1003, 1002)]
+    )
+    print(chain1.find_latest_block())
+    # [Block(1, 0), Block(2, 1), Block(3, 2), Block(0, None), Block(4, 3), Block(5, 4), Block(102, 101), Block(100, 2), Block(101, 100), Block(1002, 101), Block(1003, 1002)]
+
+    # 0->1->2->3->4->5
+    # 0->1->2->100->101->102
+    # 0->1->2->100->101->1002->1003
+    
+    # {0: False, 1: False, 2: False, 3: False, 4: False, 5: False, 102: False, 100: False, 101: False, 1002: False, 1003: False}
+    # {0: [0]; 1: [1]; 2: [2]; 3: [3]; 4: [4]; 5: [5]; 102: [102]; 100: [100]; 101: [101]; 1002: [1002]; 1003: [1003]}
+
 
 if __name__ == "__main__":
-    test_account()
+    test_find_latest_block()
