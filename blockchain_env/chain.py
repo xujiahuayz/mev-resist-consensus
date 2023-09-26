@@ -11,6 +11,7 @@ class Transaction:
         timestamp: int,
         sender,
         recipient,
+        gas: int,
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
@@ -22,6 +23,7 @@ class Transaction:
         self.timestamp = timestamp
         self.sender = sender
         self.recipient = recipient
+        self.gas = gas
         self.amount = amount
         self.base_fee = base_fee
         self.priority_fee = priority_fee
