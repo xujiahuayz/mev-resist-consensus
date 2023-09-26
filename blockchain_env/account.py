@@ -51,8 +51,9 @@ class Account:
         return transaction
 
 if __name__ == "__main__":
-    user1 = Account(x,x,x)
-    builder1 = Builder(x,x,x)
+    # user1 = Account(x,x,x)
+    # builder1 = Builder("dsdsd", 2121212, , x, x)
 
-    trans1 = user1.create_transaction(x,x,x,x)
-    builder1.mempool.add_transaction(trans1)
+    # trans1 = user1.create_transaction(x,x,x,x)
+    # builder1.mempool.add_transaction(trans1)
+    pass
