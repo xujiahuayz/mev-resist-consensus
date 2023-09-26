@@ -1,38 +1,42 @@
-from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE
+from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
 from blockchain_env.proposer import Proposer
 from blockchain_env.chain import Transaction
 import uuid
 from datetime import datetime
 import random
+import copy
+
 class Mempool:
     def __init__(self) -> None:
         self.transactions = []
 
     def add_transaction(self, transaction) -> None:
-        self.transactions.append(transaction)
+        self.transactions.append(copy.deepcopy(transaction))
 
     def remove_transaction(self, transaction) -> None:
         if transaction in self.transactions:
             self.transactions.remove(transaction)
 
 class Builder(Account):
-    def __init__(self, address,
+    def __init__(self,
+                address,
                 balance: float,
                 builder_strategy: str = "greedy",
-                mempool: dict[str, Mempool] | None = None
+                mempool: Mempool | None = None,
     ):
-        if mempools is None:
-            mempools = {}
+        if mempool is None:
+            mempool = Mempool()
+        else:
+            self.mempool = mempool
         super().__init__(address, balance)
         # make sure builder_strategy is a str from the list of available strategies
         assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
         self.builder_strategy = builder_strategy
-        self.mempool = mempool
     
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
-        remaining_gas = self.gas_limit
+        remaining_gas = GAS_LIMIT
         
         if self.builder_strategy == "greedy":
             # Sort transactions by fee in descending order
