@@ -1,6 +1,7 @@
 from blockchain_env.chain import Transaction
 from blockchain_env.constants import BASE_FEE
 from blockchain_env.builder import Builder
+from blockchain_env.builder import Mempool
 import uuid
 from datetime import datetime
 import random
@@ -43,5 +44,15 @@ class Account:
         transaction = Transaction(transaction_id, timestamp, self.address, recipient, amount, base_fee, priority_fee)
         # selected_builders = random.sample(builders, len(builders) // 2)
         # for builder in selected_builders:
-        Builder.mempool.add_transaction(transaction) 
+
+        # .mempool.add_transaction(transaction) 
         self.balance -= total_fee + amount
+
+        return transaction
+
+if __name__ == "__main__":
+    user1 = Account(x,x,x)
+    builder1 = Builder(x,x,x)
+
+    trans1 = user1.create_transaction(x,x,x,x)
+    builder1.mempool.add_transaction(trans1)
