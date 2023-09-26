@@ -1,8 +1,9 @@
 from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
+from blockchain_env.chain import Chain
 
 import random
-class Chainpool():
+class Blockpool():
     def __init__(self) -> None:
         self.bodys = []
 
@@ -12,22 +13,23 @@ class Chainpool():
     def remove_body(self, body) -> None:
         if body in self.bodys:
             self.bodys.remove(body)
+
 class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 
                  proposer_strategy: str = "greedy", 
-                 chainpool: dict[str, Chainpool] | None = None):
+                 blockpool: dict[str, Blockpool] | None = None):
         super().__init__(address, balance)
         assert proposer_strategy in PROPOSER_STRATEGY_LIST, f"The proposer_strategy must be one of {PROPOSER_STRATEGY_LIST}."
         self.proposer_strategy = proposer_strategy
-        self.chainpool = chainpool
+        self.chainpool = blockpool
     
     def select_block(self) -> str | None:
         if self.proposer_strategy == "greedy":
             # Select the body with the highest profit (priority * gas - bid)
             if not self.chainpool:
                 return None  
-            selected_body = max(self.chainpool.values(), key=lambda x: x.calculate_profit())
+            selected_body = max(self.chainpool.values(), key=lambda x: x.priority * x.gas - x.bid)
             return selected_body
 
         elif self.proposer_strategy == "random":
@@ -47,6 +49,12 @@ class Proposer(Account):
         else:
             raise ValueError("Invalid proposer_strategy")
 
+    def publish_block(self):
+        selected_body = self.select_block()
+        if selected_body is None:
+            return None
+        self.chainpool.remove_body(selected_body)
+        Chain.add_block(selected_body)
 
 
 
