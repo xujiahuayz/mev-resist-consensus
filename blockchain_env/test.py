@@ -3,6 +3,7 @@ from blockchain_env.chain import Block, Chain
 from blockchain_env.builder import Builder, Mempool
 from blockchain_env.constants import BASE_FEE, GAS_LIMIT
 from blockchain_env.proposer import Blockpool, Proposer
+from blockchain_env.transaction import Transaction
 import time
 
 def test_chain():
@@ -113,7 +114,7 @@ def test_flow():
     account1 = Account("Address1", 1000.0)
     account2 = Account("Address2", 1000.0)
     mempool = Mempool()
-    builder = Builder("Builder1", 100.0, mempSool=mempool)
+    builder = Builder("Builder1", 100.0, memppool=mempool)
     blockpool = Blockpool()
     proposer = Proposer("Proposer1", 100.0, blockpool=blockpool)
     chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer])

@@ -1,6 +1,5 @@
 from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
-from blockchain_env.chain import Chain
 
 import random
 class Blockpool():

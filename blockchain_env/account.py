@@ -1,4 +1,5 @@
 from blockchain_env.constants import BASE_FEE
+from blockchain_env.transaction import Transaction
 import uuid
 from datetime import datetime
 import random

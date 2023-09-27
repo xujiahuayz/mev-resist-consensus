@@ -1,6 +1,7 @@
 from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
-from blockchain_env.chain import Transaction
+from blockchain_env.transaction import Transaction
+
 import uuid
 from datetime import datetime
 import random
