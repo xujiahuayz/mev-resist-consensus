@@ -1,4 +1,3 @@
-from blockchain_env.chain import Transaction
 from blockchain_env.constants import BASE_FEE
 import uuid
 from datetime import datetime

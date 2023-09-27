@@ -35,48 +35,48 @@ class Transaction:
         return self.amount * (self.base_fee + self.priority_fee)
 
 class Block:
-    def __init__(self,
-        block_id,
-        previous_block_id,
-        builder_id,
-        timestamp: int,
-        total_fee: float,
-        transactions: list[Transaction] = None,
-        proposer_id = None,
-    ):
-        """
-        Initialize a new block.
-        """
-        self.block_id = block_id
-        self.previous_block_id = previous_block_id
-        self.builder_id = builder_id
-        self.proposer_id = proposer_id
-        self.timestamp = timestamp
-        self.total_fee = total_fee
-        if transactions == None:
-            self.transactions = []
-        else:
-            self.transactions = copy.deepcopy(transactions)
-        self.header = self.extract_header()
-
-    def extract_header(self) -> dict:
-        """
-        Extract the header of the block.
-        """
-        return {
-            "block_id": self.block_id,
-            "previous_block_id": self.previous_block_id,
-            "builder_id": self.builder_id,
-            "timestamp": self.timestamp,
-            "total_fee": self.total_fee,
-        }
-    
-    # def __init__(self, block_id, previous_block_id):
+    # def __init__(self,
+    #     block_id,
+    #     previous_block_id,
+    #     builder_id,
+    #     timestamp: int,
+    #     total_fee: float,
+    #     transactions: list[Transaction] = None,
+    #     proposer_id = None,
+    # ):
     #     """
-    #     FOR TESTING ONLY: Initialize a new block.
+    #     Initialize a new block.
     #     """
     #     self.block_id = block_id
     #     self.previous_block_id = previous_block_id
+    #     self.builder_id = builder_id
+    #     self.proposer_id = proposer_id
+    #     self.timestamp = timestamp
+    #     self.total_fee = total_fee
+    #     if transactions == None:
+    #         self.transactions = []
+    #     else:
+    #         self.transactions = copy.deepcopy(transactions)
+    #     self.header = self.extract_header()
+
+    # def extract_header(self) -> dict:
+    #     """
+    #     Extract the header of the block.
+    #     """
+    #     return {
+    #         "block_id": self.block_id,
+    #         "previous_block_id": self.previous_block_id,
+    #         "builder_id": self.builder_id,
+    #         "timestamp": self.timestamp,
+    #         "total_fee": self.total_fee,
+    #     }
+    
+    def __init__(self, block_id, previous_block_id):
+        """
+        FOR TESTING ONLY: Initialize a new block.
+        """
+        self.block_id = block_id
+        self.previous_block_id = previous_block_id
 
 
 class Chain:

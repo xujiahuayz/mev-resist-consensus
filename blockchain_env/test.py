@@ -1,5 +1,8 @@
-from blockchain_env.environment import Account, Node, Mempool, Transaction, Builder, Proposer
+from blockchain_env.account import Account
 from blockchain_env.chain import Block, Chain
+from blockchain_env.builder import Builder, Mempool
+from blockchain_env.constants import BASE_FEE, GAS_LIMIT
+from blockchain_env.proposer import Blockpool, Proposer
 import time
 
 def test_chain():
@@ -107,8 +110,35 @@ def test_find_latest_block():
     # {0: [0]; 1: [1]; 2: [2]; 3: [3]; 4: [4]; 5: [5]; 102: [102]; 100: [100]; 101: [101]; 1002: [1002]; 1003: [1003]}
 
 def test_flow():
+    account1 = Account("Address1", 1000.0)
+    account2 = Account("Address2", 1000.0)
+    mempool = Mempool()
+    builder = Builder("Builder1", 100.0, mempSool=mempool)
+    blockpool = Blockpool()
+    proposer = Proposer("Proposer1", 100.0, blockpool=blockpool)
+    chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer])
 
-    pass
+    transaction = account1.create_transaction(account2.address, 50.0)
+    mempool.add_transaction(transaction)
+    selected_transaction = builder.select_transactions()[0]
+
+    bid_transaction = builder.bid()
+    selected_transaction.amount += bid_transaction.amount
+
+    # Create a body with the selected transaction and append the bid transaction
+    body = [selected_transaction, bid_transaction]
+
+    # Add the body to the proposer's blockpool
+    proposer.blockpool.add_body(body)
+
+    # Select a block from the proposer's blockpool
+    selected_body = proposer.select_block()
+
+    # Add the selected block to the chain
+    chain.add_block(selected_body)
+
+    # Check if the chain contains the selected block
+    assert selected_body in chain.blocks
 
 if __name__ == "__main__":
-    test_find_latest_block()
+    test_flow()
