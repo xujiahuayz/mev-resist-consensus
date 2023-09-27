@@ -2,6 +2,7 @@ from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
 
 import random
+
 class Blockpool():
     def __init__(self) -> None:
         self.bodys = []
@@ -17,11 +18,19 @@ class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 
                  proposer_strategy: str = "greedy", 
-                 blockpool: dict[str, Blockpool] | None = None):
+                 blockpool: Blockpool | None = None
+    ):
+        if blockpool is None:
+            blockpool = Blockpool()
+        else:
+            self.blockpool = blockpool
         super().__init__(address, balance)
         assert proposer_strategy in PROPOSER_STRATEGY_LIST, f"The proposer_strategy must be one of {PROPOSER_STRATEGY_LIST}."
         self.proposer_strategy = proposer_strategy
-        self.blockpool = blockpool
+
+    def select_propser(self):
+        #randomly select a proposer from the proposer list
+        pass
     
     def select_block(self) -> str | None:
         if self.proposer_strategy == "greedy":

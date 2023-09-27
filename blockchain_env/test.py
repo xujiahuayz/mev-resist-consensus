@@ -122,23 +122,12 @@ def test_flow():
     transaction = account1.create_transaction(account2.address, 50.0)
     mempool.add_transaction(transaction)
     selected_transaction = builder.select_transactions()[0]
-
     bid_transaction = builder.bid()
-    selected_transaction.amount += bid_transaction.amount
-
-    # Create a body with the selected transaction and append the bid transaction
+    # selected_transactions = selected_transactions.append(bid_transaction)
     body = [selected_transaction, bid_transaction]
-
-    # Add the body to the proposer's blockpool
     proposer.blockpool.add_body(body)
-
-    # Select a block from the proposer's blockpool
     selected_body = proposer.select_block()
-
-    # Add the selected block to the chain
     chain.add_block(selected_body)
-
-    # Check if the chain contains the selected block
     assert selected_body in chain.blocks
 
 if __name__ == "__main__":
