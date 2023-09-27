@@ -1,7 +1,7 @@
 from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
-from blockchain_env.proposer import Proposer
-from blockchain_env.chain import Transaction
+from blockchain_env.transaction import Transaction
+
 import uuid
 from datetime import datetime
 import random
@@ -39,14 +39,11 @@ class Builder(Account):
         remaining_gas = GAS_LIMIT
         
         if self.builder_strategy == "greedy":
-            # Sort transactions by fee in descending order
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.fee, reverse=True)
         elif self.builder_strategy == "random":
-            # Shuffle transactions randomly
             random.shuffle(self.mempool.transactions)
             sorted_transactions = self.mempool.transactions
         elif self.builder_strategy == "FCFS":
-            # Sort transactions by timestamp in ascending order
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.timestamp)
         else:
             raise ValueError("Invalid builder_strategy")
@@ -58,8 +55,7 @@ class Builder(Account):
                 selected_transactions.append(transaction)
                 remaining_gas -= transaction_gas
             else:
-                break  
-        
+                break          
         return selected_transactions
         
     def bid(self):
@@ -70,14 +66,15 @@ class Builder(Account):
             bid_transaction = Transaction(
                             transaction_id=str(uuid.uuid4()),
                             timestamp=int(datetime.now().timestamp()),
-                            sender=self.proposer_address,  # Set the proposer as the sender
-                            recipient=self.address,  # The builder's address is the recipient
+                            sender=self.proposer.address,  
+                            recipient=self.address, 
                             amount=bid,
-                            base_fee=BASE_FEE,  # Replace with the actual base fee
-                            priority_fee=0  # No priority fee for the bid
+                            base_fee=BASE_FEE,  
+                            priority_fee=0
                         )
-            self.selected_transactions.append(bid_transaction)
-            Proposer.blockpool.add_body(self, selected_transaction, bid)
+            return bid_transaction
+        
 
 if __name__ == "__main__":
+    # selected_transactions.append(bid_transaction)
     pass
