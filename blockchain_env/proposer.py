@@ -22,39 +22,32 @@ class Proposer(Account):
         super().__init__(address, balance)
         assert proposer_strategy in PROPOSER_STRATEGY_LIST, f"The proposer_strategy must be one of {PROPOSER_STRATEGY_LIST}."
         self.proposer_strategy = proposer_strategy
-        self.chainpool = blockpool
+        self.blockpool = blockpool
     
     def select_block(self) -> str | None:
         if self.proposer_strategy == "greedy":
             # Select the body with the highest profit (priority * gas - bid)
-            if not self.chainpool:
+            if not self.blockpool:
                 return None  
-            selected_body = max(self.chainpool.values(), key=lambda x: x.priority * x.gas - x.bid)
+            selected_body = max(self.blockpool.values(), key=lambda x: x.priority * x.gas - x.bid)
             return selected_body
 
         elif self.proposer_strategy == "random":
-            # Choose a body randomly from the chainpool
-            if not self.chainpool:
+            # Choose a body randomly from the blockpool
+            if not self.blockpool:
                 return None  
-            selected_body = random.choice(list(self.chainpool.values()))
+            selected_body = random.choice(list(self.blockpool.values()))
             return selected_body
 
         elif self.proposer_strategy == "cheap":
             # Select the body with the lowest bid price
-            if not self.chainpool:
+            if not self.blockpool:
                 return None  
-            selected_body = min(self.chainpool.values(), key=lambda x: x.bid)
+            selected_body = min(self.blockpool.values(), key=lambda x: x.bid)
             return selected_body
 
         else:
             raise ValueError("Invalid proposer_strategy")
-
-    def publish_block(self):
-        selected_body = self.select_block()
-        if selected_body is None:
-            return None
-        self.chainpool.remove_body(selected_body)
-        Chain.add_block(selected_body)
 
 
 

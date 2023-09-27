@@ -102,10 +102,13 @@ def test_find_latest_block():
     # 0->1->2->3->4->5
     # 0->1->2->100->101->102
     # 0->1->2->100->101->1002->1003
-    
+
     # {0: False, 1: False, 2: False, 3: False, 4: False, 5: False, 102: False, 100: False, 101: False, 1002: False, 1003: False}
     # {0: [0]; 1: [1]; 2: [2]; 3: [3]; 4: [4]; 5: [5]; 102: [102]; 100: [100]; 101: [101]; 1002: [1002]; 1003: [1003]}
 
+def test_flow():
+
+    pass
 
 if __name__ == "__main__":
     test_find_latest_block()
