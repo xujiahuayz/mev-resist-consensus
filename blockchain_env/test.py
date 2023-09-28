@@ -116,19 +116,20 @@ def test_flow():
     mempool = Mempool()
     builder = Builder("Builder1", 100.0, "greedy", mempool)
     blockpool = Blockpool()
-    proposer = Proposer("Proposer1", 100.0, "greedy", blockpool)
-    chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer])
+    proposer1 = Proposer("Proposer1", 100.0, "greedy", blockpool)
+    proposer2 = Proposer("Proposer2", 100.0, "greedy", blockpool) 
+    chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer1, proposer2])
 
+    selected_proposer = chain.select_proposer()
     transaction = account1.create_transaction(account2.address, 50.0)
     transaction.fee = transaction.calculate_total_fee()
     mempool.add_transaction(transaction)
     selected_transaction = builder.select_transactions()[0]
-    bid_transaction = builder.bid()
+    bid_transaction = builder.bid(selected_proposer.address)
     bid_transaction.fee = bid_transaction.calculate_total_fee()
-    # selected_transactions = selected_transactions.append(bid_transaction)
     body = [selected_transaction, bid_transaction]
-    proposer.blockpool.add_body(body)
-    selected_body = proposer.select_block()
+    selected_proposer.blockpool.add_body(body)
+    selected_body = selected_proposer.select_block()
     chain.add_block(selected_body)
     assert selected_body in chain.blocks
 

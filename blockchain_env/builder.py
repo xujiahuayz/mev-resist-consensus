@@ -40,7 +40,7 @@ class Builder(Account):
         remaining_gas = GAS_LIMIT
         
         if self.builder_strategy == "greedy":
-            sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.fee, reverse=True)
+            sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "random":
             random.shuffle(self.mempool.transactions)
             sorted_transactions = self.mempool.transactions
