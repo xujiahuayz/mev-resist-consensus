@@ -22,6 +22,7 @@ class Transaction:
         self.amount = amount
         self.base_fee = base_fee
         self.priority_fee = priority_fee
+        self.fee = self.calculate_total_fee()
     
     def calculate_total_fee(self):
         """
