@@ -114,15 +114,17 @@ def test_flow():
     account1 = Account("Address1", 1000.0)
     account2 = Account("Address2", 1000.0)
     mempool = Mempool()
-    builder = Builder("Builder1", 100.0, memppool=mempool)
+    builder = Builder("Builder1", 100.0, "greedy", mempool)
     blockpool = Blockpool()
-    proposer = Proposer("Proposer1", 100.0, blockpool=blockpool)
+    proposer = Proposer("Proposer1", 100.0, "greedy", blockpool)
     chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer])
 
     transaction = account1.create_transaction(account2.address, 50.0)
+    transaction.fee = transaction.calculate_total_fee()
     mempool.add_transaction(transaction)
     selected_transaction = builder.select_transactions()[0]
     bid_transaction = builder.bid()
+    bid_transaction.fee = bid_transaction.calculate_total_fee()
     # selected_transactions = selected_transactions.append(bid_transaction)
     body = [selected_transaction, bid_transaction]
     proposer.blockpool.add_body(body)

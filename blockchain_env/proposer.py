@@ -27,10 +27,6 @@ class Proposer(Account):
         super().__init__(address, balance)
         assert proposer_strategy in PROPOSER_STRATEGY_LIST, f"The proposer_strategy must be one of {PROPOSER_STRATEGY_LIST}."
         self.proposer_strategy = proposer_strategy
-
-    def select_propser(self):
-        #randomly select a proposer from the proposer list
-        pass
     
     def select_block(self) -> str | None:
         if self.proposer_strategy == "greedy":

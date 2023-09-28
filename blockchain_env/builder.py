@@ -1,6 +1,7 @@
 from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
 from blockchain_env.transaction import Transaction
+from blockchain_env.proposer import Proposer
 
 import uuid
 from datetime import datetime
@@ -58,7 +59,7 @@ class Builder(Account):
                 break          
         return selected_transactions
         
-    def bid(self):
+    def bid(self, proposer_address):
         for selected_transaction in self.select_transactions():
             # 10% of the transaction fee is put for bid
             bid = selected_transaction.fee * 0.1
@@ -66,7 +67,7 @@ class Builder(Account):
             bid_transaction = Transaction(
                             transaction_id=str(uuid.uuid4()),
                             timestamp=int(datetime.now().timestamp()),
-                            sender=self.proposer.address,  
+                            sender=proposer_address,  
                             recipient=self.address, 
                             amount=bid,
                             base_fee=BASE_FEE,  
