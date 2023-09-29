@@ -69,6 +69,7 @@ class Builder(Account):
                             timestamp=int(datetime.now().timestamp()),
                             sender=proposer_address,  
                             recipient=self.address, 
+                            gas=21000,
                             amount=bid,
                             base_fee=BASE_FEE,  
                             priority_fee=0

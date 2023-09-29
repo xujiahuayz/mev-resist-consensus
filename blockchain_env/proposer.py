@@ -33,21 +33,27 @@ class Proposer(Account):
             # Select the body with the highest profit (priority * gas - bid)
             if not self.blockpool:
                 return None  
-            selected_body = max(self.blockpool.values(), key=lambda x: x.priority * x.gas - x.bid)
+            
+            def calculate_profit(body, blockpool):
+                total_profit = 0
+                for transaction in blockpool.bodys:
+                    total_profit += (transaction.priority * transaction.gas) - body.bid
+                return total_profit
+            selected_body = max(self.blockpool.bodys, key=lambda body: calculate_profit(body, self.blockpool), default=None)
             return selected_body
 
         elif self.proposer_strategy == "random":
             # Choose a body randomly from the blockpool
             if not self.blockpool:
                 return None  
-            selected_body = random.choice(list(self.blockpool.values()))
+            selected_body = random.choice(list(self.blockpool.bodys()))
             return selected_body
 
         elif self.proposer_strategy == "cheap":
             # Select the body with the lowest bid price
             if not self.blockpool:
                 return None  
-            selected_body = min(self.blockpool.values(), key=lambda x: x.bid)
+            selected_body = min(self.blockpool.bodys(), key=lambda x: x.bid)
             return selected_body
 
         else:
