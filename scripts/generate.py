@@ -19,15 +19,21 @@ def generate_accounts(num_accounts):
 def generate_transactions(accounts, num_transactions):
     transactions = []
     for _ in range(num_transactions):
-        sender = random.choice(accounts)
-        recipient = random.choice(accounts)
-        while sender == recipient:
-            recipient = random.choice(accounts)
+        sender_address = random.choice(accounts).address
+        recipient_address = random.choice(accounts).address
+        if sender_address == recipient_address:
+            while True:
+                recipient_address = random.choice(accounts).address
+                if sender_address != recipient_address:
+                    break
         
+        transaction_id = str(uuid.uuid4())
+        
+
         amount = random.uniform(1.0, 10.0)  
         base_fee = BASE_FEE
-        priority_fee = random.uniform(0.0, 5.0)  
-        transaction = sender.create_transaction(recipient, amount, base_fee, priority_fee)
+        priority_fee = random.uniform(0.0, 5.0)
+        transaction = Transaction()
         if transaction is not None:
             transactions.append(transaction)
     return transactions
