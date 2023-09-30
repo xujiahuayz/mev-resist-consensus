@@ -28,7 +28,8 @@ def generate_transactions(accounts, num_transactions):
         base_fee = BASE_FEE
         priority_fee = random.uniform(0.0, 5.0)  
         transaction = sender.create_transaction(recipient, amount, base_fee, priority_fee)
-        transactions.append(transaction)
+        if transaction is not None:
+            transactions.append(transaction)
     return transactions
 
 def generate_builders(num_builders):
@@ -50,7 +51,6 @@ num_transactions = 100
 initial_balance = 100.0
 num_builders = 20
 num_proposers = 20
-
 
 
 if __name__ == "__main__":
