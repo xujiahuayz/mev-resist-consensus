@@ -6,6 +6,7 @@ from blockchain_env.proposer import Blockpool, Proposer
 from blockchain_env.transaction import Transaction
 
 import random
+import uuid
 
 def generate_accounts(num_accounts):
     accounts = []
@@ -28,12 +29,12 @@ def generate_transactions(accounts, num_transactions):
                     break
         
         transaction_id = str(uuid.uuid4())
-        
 
+        gas = 21000
         amount = random.uniform(1.0, 10.0)  
         base_fee = BASE_FEE
         priority_fee = random.uniform(0.0, 5.0)
-        transaction = Transaction()
+        transaction = Transaction(transaction_id=transaction_id, timestamp=0, sender=sender_address, recipient=recipient_address, gas=gas, amount=amount, base_fee=base_fee, priority_fee=priority_fee)
         if transaction is not None:
             transactions.append(transaction)
     return transactions
@@ -41,14 +42,14 @@ def generate_transactions(accounts, num_transactions):
 def generate_builders(num_builders):
     builders = []
     for i in range(num_builders):
-        builder = Builder(f"Builder{i}", initial_balance)
+        builder = Builder(address=f"Builder{i}", balance=initial_balance, builder_strategy="greedy")
         builders.append(builder)
     return builders
 
 def generate_proposers(num_proposers):
     proposers = []
     for i in range(num_proposers):
-        proposer = Proposer(f"Proposer{i}", initial_balance)
+        proposer = Proposer(address=f"Proposer{i}", balance=initial_balance, proposer_strategy="greedy")
         proposers.append(proposer)
     return proposers
 
