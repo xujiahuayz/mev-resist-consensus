@@ -19,6 +19,12 @@ class Mempool:
         if transaction in self.transactions:
             self.transactions.remove(transaction)
 
+    def give_timestamp(self, transaction) -> None:
+        # give a timestamp base on order recieved
+        if transaction.timestamp is None:
+            transaction.timestamp = len(self.transactions)
+            self.add_transaction(transaction)
+
 class Builder(Account):
     def __init__(self,
                 address,
