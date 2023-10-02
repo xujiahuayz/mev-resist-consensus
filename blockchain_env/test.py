@@ -135,12 +135,11 @@ def test_flow():
     chain.add_block(selected_body)
 
     print(chain.blocks)
-    
+
     for block in chain.blocks:
         print(f"Block ID: {block.block_id}")
         print(f"Previous Block ID: {block.previous_block_id}")
         print(f"Builder ID: {block.builder_id}")
-        # You can print other attributes as needed
         print(f"Timestamp: {block.timestamp}")
         print(f"Total Fee: {block.total_fee}")
         print("Transactions:")
@@ -149,8 +148,7 @@ def test_flow():
             print(f"  Sender: {transaction.sender}")
             print(f"  Recipient: {transaction.recipient}")
             print(f"  Amount: {transaction.amount}")
-            # Print other transaction attributes as needed
-        print("===")  # To separate the blocks
+        print("===")
 
 if __name__ == "__main__":
     test_flow()
