@@ -10,6 +10,7 @@ class Transaction:
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
+        bid: float = 0
     ):
         """
         Initialize a new transaction.
@@ -23,6 +24,7 @@ class Transaction:
         self.base_fee = base_fee
         self.priority_fee = priority_fee
         self.fee = self.calculate_total_fee()
+        self.bid = bid
     
     def calculate_total_fee(self):
         """

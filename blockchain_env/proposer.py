@@ -1,9 +1,10 @@
 from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
+from blockchain_env.transaction import Transaction
 
 import random
 
-class Blockpool():
+class Blockpool:
     def __init__(self) -> None:
         self.bodys = []
 
@@ -13,7 +14,6 @@ class Blockpool():
     def remove_body(self, body) -> None:
         if body in self.bodys:
             self.bodys.remove(body)
-
 class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 
@@ -30,15 +30,15 @@ class Proposer(Account):
     
     def select_block(self) -> str | None:
         if self.proposer_strategy == "greedy":
-            # Select the body with the highest profit (priority * gas - bid)
             if not self.blockpool:
                 return None  
             
             def calculate_profit(body, blockpool):
                 total_profit = 0
-                for transaction in blockpool.bodys:
-                    total_profit += (transaction.priority * transaction.gas) - body.bid
+                for transaction in body:
+                    total_profit += (transaction.priority_fee * transaction.gas) - transaction.bid
                 return total_profit
+
             selected_body = max(self.blockpool.bodys, key=lambda body: calculate_profit(body, self.blockpool), default=None)
             return selected_body
 

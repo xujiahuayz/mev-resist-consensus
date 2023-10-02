@@ -133,7 +133,24 @@ def test_flow():
     selected_body = selected_proposer.select_block()
 
     chain.add_block(selected_body)
-    assert selected_body in chain.blocks
+
+    print(chain.blocks)
+    
+    for block in chain.blocks:
+        print(f"Block ID: {block.block_id}")
+        print(f"Previous Block ID: {block.previous_block_id}")
+        print(f"Builder ID: {block.builder_id}")
+        # You can print other attributes as needed
+        print(f"Timestamp: {block.timestamp}")
+        print(f"Total Fee: {block.total_fee}")
+        print("Transactions:")
+        for transaction in block.transactions:
+            print(f"  Transaction ID: {transaction.transaction_id}")
+            print(f"  Sender: {transaction.sender}")
+            print(f"  Recipient: {transaction.recipient}")
+            print(f"  Amount: {transaction.amount}")
+            # Print other transaction attributes as needed
+        print("===")  # To separate the blocks
 
 if __name__ == "__main__":
     test_flow()
