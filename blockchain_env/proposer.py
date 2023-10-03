@@ -5,11 +5,14 @@ from blockchain_env.transaction import Transaction
 import random
 
 class Blockpool:
-    def __init__(self) -> None:
+    def __init__(self, address) -> None:
         self.bodys = []
+        # here, the address is the address of the proposer
+        self.address = address
 
-    def add_body(self, body) -> None:
+    def add_body(self, body, transaction: Transaction, select_time) -> None:
         self.bodys.append(body)
+        transaction.enter_blockpool(self, proposer_address=self.address, selected_timestamp = select_time)
 
     def remove_body(self, body) -> None:
         if body in self.bodys:
