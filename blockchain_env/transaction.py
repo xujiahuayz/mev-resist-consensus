@@ -48,11 +48,17 @@ class Transaction:
         """
         self.dict_timestamp[builder_address] = enter_timestamp
 
-    def enter_blockpool(self, builder_address, selected_timestamp):
+    def enter_blockpool(self, proposer_address, selected_timestamp):
         """
         Enter the transaction into the mempool.
         """
-        self.dict_timestamp[builder_address] = selected_timestamp
+        self.dict_timestamp[proposer_address] = selected_timestamp
+
+    def confirm(self, proposer_address, confirm_timestamp):
+        """
+        Confirm the transaction.
+        """
+        self.dict_timestamp[proposer_address] = confirm_timestamp
 
 
 

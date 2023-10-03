@@ -12,11 +12,12 @@ class Blockpool:
 
     def add_body(self, body, transaction: Transaction, select_time) -> None:
         self.bodys.append(body)
-        transaction.enter_blockpool(self, proposer_address=self.address, selected_timestamp = select_time)
+        transaction.enter_blockpool(proposer_address=self.address, selected_timestamp = select_time)
 
     def remove_body(self, body) -> None:
         if body in self.bodys:
             self.bodys.remove(body)
+
 class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 

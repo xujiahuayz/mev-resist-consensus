@@ -62,14 +62,21 @@ def generate_proposers(num_proposers):
         proposers.append(proposer)
     return proposers
 
-num_accounts = 200
-num_transactions = 100
-initial_balance = 100.0
-num_builders = 20
-num_proposers = 20
-
+def simulate():
+    counter = 0
+    while True:
+        new_tx = generate_transactions(accounts, random_number)
+        pass
 
 if __name__ == "__main__":
+
+    num_accounts = 200
+    num_transactions = 100
+    initial_balance = 100.0
+    num_builders = 20
+    num_proposers = 20
+    random_number = random.randint(1, 100)
+
     accounts = generate_accounts(num_accounts)
     transactions = generate_transactions(accounts, num_transactions)
     builders = generate_builders(num_builders)
@@ -87,3 +94,5 @@ if __name__ == "__main__":
         print(builder.address, builder.balance)
     for proposer in proposers:
         print(proposer.address, proposer.balance)
+
+    

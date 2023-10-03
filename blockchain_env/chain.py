@@ -69,11 +69,12 @@ class Chain:
         self.builders = copy.deepcopy(builders)
         self.blocks = copy.deepcopy(blocks)
     
-    def add_block(self, block: Block):
+    def add_block(self, block: Block, confirm_time: int, trasnaction: Transaction, proposer: Proposer):
         """
         Add a block to the chain.
         """
         self.blocks.append(copy.deepcopy(block))
+        trasnaction.confirm(proposer_address=proposer.address, confirm_timestamp=confirm_time)
     
     def find_longest_chain(self):
         """
