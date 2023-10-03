@@ -9,37 +9,36 @@ import random
 import copy
 
 class Mempool:
-    def __init__(self) -> None:
+    def __init__(self, address) -> None:
         self.transactions = []
+        # here, the address is the address of the builder
+        self.address = address
 
-    def add_transaction(self, transaction) -> None:
-        self.transactions.append(copy.deepcopy(transaction))
+    def add_transaction(self, transaction: Transaction, enter_time) -> None:
+        self.transactions.append(transaction)
+        transaction.enter_mempool(builder_address = self.address, enter_timestamp = enter_time)
 
     def remove_transaction(self, transaction) -> None:
         if transaction in self.transactions:
             self.transactions.remove(transaction)
-
-    def give_timestamp(self, transaction) -> None:
-        # give a timestamp base on order recieved
-        if transaction.timestamp is None:
-            transaction.timestamp = len(self.transactions)
-            self.add_transaction(transaction)
 
 class Builder(Account):
     def __init__(self,
                 address,
                 balance: float,
                 builder_strategy: str = "greedy",
-                mempool: Mempool | None = None,
     ):
-        if mempool is None:
-            mempool = Mempool()
-        else:
-            self.mempool = mempool
         super().__init__(address, balance)
         # make sure builder_strategy is a str from the list of available strategies
         assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
         self.builder_strategy = builder_strategy
+        # Initialize a mempool for the builder, which should have the same address as the builder
+        self.mempool = Mempool(self.address)
+
+        self.timestamp_counter = 0
+
+    def increment(self):
+        self.timestamp_counter += 1
     
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
