@@ -34,11 +34,6 @@ class Builder(Account):
         self.builder_strategy = builder_strategy
         # Initialize a mempool for the builder, which should have the same address as the builder
         self.mempool = Mempool(self.address)
-
-        self.timestamp_counter = 0
-
-    def increment(self):
-        self.timestamp_counter += 1
     
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
