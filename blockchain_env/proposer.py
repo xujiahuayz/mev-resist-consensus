@@ -5,7 +5,7 @@ from blockchain_env.transaction import Transaction
 import random
 
 class Blockpool:
-    def __init__(self, address) -> None:
+    def __init__(self, address=None) -> None:
         self.bodys = []
         # here, the address is the address of the proposer
         self.address = address

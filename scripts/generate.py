@@ -58,11 +58,13 @@ def generate_builders(num_builders):
 def generate_proposers(num_proposers):
     proposers = []
     for i in range(num_proposers):
-        proposer = Proposer(address=f"Proposer{i}", balance=initial_balance, proposer_strategy="greedy")
+        proposer_address = f"Proposer{i}"
+        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy")
         proposers.append(proposer)
     return proposers
 
 def simulate():
+    counter = 0
     while True:
         new_transactions = generate_transactions(accounts, random_number)
 
@@ -108,7 +110,6 @@ if __name__ == "__main__":
     num_builders = 20
     num_proposers = 20
     random_number = random.randint(1, 100)
-    counter = 0
 
     chain = Chain()
 
@@ -116,6 +117,8 @@ if __name__ == "__main__":
     transactions = generate_transactions(accounts, num_transactions)
     builders = generate_builders(num_builders)
     proposers = generate_proposers(num_proposers)
+
+    simulate()
 
     for account in accounts:
         print(account.address, account.balance)
