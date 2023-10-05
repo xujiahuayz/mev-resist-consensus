@@ -75,26 +75,23 @@ class Builder(Account):
     # Input: selected_transactions, proposer_address, self.address
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
-    #        append this particular bid transaction to selected_transactions
-    #        send this final selected trasnactions information to proposer's blockpool
-    #        return 
-
-    # bid is a list, need to sum it up
     def bid(self, proposer_address):
-        for selected_transaction in self.select_transactions():
-            # 10% of the transaction fee is put for bid
-            bid = selected_transaction.fee * 0.1
-            # send this information to proposer's blockpool
-            bid_transaction = Transaction(
-                            transaction_id=str(uuid.uuid4()),
-                            timestamp=int(datetime.now().timestamp()),
-                            sender=proposer_address,  
-                            recipient=self.address, 
-                            gas=21000,
-                            amount=bid,
-                            base_fee=BASE_FEE,  
-                            priority_fee=0
-                        )
+        # call the select_transactions method to get the selected_transactions
+        selected_transactions = self.select_transactions()
+        # calculate the 10% of the total transaction fee
+        bid_amount = sum(transaction.fee * 0.1 for transaction in selected_transactions)
+        
+        # create a bid transaction
+        bid_transaction = Transaction(
+            transaction_id=str(uuid.uuid4()),
+            timestamp=int(datetime.now().timestamp()),
+            sender=proposer_address,
+            recipient=self.address,
+            gas=21000,
+            amount=bid_amount,
+            base_fee=BASE_FEE,
+            priority_fee=0
+        )
         return bid_transaction
         
 

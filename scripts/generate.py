@@ -90,14 +90,15 @@ def simulate(chain):
                 selected_proposer = chain.select_proposer()
 
                 # add a bid for the selected list of transactions
-
-                
-                # bid_transaction = builder.bid(selected_proposer.address)
-                # bid_transaction.fee = bid_transaction.calculate_total_fee()
-                # block = selected_transactions + bid_transaction
-                
-                # add to blockpool and record the time
+                bid_transaction = builder.bid(selected_proposer.address)
+                # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
+                # selected_transactions = selected_transactions.append(bid_transaction)
+                # record the time
                 selecte_time = counter
+                # add selected transactions as a block to the blockpool for the selected propsoer
+                selected_proposer.blockpool.add_body(selected_transactions, selecte_time)
+                
+
                 selected_proposer.blockpool.add_body(block, selecte_time)
                 selected_body = selected_proposer.select_block()
 
