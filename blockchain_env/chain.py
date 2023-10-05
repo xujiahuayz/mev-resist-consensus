@@ -1,5 +1,6 @@
 import copy
 import random
+import uuid
 
 from blockchain_env.account import Account
 from blockchain_env.proposer import Proposer
@@ -20,7 +21,7 @@ class Block:
         """
         Initialize a new block.
         """
-        self.block_id = block_id
+        self.block_id = str(uuid.uuid4())
         self.previous_block_id = previous_block_id
         self.builder_id = builder_id
         self.proposer_id = proposer_id
@@ -68,11 +69,12 @@ class Chain:
         self.builders = copy.deepcopy(builders)
         self.blocks = copy.deepcopy(blocks)
     
-    def add_block(self, block: Block):
+    def add_block(self, block: Block, confirm_time: float, trasnaction: Transaction, proposer: Proposer):
         """
         Add a block to the chain.
         """
-        self.blocks.append(copy.deepcopy(block))
+        self.blocks.append(block)
+        trasnaction.confirm(proposer_address=proposer.address, confirm_timestamp=confirm_time)
     
     def find_longest_chain(self):
         """

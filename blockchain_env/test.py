@@ -116,21 +116,39 @@ def test_flow():
     mempool = Mempool()
     builder = Builder("Builder1", 100.0, "greedy", mempool)
     blockpool = Blockpool()
-    proposer = Proposer("Proposer1", 100.0, "greedy", blockpool)
-    chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer])
+    proposer1 = Proposer("Proposer1", 100.0, "greedy", blockpool)
+    proposer2 = Proposer("Proposer2", 100.0, "greedy", blockpool) 
+    chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer1, proposer2])
 
-    transaction = account1.create_transaction(account2.address, 50.0)
+    selected_proposer = chain.select_proposer()
+    transaction = account1.create_transaction(account2.address, 50.0, BASE_FEE, 0)
     transaction.fee = transaction.calculate_total_fee()
     mempool.add_transaction(transaction)
     selected_transaction = builder.select_transactions()[0]
-    bid_transaction = builder.bid()
+    bid_transaction = builder.bid(selected_proposer.address)
     bid_transaction.fee = bid_transaction.calculate_total_fee()
-    # selected_transactions = selected_transactions.append(bid_transaction)
+
     body = [selected_transaction, bid_transaction]
-    proposer.blockpool.add_body(body)
-    selected_body = proposer.select_block()
+    selected_proposer.blockpool.add_body(body)
+    selected_body = selected_proposer.select_block()
+
     chain.add_block(selected_body)
-    assert selected_body in chain.blocks
+
+    print(chain.blocks)
+
+    for block in chain.blocks:
+        print(f"Block ID: {block.block_id}")
+        print(f"Previous Block ID: {block.previous_block_id}")
+        print(f"Builder ID: {block.builder_id}")
+        print(f"Timestamp: {block.timestamp}")
+        print(f"Total Fee: {block.total_fee}")
+        print("Transactions:")
+        for transaction in block.transactions:
+            print(f"  Transaction ID: {transaction.transaction_id}")
+            print(f"  Sender: {transaction.sender}")
+            print(f"  Recipient: {transaction.recipient}")
+            print(f"  Amount: {transaction.amount}")
+        print("===")
 
 if __name__ == "__main__":
     test_flow()

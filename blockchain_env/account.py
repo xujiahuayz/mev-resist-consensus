@@ -40,11 +40,6 @@ class Account:
             return
         
         transaction = Transaction(transaction_id, timestamp, self.address, recipient, amount, base_fee, priority_fee)
-        # selected_builders = random.sample(builders, len(builders) // 2)
-        # for builder in selected_builders:
-        # .mempool.add_transaction(transaction)
-         
-        self.balance -= total_fee + amount
         return transaction
 
 if __name__ == "__main__":
