@@ -17,6 +17,8 @@ def generate_accounts(num_accounts):
         accounts.append(account)
     return accounts
 
+# valid transactions
+
 def generate_transactions(accounts, num_transactions):
     transactions = []
     for _ in range(num_transactions):
@@ -63,44 +65,55 @@ def generate_proposers(num_proposers):
         proposers.append(proposer)
     return proposers
 
-def simulate():
+def simulate(chain):
+    slot:int = 12
     counter = 0
+    # generate a random number of transactions
+    random_number = random.randint(1, 100)
     while True:
-        new_transactions = generate_transactions(accounts, random_number)
+        new_transactions = generate_transactions(chain.accounts, random_number)
 
+        # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
-            broadcasted_builders = random.sample(builders, len(builders) // 2)
+            broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
             for builder in broadcasted_builders:
+                # set a random delay for the time recieving transaction
                 enter_time = random.uniform(0, 0.5)  
                 builder.mempool.add_transaction(transaction, enter_time)
 
-        if counter % 12 == 0:
-            selected_transactions = builder.select_transactions()
-            selected_proposer = chain.select_proposer()
-            bid_transaction = builder.bid(selected_proposer.address)
-            bid_transaction.fee = bid_transaction.calculate_total_fee()
-            body = [selected_transactions, bid_transaction]
+        if counter % slot == 0:
+            # for each builder, select transactions, append bid and add to blockpool
+            for builder in chain.builders:
+                # select transactions
+                selected_transactions = builder.select_transactions()
+                # select proposer
+                selected_proposer = chain.select_proposer()
 
-            selected_time = counter
-            selected_proposer.blockpool.add_body(body, transaction, selected_time)
-            selected_body = selected_proposer.select_block()
+                # add a bid for the selected list of transactions
 
-            if selected_body is not None:
-                confirm_time = random.uniform(0, 0.5)  
-                chain.add_block(selected_body, confirm_time, transaction, selected_proposer.address)
-                selected_proposer.blockpool.remove_body(selected_body)
-                for transaction in selected_body:
-                    transaction.confirm(selected_proposer.address, confirm_time)
-                    for builder in builders:
-                        builder.mempool.remove_transaction(transaction)
+                
+                # bid_transaction = builder.bid(selected_proposer.address)
+                # bid_transaction.fee = bid_transaction.calculate_total_fee()
+                # block = selected_transactions + bid_transaction
+                
+                # add to blockpool and record the time
+                selecte_time = counter
+                selected_proposer.blockpool.add_body(block, selecte_time)
+                selected_body = selected_proposer.select_block()
+
+                if selected_body is not None:
+                    confirm_time = random.uniform(0, 0.5)  
+                    chain.add_block(selected_body, confirm_time, transaction, selected_proposer.address)
+                    selected_proposer.blockpool.remove_body(selected_body)
+                    for transaction in selected_body:
+                        transaction.confirm(selected_proposer.address, confirm_time)
+                        for builder in builders:
+                            builder.mempool.remove_transaction(transaction)
 
         counter += 1
         if counter >= 100:
             break
                 
-            
-                
-        
 
 if __name__ == "__main__":
 
@@ -109,16 +122,19 @@ if __name__ == "__main__":
     initial_balance = 100.0
     num_builders = 20
     num_proposers = 20
-    random_number = random.randint(1, 100)
+    
 
     chain = Chain()
 
     accounts = generate_accounts(num_accounts)
-    transactions = generate_transactions(accounts, num_transactions)
     builders = generate_builders(num_builders)
     proposers = generate_proposers(num_proposers)
 
-    simulate()
+    chain.proposers = proposers
+    chain.builders = builders
+    chain.accounts = accounts
+
+    simulate(chain)
 
     for account in accounts:
         print(account.address, account.balance)

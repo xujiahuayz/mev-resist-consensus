@@ -1,6 +1,7 @@
 from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
 from blockchain_env.transaction import Transaction
+from blockchain_env.chain import Block
 
 import random
 
@@ -10,9 +11,10 @@ class Blockpool:
         # here, the address is the address of the proposer
         self.address = address
 
-    def add_body(self, body, transaction: Transaction, select_time) -> None:
-        self.bodys.append(body)
-        transaction.enter_blockpool(proposer_address=self.address, selected_timestamp = select_time)
+    def add_body(self, block: Block, select_time) -> None:
+        self.bodys.append(block)
+        for transaction in block.transactions:
+            transaction.enter_blockpool(proposer_address=self.address, selected_timestamp = select_time)
 
     def remove_body(self, body) -> None:
         if body in self.bodys:

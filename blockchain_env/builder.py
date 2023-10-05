@@ -58,7 +58,28 @@ class Builder(Account):
             else:
                 break          
         return selected_transactions
+    
+    # Method to validate transactions
+    # Input: transactions,balance
+    # Output: True/False
+    # Steps: if balance is less than amount in the transaction, return False
+    #        if balance is greater than amount in the transaction, return True
+    def validate_transactions(self, transactions, balance):
+        for transaction in transactions:
+            if balance < transaction.amount:
+                return False
+            balance -= transaction.amount
+        return True
         
+    # Method to add bid for the transactions 
+    # Input: selected_transactions, proposer_address, self.address
+    # Output: bid_transaction
+    # Steps: 10% of the transaction fee is put for bid
+    #        append this particular bid transaction to selected_transactions
+    #        send this final selected trasnactions information to proposer's blockpool
+    #        return 
+
+    # bid is a list, need to sum it up
     def bid(self, proposer_address):
         for selected_transaction in self.select_transactions():
             # 10% of the transaction fee is put for bid
@@ -74,7 +95,7 @@ class Builder(Account):
                             base_fee=BASE_FEE,  
                             priority_fee=0
                         )
-            return bid_transaction
+        return bid_transaction
         
 
 if __name__ == "__main__":
