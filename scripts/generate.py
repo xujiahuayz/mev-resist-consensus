@@ -20,7 +20,8 @@ def generate_accounts(num_accounts):
 
 # valid transactions
 
-def generate_transactions(accounts, num_transactions):
+# add percentage of invalid transactions
+def generate_transactions(accounts, num_transactions, valid_percentage):
     transactions = []
     for _ in range(num_transactions):
         sender_address = random.choice(accounts).address
@@ -72,16 +73,17 @@ def simulate(chain):
     # generate a random number of transactions
     random_number = random.randint(1, 100)
     while True:
-        new_transactions = generate_transactions(chain.accounts, random_number)
+        new_transactions = generate_transactions(chain.accounts, random_number, 0.8)
 
         # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
             broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
             for builder in broadcasted_builders:
                 # set a random delay for the time recieving transaction
-                enter_time = random.uniform(0, 0.5)  
-                builder.mempool.add_transaction(transaction, enter_time)
+                enter_time = random.uniform(0, 1)  
+                builder.mempool.add_transaction(transaction, counter+enter_time)
 
+        # for each slot, a block should be built and added on chain
         if counter % slot == 0:
             # for each builder, select transactions, append bid and add to blockpool
             for builder in chain.builders:
@@ -121,7 +123,7 @@ def simulate(chain):
                 # add the new block to the blockpool
                 selected_proposer.blockpool.add_block(new_block, selecte_time)
 
-                # select a body from the blockpool 
+                # the selected proposer select a block from the blockpool 
                 selected_block = selected_proposer.select_block()
 
                 # add the selected block to the longest chain
@@ -133,6 +135,10 @@ def simulate(chain):
                         transaction.confirm(selected_proposer.address, confirm_time)
                         for builder in builders:
                             builder.mempool.remove_transaction(transaction)
+
+            # balance change for each account after block put on chain
+            # 
+
 
         counter += 1
         if counter >= 100:
@@ -146,7 +152,6 @@ if __name__ == "__main__":
     initial_balance = 100.0
     num_builders = 20
     num_proposers = 20
-    
 
     chain = Chain()
 
