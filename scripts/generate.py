@@ -1,9 +1,10 @@
 from blockchain_env.account import Account
-from blockchain_env.chain import Block, Chain
+from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
 from blockchain_env.constants import BASE_FEE, GAS_LIMIT
-from blockchain_env.proposer import Blockpool, Proposer
+from blockchain_env.proposer import Proposer
 from blockchain_env.transaction import Transaction
+from blockchain_env.block import Block
 
 import random
 import uuid
@@ -88,25 +89,47 @@ def simulate(chain):
                 selected_transactions = builder.select_transactions()
                 # select proposer
                 selected_proposer = chain.select_proposer()
-
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
-                # selected_transactions = selected_transactions.append(bid_transaction)
+                selected_transactions = selected_transactions.append(bid_transaction)
+                
                 # record the time
                 selecte_time = counter
-                # add selected transactions as a block to the blockpool for the selected propsoer
-                selected_proposer.blockpool.add_body(selected_transactions, selecte_time)
-                
+                # get information of previous block
+                previous_block = chain.find_latest_block()
+                if previous_block is not None:
+                    previous_block_id = previous_block.block_id
+                else:
+                    # Handle the case where there are no previous blocks (e.g., for the first block)
+                    previous_block_id = None
 
-                selected_proposer.blockpool.add_body(block, selecte_time)
-                selected_body = selected_proposer.select_block()
+                # calculate total fee
+                total_fee = sum(transaction.fee for transaction in selected_transactions)
+                # create a new block with the selected transactions
+                new_block = Block(
+                    block_id=uuid.uuid4(),
+                    previous_block_id=previous_block_id,
+                    timestamp=selecte_time,
+                    proposer_address=selected_proposer.address,
+                    transactions=selected_transactions,
+                    builder_id=builder.address,
+                    proposer_id=selected_proposer.address,
+                    total_fee=total_fee
+                )
 
-                if selected_body is not None:
-                    confirm_time = random.uniform(0, 0.5)  
-                    chain.add_block(selected_body, confirm_time, transaction, selected_proposer.address)
-                    selected_proposer.blockpool.remove_body(selected_body)
-                    for transaction in selected_body:
+                # add the new block to the blockpool
+                selected_proposer.blockpool.add_block(new_block, selecte_time)
+
+                # select a body from the blockpool 
+                selected_block = selected_proposer.select_block()
+
+                # add the selected block to the longest chain
+                if selected_block is not None:
+                    confirm_time = counter  
+                    chain.add_block(block=selected_block, confirm_time= confirm_time, transaction=transaction, proposer=selected_proposer.address)
+                    selected_proposer.blockpool.remove_body(selected_block)
+                    for transaction in selected_block:
                         transaction.confirm(selected_proposer.address, confirm_time)
                         for builder in builders:
                             builder.mempool.remove_transaction(transaction)
@@ -139,15 +162,5 @@ if __name__ == "__main__":
 
     for account in accounts:
         print(account.address, account.balance)
-    for transaction in transactions:
-        print(
-            f"Transaction ID: {transaction.transaction_id}, Sender: {transaction.sender}, "
-            f"Recipient: {transaction.recipient}, Amount: {transaction.amount}, "
-            f"Base Fee: {transaction.base_fee}, Priority Fee: {transaction.priority_fee}"
-        )
-    for builder in builders:
-        print(builder.address, builder.balance)
-    for proposer in proposers:
-        print(proposer.address, proposer.balance)
 
     
