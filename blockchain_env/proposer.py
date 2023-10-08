@@ -20,6 +20,7 @@ class Blockpool:
     def remove_block(self, block) -> None:  
         if block in self.blocks:
             self.blocks.remove(block) 
+            
 class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 

@@ -2,12 +2,13 @@ from blockchain_env.account import Account
 from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
 from blockchain_env.constants import BASE_FEE, GAS_LIMIT
-from blockchain_env.proposer import Proposer
+from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
 import random
 import uuid
+import copy
 
 def generate_accounts(num_accounts):
     accounts = []
@@ -63,7 +64,8 @@ def generate_proposers(num_proposers):
     proposers = []
     for i in range(num_proposers):
         proposer_address = f"Proposer{i}"
-        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy")
+        blockpool = Blockpool(address=proposer_address)
+        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy", blockpool=blockpool)
         proposers.append(proposer)
     return proposers
 
@@ -86,15 +88,15 @@ def simulate(chain):
         # for each slot, a block should be built and added on chain
         if counter % slot == 0:
             # for each builder, select transactions, append bid and add to blockpool
+            # select proposer for the slot
+            selected_proposer = chain.select_proposer()
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
-                # select proposer
-                selected_proposer = chain.select_proposer()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
-                selected_transactions = selected_transactions.append(bid_transaction)
+                selected_transactions = selected_transactions.append(copy.deepcopy(bid_transaction))
                 
                 # record the time
                 selecte_time = counter
@@ -107,7 +109,10 @@ def simulate(chain):
                     previous_block_id = None
 
                 # calculate total fee
-                total_fee = sum(transaction.fee for transaction in selected_transactions)
+                if selected_transactions:
+                    total_fee = sum(transaction.fee for transaction in selected_transactions)
+                else:
+                    total_fee = 0 
                 # create a new block with the selected transactions
                 new_block = Block(
                     block_id=uuid.uuid4(),
@@ -116,7 +121,6 @@ def simulate(chain):
                     proposer_address=selected_proposer.address,
                     transactions=selected_transactions,
                     builder_id=builder.address,
-                    proposer_id=selected_proposer.address,
                     total_fee=total_fee
                 )
 
@@ -137,7 +141,16 @@ def simulate(chain):
                             builder.mempool.remove_transaction(transaction)
 
             # balance change for each account after block put on chain
-            # 
+            # for each block, update the balance of proposer and builder e.g. proposer get the trasnaction total fee - bid and builder get the bid
+            # for each transaction in the block, update the balance of sender and recipient
+            # use the withdraw and deposit method in account class
+            # for selected_block in chain.blocks:
+            #     proposer = selected_proposer
+            #     builder = next(builder for builder in chain.builders if builder.address == selected_block.builder_id)
+
+
+
+
 
 
         counter += 1

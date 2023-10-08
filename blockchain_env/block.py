@@ -13,7 +13,7 @@ class Block:
         timestamp: int,
         total_fee: float,
         transactions: list[Transaction] = None,
-        proposer_id = None,
+        proposer_address = None,
     ):
         """
         Initialize a new block.
@@ -21,13 +21,10 @@ class Block:
         self.block_id = str(uuid.uuid4())
         self.previous_block_id = previous_block_id
         self.builder_id = builder_id
-        self.proposer_id = proposer_id
+        self.proposer_address = proposer_address
         self.timestamp = timestamp
         self.total_fee = total_fee
-        if transactions == None:
-            self.transactions = []
-        else:
-            self.transactions = copy.deepcopy(transactions)
+        self.transactions = transactions if transactions is not None else []
         self.header = self.extract_header()
 
     def extract_header(self) -> dict:
