@@ -1,12 +1,14 @@
 from blockchain_env.account import Account
-from blockchain_env.chain import Block, Chain
+from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
 from blockchain_env.constants import BASE_FEE, GAS_LIMIT
-from blockchain_env.proposer import Blockpool, Proposer
+from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
+from blockchain_env.block import Block
 
 import random
 import uuid
+import copy
 
 def generate_accounts(num_accounts):
     accounts = []
@@ -19,7 +21,8 @@ def generate_accounts(num_accounts):
 
 # valid transactions
 
-def generate_transactions(accounts, num_transactions):
+# add percentage of invalid transactions
+def generate_transactions(accounts, num_transactions, valid_percentage):
     transactions = []
     for _ in range(num_transactions):
         sender_address = random.choice(accounts).address
@@ -61,7 +64,8 @@ def generate_proposers(num_proposers):
     proposers = []
     for i in range(num_proposers):
         proposer_address = f"Proposer{i}"
-        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy")
+        blockpool = Blockpool(address=proposer_address)
+        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy", blockpool=blockpool)
         proposers.append(proposer)
     return proposers
 
@@ -71,45 +75,83 @@ def simulate(chain):
     # generate a random number of transactions
     random_number = random.randint(1, 100)
     while True:
-        new_transactions = generate_transactions(chain.accounts, random_number)
+        new_transactions = generate_transactions(chain.accounts, random_number, 0.8)
 
         # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
             broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
             for builder in broadcasted_builders:
                 # set a random delay for the time recieving transaction
-                enter_time = random.uniform(0, 0.5)  
-                builder.mempool.add_transaction(transaction, enter_time)
+                enter_time = random.uniform(0, 1)  
+                builder.mempool.add_transaction(transaction, counter+enter_time)
 
+        # for each slot, a block should be built and added on chain
         if counter % slot == 0:
             # for each builder, select transactions, append bid and add to blockpool
+            # select proposer for the slot
+            selected_proposer = chain.select_proposer()
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
-                # select proposer
-                selected_proposer = chain.select_proposer()
-
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
-                # selected_transactions = selected_transactions.append(bid_transaction)
+                selected_transactions = selected_transactions.append(copy.deepcopy(bid_transaction))
+                
                 # record the time
                 selecte_time = counter
-                # add selected transactions as a block to the blockpool for the selected propsoer
-                selected_proposer.blockpool.add_body(selected_transactions, selecte_time)
-                
+                # get information of previous block
+                previous_block = chain.find_latest_block()
+                if previous_block is not None:
+                    previous_block_id = previous_block.block_id
+                else:
+                    # Handle the case where there are no previous blocks (e.g., for the first block)
+                    previous_block_id = None
 
-                selected_proposer.blockpool.add_body(block, selecte_time)
-                selected_body = selected_proposer.select_block()
+                # calculate total fee
+                if selected_transactions:
+                    total_fee = sum(transaction.fee for transaction in selected_transactions)
+                else:
+                    total_fee = 0 
+                # create a new block with the selected transactions
+                new_block = Block(
+                    block_id=uuid.uuid4(),
+                    previous_block_id=previous_block_id,
+                    timestamp=selecte_time,
+                    proposer_address=selected_proposer.address,
+                    transactions=selected_transactions,
+                    builder_id=builder.address,
+                    total_fee=total_fee
+                )
 
-                if selected_body is not None:
-                    confirm_time = random.uniform(0, 0.5)  
-                    chain.add_block(selected_body, confirm_time, transaction, selected_proposer.address)
-                    selected_proposer.blockpool.remove_body(selected_body)
-                    for transaction in selected_body:
+                # add the new block to the blockpool
+                selected_proposer.blockpool.add_block(new_block, selecte_time)
+
+                # the selected proposer select a block from the blockpool 
+                selected_block = selected_proposer.select_block()
+
+                # add the selected block to the longest chain
+                if selected_block is not None:
+                    confirm_time = counter  
+                    chain.add_block(block=selected_block, confirm_time= confirm_time, transaction=transaction, proposer=selected_proposer.address)
+                    selected_proposer.blockpool.remove_body(selected_block)
+                    for transaction in selected_block:
                         transaction.confirm(selected_proposer.address, confirm_time)
                         for builder in builders:
                             builder.mempool.remove_transaction(transaction)
+
+            # balance change for each account after block put on chain
+            # for each block, update the balance of proposer and builder e.g. proposer get the trasnaction total fee - bid and builder get the bid
+            # for each transaction in the block, update the balance of sender and recipient
+            # use the withdraw and deposit method in account class
+            # for selected_block in chain.blocks:
+            #     proposer = selected_proposer
+            #     builder = next(builder for builder in chain.builders if builder.address == selected_block.builder_id)
+
+
+
+
+
 
         counter += 1
         if counter >= 100:
@@ -123,7 +165,6 @@ if __name__ == "__main__":
     initial_balance = 100.0
     num_builders = 20
     num_proposers = 20
-    
 
     chain = Chain()
 
@@ -139,15 +180,5 @@ if __name__ == "__main__":
 
     for account in accounts:
         print(account.address, account.balance)
-    for transaction in transactions:
-        print(
-            f"Transaction ID: {transaction.transaction_id}, Sender: {transaction.sender}, "
-            f"Recipient: {transaction.recipient}, Amount: {transaction.amount}, "
-            f"Base Fee: {transaction.base_fee}, Priority Fee: {transaction.priority_fee}"
-        )
-    for builder in builders:
-        print(builder.address, builder.balance)
-    for proposer in proposers:
-        print(proposer.address, proposer.balance)
 
     
