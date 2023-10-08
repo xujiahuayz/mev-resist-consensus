@@ -100,13 +100,13 @@ def simulate(chain):
                 
                 # record the time
                 selecte_time = counter
-                # get information of previous block
-                previous_block = chain.find_latest_block()
-                if previous_block is not None:
-                    previous_block_id = previous_block.block_id
-                else:
-                    # Handle the case where there are no previous blocks (e.g., for the first block)
-                    previous_block_id = None
+                # get information (block_id) of previous block
+                previous_block_id = chain.find_latest_block()
+                # if previous_block is not None:
+                #     previous_block_id = previous_block.block_id
+                # else:
+                #     # Handle the case where there are no previous blocks (e.g., for the first block)
+                #     previous_block_id = None
 
                 # calculate total fee
                 if selected_transactions:
@@ -133,9 +133,9 @@ def simulate(chain):
                 # add the selected block to the longest chain
                 if selected_block is not None:
                     confirm_time = counter  
-                    chain.add_block(block=selected_block, confirm_time= confirm_time, transaction=transaction, proposer=selected_proposer.address)
-                    selected_proposer.blockpool.remove_body(selected_block)
-                    for transaction in selected_block:
+                    chain.add_block(block=selected_block, confirm_time=confirm_time, transaction=transaction, proposer=selected_proposer)
+                    selected_proposer.blockpool.remove_block(selected_block)
+                    for transaction in selected_block.transactions:
                         transaction.confirm(selected_proposer.address, confirm_time)
                         for builder in builders:
                             builder.mempool.remove_transaction(transaction)
@@ -144,14 +144,22 @@ def simulate(chain):
             # for each block, update the balance of proposer and builder e.g. proposer get the trasnaction total fee - bid and builder get the bid
             # for each transaction in the block, update the balance of sender and recipient
             # use the withdraw and deposit method in account class
-            # for selected_block in chain.blocks:
-            #     proposer = selected_proposer
-            #     builder = next(builder for builder in chain.builders if builder.address == selected_block.builder_id)
 
+            # Create a mapping from builder_id to Builder object
+            builder_mapping = {builder.address: builder for builder in chain.builders}
 
-
-
-
+            for selected_block in chain.blocks:
+                proposer = selected_proposer
+                builder = selected_block.builder_id
+                # using the mapping get the builder object from the builder_id
+                builder = builder_mapping.get(builder)
+                proposer.deposit(selected_block.total_fee - bid_transaction.amount)
+                builder.deposit(bid_transaction.amount)
+                for transaction in selected_block.transactions:
+                    sender = transaction.sender
+                    recipient = transaction.recipient
+                    sender.withdraw(transaction.amount)
+                    recipient.deposit(transaction.amount-transaction.fee)
 
         counter += 1
         if counter >= 100:

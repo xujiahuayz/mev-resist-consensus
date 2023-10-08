@@ -20,7 +20,7 @@ class Blockpool:
     def remove_block(self, block) -> None:  
         if block in self.blocks:
             self.blocks.remove(block) 
-            
+
 class Proposer(Account):
     def __init__(self, 
                  address, balance: float, 
@@ -40,13 +40,14 @@ class Proposer(Account):
             if not self.blockpool:
                 return None  
             
-            def calculate_profit(block, blockpool):
+            def calculate_profit(block):
                 total_profit = 0
                 for transaction in block.transactions:
                     total_profit += (transaction.priority_fee * transaction.gas) - transaction.bid
                 return total_profit
 
-            selected_block = max(self.blockpool.blocks, key=lambda block: calculate_profit(Block, self.blockpool), default=None)
+            selected_block = max(self.blockpool.blocks, key=lambda block: 
+                                 calculate_profit(block), default=None)
             return selected_block
 
         elif self.proposer_strategy == "random":
