@@ -162,7 +162,7 @@ def simulate(chain):
                     recipient.deposit(transaction.amount-transaction.fee)
 
         counter += 1
-        if counter >= 100:
+        if counter >= 10:
             break
                 
 
@@ -189,4 +189,44 @@ if __name__ == "__main__":
     for account in accounts:
         print(account.address, account.balance)
 
-    
+    for builder in builders:
+        print(builder.address, builder.balance)
+
+    for proposer in proposers:
+        print(proposer.address, proposer.balance)
+
+    for selected_block in chain.blocks:
+        print(f"Block Header ID: {selected_block.block_id}")
+        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+        print(f"Total Fee: {selected_block.total_fee}")
+        
+        # Get the bid transaction
+        bid_transaction = None
+        for transaction in selected_block.transactions:
+            if transaction.sender == selected_block.builder_id:
+                bid_transaction = transaction
+                break
+
+        if bid_transaction:
+            print(f"Bid Amount: {bid_transaction.amount}")
+        else:
+            print("No Bid Transaction found in this block")
+
+        print(f"Proposer: {selected_block.proposer_address}")
+        print(f"Builder ID: {selected_block.builder_id}")
+
+        print("Transactions:")
+        for transaction in selected_block.transactions:
+            print(f"  Transaction ID: {transaction.transaction_id}")
+            print(f"  Sender: {transaction.sender}")
+            print(f"  Recipient: {transaction.recipient}")
+            print(f"  Gas: {transaction.gas}")
+            print(f"  Amount: {transaction.amount}")
+            print(f"  Base Fee: {transaction.base_fee}")
+            print(f"  Priority Fee: {transaction.priority_fee}")
+            print(f"  Fee: {transaction.fee}")
+            print(f"  Timestamp: {transaction.timestamp}")
+            print()
+
+        print()
+
