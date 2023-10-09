@@ -1,8 +1,8 @@
+import random
+
 from blockchain_env.account import Account
 from blockchain_env.constants import PROPOSER_STRATEGY_LIST
 from blockchain_env.block import Block
-
-import random
 
 class Blockpool:
     # block should consist of a list of transactions

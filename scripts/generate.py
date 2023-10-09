@@ -1,3 +1,7 @@
+import random
+import uuid
+import copy
+
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
@@ -6,9 +10,6 @@ from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
-import random
-import uuid
-import copy
 
 def generate_accounts(num_accounts):
     accounts = []
