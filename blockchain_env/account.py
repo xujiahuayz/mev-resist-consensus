@@ -17,7 +17,7 @@ class Account:
         Deposit amount to the account.
         """
         self.balance += amount
-    
+
     def withdraw(self, amount: float):
         """
         Withdraw amount from the account.
@@ -26,7 +26,7 @@ class Account:
             print(f"Insufficient balance. the amount to withdraw is {amount} but address {self.address} only has {self.balance}")
             return
         self.balance -= amount
-    
+
 if __name__ == "__main__":
     # user1 = Account(x,x,x)
     # builder1 = Builder("dsdsd", 2121212, , x, x)

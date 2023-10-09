@@ -38,7 +38,7 @@ class Block:
             "timestamp": self.timestamp,
             "total_fee": self.total_fee,
         }
-    
+
     # def __init__(self, block_id, previous_block_id):
     #     """
     #     FOR TESTING ONLY: Initialize a new block.

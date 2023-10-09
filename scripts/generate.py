@@ -32,22 +32,22 @@ def generate_transactions(accounts, num_transactions, valid_percentage):
                 recipient_address = random.choice(accounts).address
                 if sender_address != recipient_address:
                     break
-        
+
         transaction_id = str(uuid.uuid4())
         timestamp = None
 
         gas = 21000
-        amount = random.uniform(1.0, 10.0)  
+        amount = random.uniform(1.0, 10.0)
         base_fee = BASE_FEE
         priority_fee = random.uniform(0.0, 5.0)
         transaction = Transaction(
-            transaction_id=transaction_id, 
+            transaction_id=transaction_id,
             timestamp=timestamp,
-            sender=sender_address, 
-            recipient=recipient_address, 
-            gas=gas, 
-            amount=amount, 
-            base_fee=base_fee, 
+            sender=sender_address,
+            recipient=recipient_address,
+            gas=gas,
+            amount=amount,
+            base_fee=base_fee,
             priority_fee=priority_fee)
         if transaction is not None:
             transactions.append(transaction)
@@ -82,7 +82,7 @@ def simulate(chain):
             broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
             for builder in broadcasted_builders:
                 # set a random delay for the time recieving transaction
-                enter_time = random.uniform(0, 1)  
+                enter_time = random.uniform(0, 1)
                 builder.mempool.add_transaction(transaction, counter+enter_time)
 
         # for each slot, a block should be built and added on chain
@@ -110,12 +110,12 @@ def simulate(chain):
                 #     # Handle the case where there are no previous blocks (e.g., for the first block)
                 #     previous_block_id = None
 
-                # calculate total fee 
+                # calculate total fee
                 # print(selected_transactions)
                 if selected_transactions:
                     total_fee = sum(transaction.fee for transaction in selected_transactions)
                 else:
-                    total_fee = 0 
+                    total_fee = 0
                 # create a new block with the selected transactions
                 new_block = Block(
                     block_id=uuid.uuid4(),
@@ -130,12 +130,12 @@ def simulate(chain):
                 # add the new block to the blockpool
                 selected_proposer.blockpool.add_block(new_block, selecte_time)
 
-                # the selected proposer select a block from the blockpool 
+                # the selected proposer select a block from the blockpool
                 selected_block = selected_proposer.select_block()
 
                 # add the selected block to the longest chain
                 if selected_block is not None:
-                    confirm_time = counter  
+                    confirm_time = counter
                     chain.add_block(block=selected_block, confirm_time=confirm_time, transaction=transaction, proposer=selected_proposer)
                     selected_proposer.blockpool.remove_block(selected_block)
                     for transaction in selected_block.transactions:
@@ -158,7 +158,7 @@ def simulate(chain):
                 builder = builder_mapping.get(builder)
                 proposer.deposit(selected_block.total_fee - bid_transaction.amount)
                 builder.deposit(bid_transaction.amount)
-                
+
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
                     for account in chain.accounts:
@@ -182,7 +182,7 @@ def simulate(chain):
         counter += 1
         if counter >= 10:
             break
-                
+
 
 if __name__ == "__main__":
 
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         print(f"Block Header ID: {selected_block.block_id}")
         print(f"Previous Block Header ID: {selected_block.previous_block_id}")
         print(f"Total Fee: {selected_block.total_fee}")
-        
+
         # Get the bid transaction
         bid_transaction = None
         for transaction in selected_block.transactions:

@@ -117,7 +117,7 @@ def test_flow():
     builder = Builder("Builder1", 100.0, "greedy", mempool)
     blockpool = Blockpool()
     proposer1 = Proposer("Proposer1", 100.0, "greedy", blockpool)
-    proposer2 = Proposer("Proposer2", 100.0, "greedy", blockpool) 
+    proposer2 = Proposer("Proposer2", 100.0, "greedy", blockpool)
     chain = Chain(accounts=[account1, account2], builders=[builder], proposers=[proposer1, proposer2])
 
     selected_proposer = chain.select_proposer()

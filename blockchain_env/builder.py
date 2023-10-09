@@ -34,11 +34,11 @@ class Builder(Account):
         self.builder_strategy = builder_strategy
         # Initialize a mempool for the builder, which should have the same address as the builder
         self.mempool = Mempool(self.address)
-    
+
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
         remaining_gas = GAS_LIMIT
-        
+
         if self.builder_strategy == "greedy":
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "random":
@@ -60,7 +60,7 @@ class Builder(Account):
         # print("==========")
         # print(f"Selected transactions: {selected_transactions}")
         return selected_transactions
-    
+
     # Method to validate transactions
     # Input: transactions,balance
     # Output: True/False
@@ -72,8 +72,8 @@ class Builder(Account):
                 return False
             balance -= transaction.amount
         return True
-        
-    # Method to add bid for the transactions 
+
+    # Method to add bid for the transactions
     # Input: selected_transactions, proposer_address, self.address
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
@@ -82,7 +82,7 @@ class Builder(Account):
         selected_transactions = self.select_transactions()
         # calculate the 10% of the total transaction fee
         bid_amount = sum(transaction.fee * 0.1 for transaction in selected_transactions)
-        
+
         # create a bid transaction
         bid_transaction = Transaction(
             transaction_id=str(uuid.uuid4()),
@@ -95,7 +95,7 @@ class Builder(Account):
             priority_fee=0
         )
         return bid_transaction
-        
+
 
 if __name__ == "__main__":
     # selected_transactions.append(bid_transaction)

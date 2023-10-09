@@ -35,13 +35,13 @@ class Transaction:
         # self.confirm_timestamp
         self.builder_timestamp = dict()
         self.proposer_timestamp = dict()
-    
+
     def calculate_total_fee(self):
         """
         Calculate the total fee of the transaction.
         """
         return self.amount * (self.base_fee + self.priority_fee)
-    
+
     def enter_mempool(self, builder_address, enter_timestamp):
         """
         Enter the transaction into the mempool.
