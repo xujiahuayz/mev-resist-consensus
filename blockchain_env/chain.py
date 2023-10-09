@@ -11,18 +11,20 @@ from blockchain_env.block import Block
 
 class Chain:
     def __init__(self,
-        accounts: list[Account] = [],
+        normal_users: list[Account] = [],
         proposers: list[Proposer] = [],
         builders: list[Builder] = [],
+        all_accounts: list[Account] = [],
         blocks: list[Block] = [],
     ):
         """
         Initialize a new chain.
         Use deepcopy to avoid modifying the original lists.
         """
-        self.accounts = copy.deepcopy(accounts)
+        self.normal_users = copy.deepcopy(normal_users)
         self.proposers = copy.deepcopy(proposers)
         self.builders = copy.deepcopy(builders)
+        self.all_accounts = self.normal_users + self.proposers + self.builders
         self.blocks = copy.deepcopy(blocks)
     
     def add_block(self, block: Block, confirm_time: float, transaction: Transaction, proposer: Proposer):
@@ -73,7 +75,7 @@ class Chain:
             if len(block_previous_chain[block_id]) >= len(longest_chain):
                 longest_chain = block_previous_chain[block_id]
         
-        print(f"Longest chain: {longest_chain}")
+        # print(f"Longest chain: {longest_chain}")
         return longest_chain
     
     def find_latest_block(self):

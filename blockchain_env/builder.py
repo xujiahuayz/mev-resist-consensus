@@ -56,7 +56,9 @@ class Builder(Account):
                 selected_transactions.append(transaction)
                 remaining_gas -= transaction_gas
             else:
-                break          
+                break
+        # print("==========")
+        # print(f"Selected transactions: {selected_transactions}")
         return selected_transactions
     
     # Method to validate transactions

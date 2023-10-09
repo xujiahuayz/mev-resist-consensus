@@ -96,8 +96,10 @@ def simulate(chain):
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
-                selected_transactions = selected_transactions.append(copy.deepcopy(bid_transaction))
-                
+                selected_transactions.append(copy.deepcopy(bid_transaction))
+                print("==========")
+                print(f"Selected transactions: {selected_transactions}")
+
                 # record the time
                 selecte_time = counter
                 # get information (block_id) of previous block
@@ -108,7 +110,8 @@ def simulate(chain):
                 #     # Handle the case where there are no previous blocks (e.g., for the first block)
                 #     previous_block_id = None
 
-                # calculate total fee
+                # calculate total fee 
+                # print(selected_transactions)
                 if selected_transactions:
                     total_fee = sum(transaction.fee for transaction in selected_transactions)
                 else:
@@ -155,9 +158,24 @@ def simulate(chain):
                 builder = builder_mapping.get(builder)
                 proposer.deposit(selected_block.total_fee - bid_transaction.amount)
                 builder.deposit(bid_transaction.amount)
+                
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
+                    for account in chain.accounts:
+                        if account.address == sender:
+                            # print("find!")
+                            sender = account
+                            break
+                    # print(sender)
+                    # print("="*15)
+                    # for i in chain.accounts:
+                    #     print(i.address)
+                    # print("="*15)
                     recipient = transaction.recipient
+                    for account in chain.accounts:
+                        if account.address == recipient:
+                            recipient = account
+                            break
                     sender.withdraw(transaction.amount)
                     recipient.deposit(transaction.amount-transaction.fee)
 
@@ -183,6 +201,9 @@ if __name__ == "__main__":
     chain.proposers = proposers
     chain.builders = builders
     chain.accounts = accounts
+
+    # for i in chain.proposers:
+    #     print(i.address)
 
     simulate(chain)
 
