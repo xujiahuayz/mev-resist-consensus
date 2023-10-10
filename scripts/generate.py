@@ -23,33 +23,55 @@ def generate_accounts(num_accounts):
 # valid transactions
 
 # add percentage of invalid transactions
-def generate_transactions(accounts, num_transactions, valid_percentage):
+def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
+    num_valid = int(num_transactions * valid_percentage)
+
     for _ in range(num_transactions):
-        sender_address = random.choice(accounts).address
-        recipient_address = random.choice(accounts).address
+        sender_address = random.choice(normal_users).address
+        recipient_address = random.choice(normal_users).address
         if sender_address == recipient_address:
             while True:
-                recipient_address = random.choice(accounts).address
+                recipient_address = random.choice(normal_users).address
                 if sender_address != recipient_address:
                     break
 
         transaction_id = str(uuid.uuid4())
         timestamp = None
-
         gas = 21000
         amount = random.uniform(1.0, 10.0)
         base_fee = BASE_FEE
         priority_fee = random.uniform(0.0, 5.0)
-        transaction = Transaction(
-            transaction_id=transaction_id,
-            timestamp=timestamp,
-            sender=sender_address,
-            recipient=recipient_address,
-            gas=gas,
-            amount=amount,
-            base_fee=base_fee,
-            priority_fee=priority_fee)
+
+        if len(transactions) < num_valid:
+            # get the sender object
+            sender_balance = next(user.balance for user in normal_users if user.address == sender_address)
+            # Generate a valid transaction
+            if sender_balance >= amount:
+                transaction = Transaction(
+                    transaction_id=transaction_id,
+                    timestamp=timestamp,
+                    sender=sender_address,
+                    recipient=recipient_address,
+                    gas=gas,
+                    amount=amount,
+                    base_fee=base_fee,
+                    priority_fee=priority_fee
+                )
+            else:
+                # Skip this transaction if sender doesn't have enough balance
+                continue
+        else:
+            # Generate an invalid transaction if the number of valid transactions has reached the limit
+            transaction = Transaction(
+                transaction_id=transaction_id,
+                timestamp=timestamp,
+                sender=sender_address,
+                recipient=recipient_address,
+                gas=gas,
+                amount=amount,
+                base_fee=base_fee,
+                priority_fee=priority_fee)
         if transaction is not None:
             transactions.append(transaction)
     return transactions
