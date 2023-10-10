@@ -167,6 +167,10 @@ def simulate(chain):
                             # print("find!")
                             sender = account
                             break
+                    # if isinstance(sender, str):
+                    #     print(f"Sender address not found in chain.accounts: {sender}")
+                    # else:
+                    #     sender.withdraw(transaction.amount)
                     # print(sender)
                     # print("="*15)
                     # for i in chain.accounts:
