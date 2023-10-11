@@ -37,6 +37,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 if sender_address != recipient_address:
                     break
 
+        # set
         transaction_id = str(uuid.uuid4())
         timestamp = None
         gas = 21000
