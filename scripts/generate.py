@@ -37,7 +37,6 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 if sender_address != recipient_address:
                     break
 
-        # set
         transaction_id = str(uuid.uuid4())
         timestamp = None
         gas = 21000
@@ -186,24 +185,27 @@ def simulate(chain):
 
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
-                    for account in chain.normal_users:
-                        if account.address == sender:
+                    for user in chain.normal_users:
+                        if user.address == sender:
                             # print("find!")
-                            sender = account
+                            sender = user
                             break
-                    # if isinstance(sender, str):
-                    #     print(f"Sender address not found in chain.accounts: {sender}")
-                    # else:
-                    #     sender.withdraw(transaction.amount)
-                    # print(sender)
-                    # print("="*15)
-                    # for i in chain.accounts:
-                    #     print(i.address)
-                    # print("="*15)
+                    
+                    # small test
+                    if isinstance(sender, str):
+                        print(f"Sender address not found in chain.accounts: {sender}")
+                    else:
+                        sender.withdraw(transaction.amount)
+                    print(sender)
+                    print("="*15)
+                    for i in chain.normal_users:
+                        print(i.address)
+                    print("="*15)
+
                     recipient = transaction.recipient
-                    for account in chain.normal_users:
-                        if account.address == recipient:
-                            recipient = account
+                    for user in chain.normal_users:
+                        if user.address == recipient:
+                            recipient = user
                             break
                     sender.withdraw(transaction.amount)
                     recipient.deposit(transaction.amount-transaction.fee)
@@ -236,8 +238,8 @@ if __name__ == "__main__":
 
     simulate(chain)
 
-    for account in accounts:
-        print(account.address, account.balance)
+    for user in normal_users:
+        print(user.address, user.balance)
 
     for builder in builders:
         print(builder.address, builder.balance)
