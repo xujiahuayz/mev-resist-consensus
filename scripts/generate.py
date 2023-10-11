@@ -11,16 +11,14 @@ from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
 
-def generate_accounts(num_accounts):
-    accounts = []
-    for i in range(num_accounts):
+def generate_normal_users(num_users):
+    normal_users = []
+    for i in range(num_users):
         address = f"Address{i}"
         balance = random.uniform(100.0, 1000.0)
-        account = Account(address, balance)
-        accounts.append(account)
-    return accounts
-
-# valid transactions
+        user = Account(address, balance)
+        normal_users.append(user)
+    return normal_users
 
 # add percentage of invalid transactions
 def generate_transactions(normal_users, num_transactions, valid_percentage):
@@ -28,11 +26,14 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
     num_valid = int(num_transactions * valid_percentage)
 
     for _ in range(num_transactions):
-        sender_address = random.choice(normal_users).address
-        recipient_address = random.choice(normal_users).address
+        sender = random.choice(normal_users)
+        recipient = random.choice(normal_users)
+        sender_address = sender.address
+        recipient_address = recipient.address
         if sender_address == recipient_address:
             while True:
-                recipient_address = random.choice(normal_users).address
+                recipient = random.choice(normal_users)
+                recipient_address = recipient.address
                 if sender_address != recipient_address:
                     break
 
@@ -45,7 +46,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
         if len(transactions) < num_valid:
             # get the sender object
-            sender_balance = next(user.balance for user in normal_users if user.address == sender_address)
+            sender_balance = sender.balance
             # Generate a valid transaction
             if sender_balance >= amount:
                 transaction = Transaction(
@@ -98,7 +99,7 @@ def simulate(chain):
     # generate a random number of transactions
     random_number = random.randint(1, 100)
     while True:
-        new_transactions = generate_transactions(chain.accounts, random_number, 0.8)
+        new_transactions = generate_transactions(chain.normal_users, random_number, 0.8)
 
         # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
@@ -184,7 +185,7 @@ def simulate(chain):
 
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
-                    for account in chain.accounts:
+                    for account in chain.normal_users:
                         if account.address == sender:
                             # print("find!")
                             sender = account
@@ -199,7 +200,7 @@ def simulate(chain):
                     #     print(i.address)
                     # print("="*15)
                     recipient = transaction.recipient
-                    for account in chain.accounts:
+                    for account in chain.normal_users:
                         if account.address == recipient:
                             recipient = account
                             break
@@ -213,7 +214,7 @@ def simulate(chain):
 
 if __name__ == "__main__":
 
-    num_accounts = 200
+    num_users = 200
     num_transactions = 100
     initial_balance = 100.0
     num_builders = 20
@@ -221,13 +222,13 @@ if __name__ == "__main__":
 
     chain = Chain()
 
-    accounts = generate_accounts(num_accounts)
+    normal_users = generate_normal_users(num_users)
     builders = generate_builders(num_builders)
     proposers = generate_proposers(num_proposers)
 
     chain.proposers = proposers
     chain.builders = builders
-    chain.accounts = accounts
+    chain.normal_users = normal_users
 
     # for i in chain.proposers:
     #     print(i.address)
