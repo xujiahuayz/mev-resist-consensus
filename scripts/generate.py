@@ -183,30 +183,29 @@ def simulate(chain):
                 proposer.deposit(selected_block.total_fee - bid_transaction.amount)
                 builder.deposit(bid_transaction.amount)
 
+                # determine if the sender is proposer or normal user
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
-                    for user in chain.normal_users:
-                        if user.address == sender:
-                            # print("find!")
-                            sender = user
-                            break
-                    
-                    # small test
-                    if isinstance(sender, str):
-                        print(f"Sender address not found in chain.accounts: {sender}")
+                    if sender == selected_proposer.address:
+                        sender = selected_proposer
                     else:
-                        sender.withdraw(transaction.amount)
-                    print(sender)
-                    print("="*15)
-                    for i in chain.normal_users:
-                        print(i.address)
-                    print("="*15)
-
+                        for user in chain.normal_users:
+                            if user.address == sender:
+                                print("find!")
+                                sender = user
+                                break
+                    
+                    # determine if the recipient is builder or normal user
                     recipient = transaction.recipient
-                    for user in chain.normal_users:
-                        if user.address == recipient:
-                            recipient = user
-                            break
+                    if recipient == builder.address:
+                        recipient = builder
+                    else:
+                        for user in chain.normal_users:
+                            if user.address == recipient:
+                                recipient = user
+                                break
+
+                    # update balance
                     sender.withdraw(transaction.amount)
                     recipient.deposit(transaction.amount-transaction.fee)
 
@@ -277,7 +276,6 @@ if __name__ == "__main__":
             print(f"  Base Fee: {transaction.base_fee}")
             print(f"  Priority Fee: {transaction.priority_fee}")
             print(f"  Fee: {transaction.fee}")
-            print(f"  Timestamp: {transaction.timestamp}")
             print()
 
         print()
