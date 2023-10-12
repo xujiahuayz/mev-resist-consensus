@@ -10,7 +10,7 @@ class Transaction:
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
-        bid: float = 0
+        fee: float = None,
     ):
         """
         Initialize a new transaction.
@@ -24,15 +24,8 @@ class Transaction:
         self.base_fee = base_fee
         self.priority_fee = priority_fee
         self.fee = self.calculate_total_fee()
-        self.bid = bid
 
         self.dict_timestamp = dict()
-        # create time (one), enter-mempool time (multiple: dict), building time (multiple: dict), confirm time
-        # # builder 1, proposer 1
-        # self.create_timestamp
-        # self.builder_timestamp[1]
-        # self.proposer_timestamp[1]
-        # self.confirm_timestamp
         self.builder_timestamp = dict()
         self.proposer_timestamp = dict()
 
@@ -73,7 +66,6 @@ if __name__ == "__main__":
         amount=5.0,
         base_fee=2.0,
         priority_fee=1.0,
-        bid=0.5
     )
 
     # Record timestamps

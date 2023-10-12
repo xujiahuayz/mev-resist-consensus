@@ -16,7 +16,7 @@ def generate_normal_users(num_users):
     for i in range(num_users):
         address = f"Address{i}"
         # balance = random.uniform(1000.0, 10000.0)
-        balance = 1000.0
+        balance = 100.0
         user = Account(address, balance)
         normal_users.append(user)
     return normal_users
@@ -41,30 +41,15 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
         transaction_id = str(uuid.uuid4())
         timestamp = None
         gas = 1
-        amount = random.uniform(1.0, 100.0)
         base_fee = BASE_FEE
-        priority_fee = random.uniform(0.0, 0.5)
+        priority_fee = random.uniform(0.0, 1)
+        fee = gas * (base_fee + priority_fee)
 
         if len(transactions) < num_valid:
-            # get the sender object
+            # Get the sender object
             sender_balance = sender.balance
             # Generate a valid transaction
-            if sender_balance >= amount:
-                transaction = Transaction(
-                    transaction_id=transaction_id,
-                    timestamp=timestamp,
-                    sender=sender_address,
-                    recipient=recipient_address,
-                    gas=gas,
-                    amount=amount,
-                    base_fee=base_fee,
-                    priority_fee=priority_fee
-                )
-            else:
-                # Skip this transaction if sender doesn't have enough balance
-                continue
-        else:
-            # Generate an invalid transaction if the number of valid transactions has reached the limit
+            amount = random.uniform(0.1, sender_balance)
             transaction = Transaction(
                 transaction_id=transaction_id,
                 timestamp=timestamp,
@@ -73,10 +58,31 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 gas=gas,
                 amount=amount,
                 base_fee=base_fee,
-                priority_fee=priority_fee)
-        if transaction is not None:
-            transactions.append(transaction)
+                priority_fee=priority_fee,
+                fee = fee
+            )
+        else:
+            # Generate an invalid transaction if the number of valid transactions has reached the limit
+            sender_balance = sender.balance
+            # Ensure the amount is greater than the sender's balance for an invalid transaction
+            amount = sender_balance + random.uniform(1.0, 100.0)
+            
+            transaction = Transaction(
+                transaction_id=transaction_id,
+                timestamp=timestamp,
+                sender=sender_address,
+                recipient=recipient_address,
+                gas=gas,
+                amount=amount,
+                base_fee=base_fee,
+                priority_fee=priority_fee,
+                fee = fee
+            )
+        
+        transactions.append(transaction)
+    
     return transactions
+
 
 def generate_builders(num_builders):
     builders = []
@@ -120,8 +126,8 @@ def simulate(chain):
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
-                print("==========")
-                print(type(builder))
+                # print("==========")
+                # print(type(builder))
 
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
@@ -151,7 +157,8 @@ def simulate(chain):
                     proposer_address=selected_proposer.address,
                     transactions=selected_transactions,
                     builder_id=builder.address,
-                    total_fee=total_fee
+                    total_fee=total_fee,
+                    bid=bid_transaction.amount
                 )
 
                 # add the new block to the blockpool

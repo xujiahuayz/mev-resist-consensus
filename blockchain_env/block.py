@@ -14,6 +14,7 @@ class Block:
         total_fee: float,
         transactions: list[Transaction] = None,
         proposer_address = None,
+        bid = None,
     ):
         """
         Initialize a new block.
@@ -26,6 +27,7 @@ class Block:
         self.total_fee = total_fee
         self.transactions = transactions if transactions is not None else []
         self.header = self.extract_header()
+        self.bid = bid
 
     def extract_header(self) -> dict:
         """

@@ -43,7 +43,7 @@ class Proposer(Account):
             def calculate_profit(block):
                 total_profit = 0
                 for transaction in block.transactions:
-                    total_profit += (transaction.priority_fee * transaction.gas) - transaction.bid
+                    total_profit += (transaction.priority_fee * transaction.gas) - block.bid
                 return total_profit
 
             selected_block = max(self.blockpool.blocks, key=lambda block:
