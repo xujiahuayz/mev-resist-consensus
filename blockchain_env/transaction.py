@@ -40,7 +40,7 @@ class Transaction:
         """
         Calculate the total fee of the transaction.
         """
-        return self.amount * (self.base_fee + self.priority_fee)
+        return self.gas * (self.base_fee + self.priority_fee)
 
     def enter_mempool(self, builder_address, enter_timestamp):
         """
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         timestamp=0,
         sender="SenderAddress",
         recipient="RecipientAddress",
-        gas=21000,
+        gas=1,
         amount=5.0,
         base_fee=2.0,
         priority_fee=1.0,

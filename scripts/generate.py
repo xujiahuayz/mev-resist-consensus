@@ -5,7 +5,7 @@ import copy
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
-from blockchain_env.constants import BASE_FEE, GAS_LIMIT
+from blockchain_env.constants import BASE_FEE
 from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
@@ -15,7 +15,8 @@ def generate_normal_users(num_users):
     normal_users = []
     for i in range(num_users):
         address = f"Address{i}"
-        balance = random.uniform(100.0, 1000.0)
+        # balance = random.uniform(1000.0, 10000.0)
+        balance = 1000.0
         user = Account(address, balance)
         normal_users.append(user)
     return normal_users
@@ -39,10 +40,10 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
         transaction_id = str(uuid.uuid4())
         timestamp = None
-        gas = 21000
-        amount = random.uniform(1.0, 10.0)
+        gas = 1
+        amount = random.uniform(1.0, 100.0)
         base_fee = BASE_FEE
-        priority_fee = random.uniform(0.0, 5.0)
+        priority_fee = random.uniform(0.0, 0.5)
 
         if len(transactions) < num_valid:
             # get the sender object
@@ -97,9 +98,9 @@ def simulate(chain):
     slot:int = 12
     counter = 0
     # generate a random number of transactions
-    random_number = random.randint(1, 100)
+    random_number = random.randint(1, 10)
     while True:
-        new_transactions = generate_transactions(chain.normal_users, random_number, 0.8)
+        new_transactions = generate_transactions(chain.normal_users, random_number, 1)
 
         # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
@@ -119,6 +120,9 @@ def simulate(chain):
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
+                print("==========")
+                print(type(builder))
+
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
                 print("==========")
@@ -136,10 +140,9 @@ def simulate(chain):
 
                 # calculate total fee
                 # print(selected_transactions)
-                if selected_transactions:
-                    total_fee = sum(transaction.fee for transaction in selected_transactions)
-                else:
-                    total_fee = 0
+
+                total_fee = sum(transaction.fee for transaction in selected_transactions)
+
                 # create a new block with the selected transactions
                 new_block = Block(
                     block_id=uuid.uuid4(),
@@ -186,32 +189,42 @@ def simulate(chain):
                 # determine if the sender is proposer or normal user
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
-                    if sender == selected_proposer.address:
-                        sender = selected_proposer
-                    else:
-                        for user in chain.normal_users:
-                            if user.address == sender:
-                                print("find!")
-                                sender = user
-                                break
-                    
+                    sender_object = None
+
+                    # tmp_flag = False
+                    # if sender == selected_proposer.address:
+                    #     tmp_flag = True
+                    #     sender_object = selected_proposer
+                    # else:
+                    for user in (chain.normal_users + chain.proposers + chain.builders):
+                        if user.address == sender:
+                            # print("find!")
+                            sender_object = user
+                            break
+                    # if not tmp_flag:
+                    #     print("not find!")
+
                     # determine if the recipient is builder or normal user
                     recipient = transaction.recipient
-                    if recipient == builder.address:
-                        recipient = builder
-                    else:
-                        for user in chain.normal_users:
-                            if user.address == recipient:
-                                recipient = user
-                                break
+                    recipient_object = None
+                    # if recipient == builder.address:
+                    #     recipient_object = builder
+                    # else:
+                    for user in (chain.normal_users + chain.proposers + chain.builders):
+                        if user.address == recipient:
+                            recipient_object = user
+                            break
 
                     # update balance
-                    sender.withdraw(transaction.amount)
-                    recipient.deposit(transaction.amount-transaction.fee)
+                    sender_object.withdraw(transaction.amount)
+                    recipient_object.deposit(transaction.amount-transaction.fee)
+                    print("==========")
+                    print(f" Amount: {transaction.amount}")
+                    print(f" Fee: {transaction.fee}")
 
         counter += 1
-        if counter >= 10:
-            break
+        if counter >= 20:
+            return chain
 
 
 if __name__ == "__main__":
@@ -235,15 +248,15 @@ if __name__ == "__main__":
     # for i in chain.proposers:
     #     print(i.address)
 
-    simulate(chain)
+    chain = simulate(chain)
 
-    for user in normal_users:
+    for user in chain.normal_users:
         print(user.address, user.balance)
 
-    for builder in builders:
+    for builder in chain.builders:
         print(builder.address, builder.balance)
 
-    for proposer in proposers:
+    for proposer in chain.proposers:
         print(proposer.address, proposer.balance)
 
     for selected_block in chain.blocks:
@@ -251,23 +264,15 @@ if __name__ == "__main__":
         print(f"Previous Block Header ID: {selected_block.previous_block_id}")
         print(f"Total Fee: {selected_block.total_fee}")
 
-        # Get the bid transaction
-        bid_transaction = None
-        for transaction in selected_block.transactions:
-            if transaction.sender == selected_block.builder_id:
-                bid_transaction = transaction
-                break
-
-        if bid_transaction:
-            print(f"Bid Amount: {bid_transaction.amount}")
-        else:
-            print("No Bid Transaction found in this block")
-
         print(f"Proposer: {selected_block.proposer_address}")
         print(f"Builder ID: {selected_block.builder_id}")
 
-        print("Transactions:")
         for transaction in selected_block.transactions:
+            # print("Create Timestamp:", transaction.create_timestamp)
+            # print("Mempool Timestamps:", transaction.enter_timestamp)
+            # print("Blockpool Timestamps:", transaction.select_timestamp)
+            # print("Confirm Timestamps:", transaction.confirm_timestamp)
+
             print(f"  Transaction ID: {transaction.transaction_id}")
             print(f"  Sender: {transaction.sender}")
             print(f"  Recipient: {transaction.recipient}")

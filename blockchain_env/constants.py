@@ -6,7 +6,7 @@ DATA_PATH = PROJECT_ROOT / "data"
 FIGURE_PATH = PROJECT_ROOT / "figures"
 CACHE_PATH = PROJECT_ROOT / ".cache"
 
-BASE_FEE = 10
-GAS_LIMIT = 30000000
+BASE_FEE = 0.1
+GAS_LIMIT = 1400
 BUILDER_STRATEGY_LIST = ["greedy", "random", "FCFS"]
 PROPOSER_STRATEGY_LIST = ["greedy", "random", "cheap"]
