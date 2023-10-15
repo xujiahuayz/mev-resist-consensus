@@ -102,13 +102,13 @@ def generate_proposers(num_proposers):
 
 
 def simulate(chain):
-    slot:int = 12
+
     counter = 0
     # generate a random number of transactions
     random_number = random.randint(1, 10)
 
     while True:
-        print(f"Counter: {counter}, Slot: {slot}")
+        print(f"Counter: {counter}")
 
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
 
