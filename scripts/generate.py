@@ -100,12 +100,16 @@ def generate_proposers(num_proposers):
         proposers.append(proposer)
     return proposers
 
+
 def simulate(chain):
     slot:int = 12
     counter = 0
     # generate a random number of transactions
     random_number = random.randint(1, 10)
+
     while True:
+        print(f"Counter: {counter}, Slot: {slot}")
+
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
 
         # for each transaction broadcast to a random set of builders
@@ -117,7 +121,7 @@ def simulate(chain):
                 builder.mempool.add_transaction(transaction, counter+enter_time)
 
         # for each slot, a block should be built and added on chain
-        if counter % slot == 0:
+        if counter % 12 == 0:
             # for each builder, select transactions, append bid and add to blockpool
             # select proposer for the slot
             selected_proposer = chain.select_proposer()
@@ -266,29 +270,29 @@ if __name__ == "__main__":
     for proposer in chain.proposers:
         print(proposer.address, proposer.balance)
 
-    for selected_block in chain.blocks:
-        print(f"Block Header ID: {selected_block.block_id}")
-        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-        print(f"Total Fee: {selected_block.total_fee}")
+    # for selected_block in chain.blocks:
+    #     print(f"Block Header ID: {selected_block.block_id}")
+    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+    #     print(f"Total Fee: {selected_block.total_fee}")
 
-        print(f"Proposer: {selected_block.proposer_address}")
-        print(f"Builder ID: {selected_block.builder_id}")
+    #     print(f"Proposer: {selected_block.proposer_address}")
+    #     print(f"Builder ID: {selected_block.builder_id}")
 
-        for transaction in selected_block.transactions:
-            # print("Create Timestamp:", transaction.create_timestamp)
-            # print("Mempool Timestamps:", transaction.enter_timestamp)
-            # print("Blockpool Timestamps:", transaction.select_timestamp)
-            # print("Confirm Timestamps:", transaction.confirm_timestamp)
+    #     for transaction in selected_block.transactions:
+    #         # print("Create Timestamp:", transaction.create_timestamp)
+    #         # print("Mempool Timestamps:", transaction.enter_timestamp)
+    #         # print("Blockpool Timestamps:", transaction.select_timestamp)
+    #         # print("Confirm Timestamps:", transaction.confirm_timestamp)
 
-            print(f"  Transaction ID: {transaction.transaction_id}")
-            print(f"  Sender: {transaction.sender}")
-            print(f"  Recipient: {transaction.recipient}")
-            print(f"  Gas: {transaction.gas}")
-            print(f"  Amount: {transaction.amount}")
-            print(f"  Base Fee: {transaction.base_fee}")
-            print(f"  Priority Fee: {transaction.priority_fee}")
-            print(f"  Fee: {transaction.fee}")
-            print()
+    #         print(f"  Transaction ID: {transaction.transaction_id}")
+    #         print(f"  Sender: {transaction.sender}")
+    #         print(f"  Recipient: {transaction.recipient}")
+    #         print(f"  Gas: {transaction.gas}")
+    #         print(f"  Amount: {transaction.amount}")
+    #         print(f"  Base Fee: {transaction.base_fee}")
+    #         print(f"  Priority Fee: {transaction.priority_fee}")
+    #         print(f"  Fee: {transaction.fee}")
+    #         print()
 
         print()
 
