@@ -122,6 +122,9 @@ def simulate(chain):
 
         # for each slot, a block should be built and added on chain
         if counter % 12 == 0:
+            # initialize a empty list to store selected transactions
+            all_selected_transactions = []
+
             # for each builder, select transactions, append bid and add to blockpool
             # select proposer for the slot
             selected_proposer = chain.select_proposer()
@@ -165,23 +168,33 @@ def simulate(chain):
                     bid=bid_transaction.amount
                 )
 
-                # add the new block to the blockpool
-                selected_proposer.blockpool.add_block(new_block, selecte_time)
+            # add the new block to the blockpool
+            selected_proposer.blockpool.add_block(new_block, selecte_time)
 
-                # the selected proposer select a block from the blockpool
-                selected_block = selected_proposer.select_block()
-                print("==========")
-                print(f"Selected block: {selected_block}")
+            # the selected proposer select a block from the blockpool
+            selected_block = selected_proposer.select_block()
 
-                # add the selected block to the longest chain
-                if selected_block is not None:
-                    confirm_time = counter
-                    chain.add_block(block=selected_block, confirm_time=confirm_time, transaction=transaction, proposer=selected_proposer)
-                    selected_proposer.blockpool.remove_block(selected_block)
-                    for transaction in selected_block.transactions:
-                        transaction.confirm(selected_proposer.address, confirm_time)
-                        for builder in builders:
-                            builder.mempool.remove_transaction(transaction)
+            # # After appending all selected transactions in the slot, create a single selected block.
+            # if all_selected_transactions:
+            #     # Create a selected block using all_selected_transactions.
+            #     selected_block = selected_block(all_selected_transactions)
+            #     print(f"Selected block: {selected_block}")
+
+            #     # Add the selected block to the longest chain.
+            #     chain.add_block(selected_block, confirm_time=counter, transaction=None, proposer=None)
+                
+            #     # Clear the list for the next slot.
+            #     all_selected_transactions.clear()
+
+            # add the selected block to the longest chain
+            if selected_block is not None:
+                confirm_time = counter
+                chain.add_block(block=selected_block, confirm_time=confirm_time, transaction=transaction, proposer=selected_proposer)
+                selected_proposer.blockpool.remove_block(selected_block)
+                for transaction in selected_block.transactions:
+                    transaction.confirm(selected_proposer.address, confirm_time)
+                    for builder in builders:
+                        builder.mempool.remove_transaction(transaction)
 
             # balance change for each account after block put on chain
             # for each block, update the balance of proposer and builder e.g. proposer get the trasnaction total fee - bid and builder get the bid
@@ -236,7 +249,7 @@ def simulate(chain):
                     print(f" Fee: {transaction.fee}")
 
         counter += 1
-        if counter >= 20:
+        if counter >= 1000:
             return chain
 
 
