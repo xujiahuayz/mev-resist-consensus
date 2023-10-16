@@ -170,6 +170,8 @@ def simulate(chain):
 
                 # the selected proposer select a block from the blockpool
                 selected_block = selected_proposer.select_block()
+                print("==========")
+                print(f"Selected block: {selected_block}")
 
                 # add the selected block to the longest chain
                 if selected_block is not None:
