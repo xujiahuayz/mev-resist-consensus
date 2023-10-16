@@ -102,14 +102,11 @@ def generate_proposers(num_proposers):
 
 
 def simulate(chain):
-
     counter = 0
     # generate a random number of transactions
     random_number = random.randint(1, 10)
 
     while True:
-        print(f"Counter: {counter}")
-
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
 
         # for each transaction broadcast to a random set of builders
@@ -238,7 +235,7 @@ def simulate(chain):
                     # print(f" Fee: {transaction.fee}")
             
         counter += 1
-        if counter >= 1000:
+        if counter >= 100:
             return chain
 
 
@@ -282,21 +279,27 @@ if __name__ == "__main__":
         print(f"Proposer: {selected_block.proposer_address}")
         print(f"Builder ID: {selected_block.builder_id}")
 
-    #     for transaction in selected_block.transactions:
-    #         # print("Create Timestamp:", transaction.create_timestamp)
-    #         # print("Mempool Timestamps:", transaction.enter_timestamp)
-    #         # print("Blockpool Timestamps:", transaction.select_timestamp)
-    #         # print("Confirm Timestamps:", transaction.confirm_timestamp)
+        for transaction in selected_block.transactions:
+            # print("Create Timestamp:", transaction.create_timestamp)
+            # print("Mempool Timestamps:", transaction.enter_timestamp)
+            # print("Blockpool Timestamps:", transaction.select_timestamp)
+            # print("Confirm Timestamps:", transaction.confirm_timestamp)
 
-    #         print(f"  Transaction ID: {transaction.transaction_id}")
-    #         print(f"  Sender: {transaction.sender}")
-    #         print(f"  Recipient: {transaction.recipient}")
-    #         print(f"  Gas: {transaction.gas}")
-    #         print(f"  Amount: {transaction.amount}")
-    #         print(f"  Base Fee: {transaction.base_fee}")
-    #         print(f"  Priority Fee: {transaction.priority_fee}")
-    #         print(f"  Fee: {transaction.fee}")
-    #         print()
+            print(f"  Transaction ID: {transaction.transaction_id}")
+            print(f"  Sender: {transaction.sender}")
+            print(f"  Recipient: {transaction.recipient}")
+            print(f"  Gas: {transaction.gas}")
+            print(f"  Amount: {transaction.amount}")
+            print(f"  Base Fee: {transaction.base_fee}")
+            print(f"  Priority Fee: {transaction.priority_fee}")
+            print(f"  Fee: {transaction.fee}")
+            print()
 
         print()
 
+
+    # Calculate the final total balance
+    final_total_balance = sum(user.balance for user in normal_users + proposers + builders)
+    print("Final Total Balance:", final_total_balance)
+
+    
