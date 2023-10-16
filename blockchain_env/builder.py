@@ -70,7 +70,7 @@ class Builder(Account):
         for transaction in transactions:
             if balance < transaction.amount:
                 return False
-            balance -= transaction.amount
+            balance >= transaction.amount
         return True
 
     # Method to add bid for the transactions

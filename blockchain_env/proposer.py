@@ -66,6 +66,9 @@ class Proposer(Account):
 
         else:
             raise ValueError("Invalid proposer_strategy")
+        
+    def clear_blockpool(self):
+        self.blockpool = Blockpool()
 
 
 

@@ -122,9 +122,6 @@ def simulate(chain):
 
         # for each slot, a block should be built and added on chain
         if counter % 12 == 0:
-            # initialize a empty list to store selected transactions
-            all_selected_transactions = []
-
             # for each builder, select transactions, append bid and add to blockpool
             # select proposer for the slot
             selected_proposer = chain.select_proposer()
@@ -138,21 +135,13 @@ def simulate(chain):
 
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
-                print("==========")
-                print(f"Selected transactions: {selected_transactions}")
+                # print("==========")
+                # print(f"Selected transactions: {selected_transactions}")
 
                 # record the time
                 selecte_time = counter
                 # get information (block_id) of previous block
                 previous_block_id = chain.find_latest_block()
-                # if previous_block is not None:
-                #     previous_block_id = previous_block.block_id
-                # else:
-                #     # Handle the case where there are no previous blocks (e.g., for the first block)
-                #     previous_block_id = None
-
-                # calculate total fee
-                # print(selected_transactions)
 
                 total_fee = sum(transaction.fee for transaction in selected_transactions)
 
@@ -217,18 +206,10 @@ def simulate(chain):
                     sender = transaction.sender
                     sender_object = None
 
-                    # tmp_flag = False
-                    # if sender == selected_proposer.address:
-                    #     tmp_flag = True
-                    #     sender_object = selected_proposer
-                    # else:
                     for user in (chain.normal_users + chain.proposers + chain.builders):
                         if user.address == sender:
-                            # print("find!")
                             sender_object = user
                             break
-                    # if not tmp_flag:
-                    #     print("not find!")
 
                     # determine if the recipient is builder or normal user
                     recipient = transaction.recipient
@@ -249,7 +230,7 @@ def simulate(chain):
                     print(f" Fee: {transaction.fee}")
 
         counter += 1
-        if counter >= 1000:
+        if counter >= 500:
             return chain
 
 
@@ -285,13 +266,13 @@ if __name__ == "__main__":
     for proposer in chain.proposers:
         print(proposer.address, proposer.balance)
 
-    # for selected_block in chain.blocks:
-    #     print(f"Block Header ID: {selected_block.block_id}")
-    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-    #     print(f"Total Fee: {selected_block.total_fee}")
+    for selected_block in chain.blocks:
+        print(f"Block Header ID: {selected_block.block_id}")
+        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+        print(f"Total Fee: {selected_block.total_fee}")
 
-    #     print(f"Proposer: {selected_block.proposer_address}")
-    #     print(f"Builder ID: {selected_block.builder_id}")
+        print(f"Proposer: {selected_block.proposer_address}")
+        print(f"Builder ID: {selected_block.builder_id}")
 
     #     for transaction in selected_block.transactions:
     #         # print("Create Timestamp:", transaction.create_timestamp)
