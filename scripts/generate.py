@@ -125,13 +125,16 @@ def simulate(chain):
             # for each builder, select transactions, append bid and add to blockpool
             # select proposer for the slot
             selected_proposer = chain.select_proposer()
+            # list to store new blocks
+            new_blocks = []
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
-                # print("==========")
+                print("==========")
                 # print(type(builder))
+                print(f"bid transaction: {bid_transaction.amount}")
 
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
@@ -156,12 +159,17 @@ def simulate(chain):
                     total_fee=total_fee,
                     bid=bid_transaction.amount
                 )
+                
+                # add the new block to the list of new blocks
+                new_blocks.append(new_block)
 
-            # add the new block to the blockpool
             selected_proposer.blockpool.add_block(new_block, selecte_time)
 
             # the selected proposer select a block from the blockpool
             selected_block = selected_proposer.select_block()
+
+            # clear the blockpool for the next slot
+            selected_proposer.clear_blockpool()
 
             # # After appending all selected transactions in the slot, create a single selected block.
             # if all_selected_transactions:
@@ -225,12 +233,12 @@ def simulate(chain):
                     # update balance
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
-                    print("==========")
-                    print(f" Amount: {transaction.amount}")
-                    print(f" Fee: {transaction.fee}")
-
+                    # print("==========")
+                    # print(f" Amount: {transaction.amount}")
+                    # print(f" Fee: {transaction.fee}")
+            
         counter += 1
-        if counter >= 500:
+        if counter >= 1000:
             return chain
 
 
