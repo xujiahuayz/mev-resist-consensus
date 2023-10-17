@@ -19,9 +19,9 @@ class Account:
         """
         Withdraw amount from the account.
         """
-        if self.balance < amount:
-            print(f"Insufficient balance. the amount to withdraw is {amount} but address {self.address} only has {self.balance}")
-            return
+        # if self.balance < amount:
+        #     print(f"Insufficient balance. the amount to withdraw is {amount} but address {self.address} only has {self.balance}")
+        #     return
         self.balance -= amount
 
 if __name__ == "__main__":

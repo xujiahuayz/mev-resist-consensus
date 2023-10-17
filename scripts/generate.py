@@ -11,6 +11,7 @@ from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
+random.seed(42)
 
 def generate_normal_users(num_users):
     normal_users = []
@@ -133,9 +134,9 @@ def simulate(chain):
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
-                print("==========")
+                # print("==========")
                 # print(type(builder))
-                print(f"bid transaction: {bid_transaction.amount}")
+                # print(f"bid transaction: {bid_transaction.amount}")
 
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
@@ -237,18 +238,51 @@ def simulate(chain):
                     # print("==========")
                     # print(f" Amount: {transaction.amount}")
                     # print(f" Fee: {transaction.fee}")
+                
+            # Calculate the total balance
+            # total_balance = sum(user.balance for user in normal_users + proposers + builders)
+            # print("Total Balance:", total_balance)
+            # print("Normal User total balance:", sum(user.balance for user in normal_users))
+            # print("Proposer total balance:", sum(proposer.balance for proposer in proposers))
+            # print("Builder total balance:", sum(builder.balance for builder in builders))
+            # print("==========")
             
         counter += 1
-        if counter >= 100:
+        if counter >= 1000:
             return chain
+        
+def plot_distribution(chain):
+    block_numbers = [block.block_id for block in chain.blocks]
+    proposer_balances = []
+    builder_balances = []
+
+    for block in chain.blocks:
+        total_proposer_balance = sum(proposer.balance for proposer in chain.proposers)
+        total_builder_balance = sum(builder.balance for builder in chain.builders)
+        total_balance = total_proposer_balance + total_builder_balance
+
+        proposer_percentage = (total_proposer_balance / total_balance) * 100
+        builder_percentage = (total_builder_balance / total_balance) * 100
+
+        proposer_balances.append(proposer_percentage)
+        builder_balances.append(builder_percentage)
+
+    plt.figure(figsize=(10, 6))
+    plt.stackplot(block_numbers, proposer_percentage, builder_percentage, labels=['Proposer Balance', 'Builder Balance'], alpha=0.7)
+    plt.xlabel('Block Number')
+    plt.ylabel('Percentage')
+    plt.legend(loc='upper left')
+    plt.grid(True)
+    plt.ylim(0, 100)
+    plt.show()
         
 if __name__ == "__main__":
 
-    num_users = 200
-    num_transactions = 100
+    num_users = 10000
+    num_transactions = 200
     initial_balance = 100.0
-    num_builders = 20
-    num_proposers = 20
+    num_builders = 100
+    num_proposers = 100
 
     chain = Chain()
 
@@ -263,47 +297,58 @@ if __name__ == "__main__":
     # for i in chain.proposers:
     #     print(i.address)
 
+    print(sum(user.balance for user in normal_users + proposers + builders))
+
     chain = simulate(chain)
 
-    for user in chain.normal_users:
-        print(user.address, user.balance)
+    plot_distribution(chain)
 
-    for builder in chain.builders:
-        print(builder.address, builder.balance)
+    # for user in chain.normal_users:
+    #     print(user.address, user.balance)
 
-    for proposer in chain.proposers:
-        print(proposer.address, proposer.balance)
+    # for builder in chain.builders:
+    #     print(builder.address, builder.balance)
+
+    # for proposer in chain.proposers:
+    #     print(proposer.address, proposer.balance)
 
     for selected_block in chain.blocks:
         print(f"Block Header ID: {selected_block.block_id}")
         print(f"Previous Block Header ID: {selected_block.previous_block_id}")
         print(f"Total Fee: {selected_block.total_fee}")
+        print(f"Number of Transactions: {len(selected_block.transactions)}")
 
         print(f"Proposer: {selected_block.proposer_address}")
         print(f"Builder ID: {selected_block.builder_id}")
 
-        for transaction in selected_block.transactions:
-            print("Create Timestamp:", transaction.create_timestamp)
-            # for builder_address, timestamp in transaction.dict_timestamp.items():
-            #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
-            # print("Blockpool Timestamps:", transaction.select_timestamp)
-            # print("Confirm Timestamps:", transaction.confirm_timestamp)
+        # for user in chain.normal_users:
+        #     print(user.address, user.balance)
 
-            print(f"  Transaction ID: {transaction.transaction_id}")
-            print(f"  Sender: {transaction.sender}")
-            print(f"  Recipient: {transaction.recipient}")
-            print(f"  Gas: {transaction.gas}")
-            print(f"  Amount: {transaction.amount}")
-            print(f"  Base Fee: {transaction.base_fee}")
-            print(f"  Priority Fee: {transaction.priority_fee}")
-            print(f"  Fee: {transaction.fee}")
-            print()
+        # for builder in chain.builders:
+        #     print(builder.address, builder.balance)
+
+        # for proposer in chain.proposers:
+        #     print(proposer.address, proposer.balance)
+
+        # for transaction in selected_block.transactions:
+        #     print("Create Timestamp:", transaction.create_timestamp)
+        #     # for builder_address, timestamp in transaction.dict_timestamp.items():
+        #     #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
+        #     # print("Blockpool Timestamps:", transaction.select_timestamp)
+        #     # print("Confirm Timestamps:", transaction.confirm_timestamp)
+
+        #     print(f"  Transaction ID: {transaction.transaction_id}")
+        #     print(f"  Sender: {transaction.sender}")
+        #     print(f"  Recipient: {transaction.recipient}")
+        #     print(f"  Gas: {transaction.gas}")
+        #     print(f"  Amount: {transaction.amount}")
+        #     print(f"  Base Fee: {transaction.base_fee}")
+        #     print(f"  Priority Fee: {transaction.priority_fee}")
+        #     print(f"  Fee: {transaction.fee}")
+        #     print()
 
         print()
 
 
-    # Calculate the final total balance
-    final_total_balance = sum(user.balance for user in normal_users + proposers + builders)
-    print("Final Total Balance:", final_total_balance)
 
     
