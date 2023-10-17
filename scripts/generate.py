@@ -1,6 +1,7 @@
 import random
 import uuid
 import copy
+import matplotlib.pyplot as plt
 
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
@@ -111,11 +112,14 @@ def simulate(chain):
 
         # for each transaction broadcast to a random set of builders
         for transaction in new_transactions:
+            create_timestamp = counter
+            # set a random delay for the time recieving transaction
+            mempool_timestamp = create_timestamp + random.uniform(0, 1)
+
             broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
             for builder in broadcasted_builders:
-                # set a random delay for the time recieving transaction
-                enter_time = random.uniform(0, 1)
-                builder.mempool.add_transaction(transaction, counter+enter_time)
+                builder.mempool.add_transaction(transaction, mempool_timestamp)
+
 
         # for each slot, a block should be built and added on chain
         if counter % 12 == 0:
@@ -237,8 +241,7 @@ def simulate(chain):
         counter += 1
         if counter >= 100:
             return chain
-
-
+        
 if __name__ == "__main__":
 
     num_users = 200
@@ -280,8 +283,9 @@ if __name__ == "__main__":
         print(f"Builder ID: {selected_block.builder_id}")
 
         for transaction in selected_block.transactions:
-            # print("Create Timestamp:", transaction.create_timestamp)
-            # print("Mempool Timestamps:", transaction.enter_timestamp)
+            print("Create Timestamp:", transaction.create_timestamp)
+            # for builder_address, timestamp in transaction.dict_timestamp.items():
+            #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
             # print("Blockpool Timestamps:", transaction.select_timestamp)
             # print("Confirm Timestamps:", transaction.confirm_timestamp)
 
