@@ -2,6 +2,7 @@ import random
 import uuid
 import copy
 import matplotlib.pyplot as plt
+import numpy as np
 
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
@@ -103,8 +104,13 @@ def generate_proposers(num_proposers):
     return proposers
 
 
-def simulate(chain):
+def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
     counter = 0
+
+    # Lists to store balances after each block publication
+    total_proposer_balance: list[float] = []
+    total_builder_balance: list[float]= []
+
     # generate a random number of transactions
     random_number = random.randint(1, 10)
 
@@ -173,18 +179,6 @@ def simulate(chain):
             # clear the blockpool for the next slot
             selected_proposer.clear_blockpool()
 
-            # # After appending all selected transactions in the slot, create a single selected block.
-            # if all_selected_transactions:
-            #     # Create a selected block using all_selected_transactions.
-            #     selected_block = selected_block(all_selected_transactions)
-            #     print(f"Selected block: {selected_block}")
-
-            #     # Add the selected block to the longest chain.
-            #     chain.add_block(selected_block, confirm_time=counter, transaction=None, proposer=None)
-                
-            #     # Clear the list for the next slot.
-            #     all_selected_transactions.clear()
-
             # add the selected block to the longest chain
             if selected_block is not None:
                 confirm_time = counter
@@ -224,9 +218,6 @@ def simulate(chain):
                     # determine if the recipient is builder or normal user
                     recipient = transaction.recipient
                     recipient_object = None
-                    # if recipient == builder.address:
-                    #     recipient_object = builder
-                    # else:
                     for user in (chain.normal_users + chain.proposers + chain.builders):
                         if user.address == recipient:
                             recipient_object = user
@@ -235,10 +226,10 @@ def simulate(chain):
                     # update balance
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
-                    # print("==========")
-                    # print(f" Amount: {transaction.amount}")
-                    # print(f" Fee: {transaction.fee}")
                 
+                total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
+                total_builder_balance.append(sum(builder.balance for builder in builders))  
+
             # Calculate the total balance
             # total_balance = sum(user.balance for user in normal_users + proposers + builders)
             # print("Total Balance:", total_balance)
@@ -248,41 +239,36 @@ def simulate(chain):
             # print("==========")
             
         counter += 1
-        if counter >= 1000:
-            return chain
+        if counter >= 10000:
+            return chain, total_proposer_balance, total_builder_balance
         
-def plot_distribution(chain):
-    block_numbers = [block.block_id for block in chain.blocks]
-    proposer_balances = []
-    builder_balances = []
+def plot_distribution(total_proposer_balance_list: list[float], total_builder_balance_list: list[float]):
+    block_numbers = np.arange(len(total_proposer_balance_list))  # Create an array of block numbers
 
-    for block in chain.blocks:
-        total_proposer_balance = sum(proposer.balance for proposer in chain.proposers)
-        total_builder_balance = sum(builder.balance for builder in chain.builders)
-        total_balance = total_proposer_balance + total_builder_balance
+    # Calculate the total balance for each block
+    total_balance = np.array(total_proposer_balance_list) + np.array(total_builder_balance_list)
 
-        proposer_percentage = (total_proposer_balance / total_balance) * 100
-        builder_percentage = (total_builder_balance / total_balance) * 100
-
-        proposer_balances.append(proposer_percentage)
-        builder_balances.append(builder_percentage)
+    # Calculate the percentage of proposer and builder balance for each block
+    proposer_percentage = (np.array(total_proposer_balance_list) / total_balance) * 100
+    builder_percentage = (np.array(total_builder_balance_list) / total_balance) * 100
 
     plt.figure(figsize=(10, 6))
     plt.stackplot(block_numbers, proposer_percentage, builder_percentage, labels=['Proposer Balance', 'Builder Balance'], alpha=0.7)
+    plt.plot(block_numbers, np.ones_like(block_numbers) * 100, color='black', linestyle='--', label='Total (100%)')
     plt.xlabel('Block Number')
     plt.ylabel('Percentage')
     plt.legend(loc='upper left')
     plt.grid(True)
-    plt.ylim(0, 100)
+    plt.title('Percentage Distribution of Proposer and Builder Balances Over Blocks')
     plt.show()
         
 if __name__ == "__main__":
 
-    num_users = 10000
+    num_users = 1000
     num_transactions = 200
     initial_balance = 100.0
-    num_builders = 100
-    num_proposers = 100
+    num_builders = 20
+    num_proposers = 20
 
     chain = Chain()
 
@@ -299,9 +285,9 @@ if __name__ == "__main__":
 
     print(sum(user.balance for user in normal_users + proposers + builders))
 
-    chain = simulate(chain)
+    chain, total_proposer_balance, total_builder_balance = simulate(chain)
 
-    plot_distribution(chain)
+    plot_distribution(total_proposer_balance, total_builder_balance)
 
     # for user in chain.normal_users:
     #     print(user.address, user.balance)
@@ -311,15 +297,16 @@ if __name__ == "__main__":
 
     # for proposer in chain.proposers:
     #     print(proposer.address, proposer.balance)
+        
 
-    for selected_block in chain.blocks:
-        print(f"Block Header ID: {selected_block.block_id}")
-        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-        print(f"Total Fee: {selected_block.total_fee}")
-        print(f"Number of Transactions: {len(selected_block.transactions)}")
+    # for selected_block in chain.blocks:
+    #     print(f"Block Header ID: {selected_block.block_id}")
+    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+    #     print(f"Total Fee: {selected_block.total_fee}")
+    #     print(f"Number of Transactions: {len(selected_block.transactions)}")
 
-        print(f"Proposer: {selected_block.proposer_address}")
-        print(f"Builder ID: {selected_block.builder_id}")
+    #     print(f"Proposer: {selected_block.proposer_address}")
+    #     print(f"Builder ID: {selected_block.builder_id}")
 
         # for user in chain.normal_users:
         #     print(user.address, user.balance)
@@ -347,7 +334,7 @@ if __name__ == "__main__":
         #     print(f"  Fee: {transaction.fee}")
         #     print()
 
-        print()
+        # print()
 
 
 
