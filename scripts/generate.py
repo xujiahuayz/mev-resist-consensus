@@ -7,10 +7,11 @@ import numpy as np
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder, Mempool
-from blockchain_env.constants import BASE_FEE
+from blockchain_env.constants import BASE_FEE, FIGURE_PATH
 from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
+
 
 random.seed(42)
 
@@ -227,8 +228,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
                 
-                total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
-                total_builder_balance.append(sum(builder.balance for builder in builders))  
+            total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
+            total_builder_balance.append(sum(builder.balance for builder in builders))  
 
             # Calculate the total balance
             # total_balance = sum(user.balance for user in normal_users + proposers + builders)
@@ -239,28 +240,34 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("==========")
             
         counter += 1
-        if counter >= 10000:
+        if counter >= 2000:
             return chain, total_proposer_balance, total_builder_balance
-        
-def plot_distribution(total_proposer_balance_list: list[float], total_builder_balance_list: list[float]):
-    block_numbers = np.arange(len(total_proposer_balance_list))  # Create an array of block numbers
+            
+def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], initial_balance: float):
+    block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
 
-    # Calculate the total balance for each block
-    total_balance = np.array(total_proposer_balance_list) + np.array(total_builder_balance_list)
+    # Calculate the total profit (ignoring initial balances) for each block
+    total_profit_proposer = np.array(total_proposer_balance) - len(total_proposer_balance) * [initial_balance]
+    total_profit_builder = np.array(total_builder_balance) - len(total_builder_balance) * [initial_balance]
 
-    # Calculate the percentage of proposer and builder balance for each block
-    proposer_percentage = (np.array(total_proposer_balance_list) / total_balance) * 100
-    builder_percentage = (np.array(total_builder_balance_list) / total_balance) * 100
+    # Calculate the total profit for each block
+    total_profit = total_profit_proposer + total_profit_builder
+
+    # Calculate the percentage of proposer and builder profit for each block
+    proposer_percentage = (total_profit_proposer / total_profit) * 100
+    builder_percentage = (total_profit_builder / total_profit) * 100
 
     plt.figure(figsize=(10, 6))
-    plt.stackplot(block_numbers, proposer_percentage, builder_percentage, labels=['Proposer Balance', 'Builder Balance'], alpha=0.7)
+    plt.stackplot(block_numbers, proposer_percentage, builder_percentage, labels=['Proposer Profit', 'Builder Profit'], alpha=0.7)
     plt.plot(block_numbers, np.ones_like(block_numbers) * 100, color='black', linestyle='--', label='Total (100%)')
     plt.xlabel('Block Number')
     plt.ylabel('Percentage')
     plt.legend(loc='upper left')
-    plt.grid(True)
-    plt.title('Percentage Distribution of Proposer and Builder Balances Over Blocks')
+    plt.grid(False)
+    plt.title('Percentage Distribution of Proposer and Builder Profits Over Blocks')
     plt.show()
+    plt.savefig('FIGURE_PATH/profit_distribution.pdf')
+
         
 if __name__ == "__main__":
 
@@ -280,14 +287,13 @@ if __name__ == "__main__":
     chain.builders = builders
     chain.normal_users = normal_users
 
-    # for i in chain.proposers:
-    #     print(i.address)
-
     print(sum(user.balance for user in normal_users + proposers + builders))
 
     chain, total_proposer_balance, total_builder_balance = simulate(chain)
+    
+    data_path = FIGURE_PATH / "figures"
+    plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
 
-    plot_distribution(total_proposer_balance, total_builder_balance)
 
     # for user in chain.normal_users:
     #     print(user.address, user.balance)
@@ -297,16 +303,15 @@ if __name__ == "__main__":
 
     # for proposer in chain.proposers:
     #     print(proposer.address, proposer.balance)
-        
 
-    # for selected_block in chain.blocks:
-    #     print(f"Block Header ID: {selected_block.block_id}")
-    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-    #     print(f"Total Fee: {selected_block.total_fee}")
-    #     print(f"Number of Transactions: {len(selected_block.transactions)}")
+    for selected_block in chain.blocks:
+        print(f"Block Header ID: {selected_block.block_id}")
+        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+        print(f"Total Fee: {selected_block.total_fee}")
+        print(f"Number of Transactions: {len(selected_block.transactions)}")
 
-    #     print(f"Proposer: {selected_block.proposer_address}")
-    #     print(f"Builder ID: {selected_block.builder_id}")
+        print(f"Proposer: {selected_block.proposer_address}")
+        print(f"Builder ID: {selected_block.builder_id}")
 
         # for user in chain.normal_users:
         #     print(user.address, user.balance)

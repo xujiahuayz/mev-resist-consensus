@@ -57,8 +57,6 @@ class Builder(Account):
                 remaining_gas -= transaction_gas
             else:
                 break
-        # print("==========")
-        # print(f"Selected transactions: {selected_transactions}")
         return selected_transactions
 
     # Method to validate transactions
@@ -81,7 +79,7 @@ class Builder(Account):
         # call the select_transactions method to get the selected_transactions
         selected_transactions = self.select_transactions()
         # calculate the 10% of the total transaction fee
-        bid_amount = sum(transaction.fee * 0.1 for transaction in selected_transactions)
+        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for transaction in selected_transactions)
 
         # create a bid transaction
         bid_transaction = Transaction(
