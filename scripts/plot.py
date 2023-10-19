@@ -30,4 +30,4 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.savefig('figures/profit_distribution.pdf')
 
 if __name__ == "__main__":
-    pass
+    plot_distribution(total_proposer_balance, total_builder_balance, 1000.0)
