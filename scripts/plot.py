@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scripts.generate import chain, total_proposer_balance, total_builder_balance
 
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], initial_balance: float):
