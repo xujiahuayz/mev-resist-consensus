@@ -12,9 +12,6 @@ from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
-
-random.seed(42)
-
 def generate_normal_users(num_users):
     normal_users = []
     for i in range(num_users):
@@ -141,14 +138,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
-                # print("==========")
-                # print(type(builder))
-                # print(f"bid transaction: {bid_transaction.amount}")
 
                 # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
-                # print("==========")
-                # print(f"Selected transactions: {selected_transactions}")
 
                 # record the time
                 selecte_time = counter
@@ -172,13 +164,20 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                 # add the new block to the list of new blocks
                 new_blocks.append(new_block)
 
-            selected_proposer.blockpool.add_block(new_block, selecte_time)
+                selected_proposer.blockpool.add_block(new_block, selecte_time)
+
+        for proposer in proposers:
+            # Your existing code for selecting transactions and creating a block goes here
+
+            # Add this print statement to display the content of the block pool
+            # if proposer.blockpool.blocks:
+                # print(f"Blockpool for proposer {proposer.address}: {proposer.blockpool.blocks}")
 
             # the selected proposer select a block from the blockpool
             selected_block = selected_proposer.select_block()
 
             # clear the blockpool for the next slot
-            selected_proposer.clear_blockpool()
+            # selected_proposer.clear_blockpool()
 
             # add the selected block to the longest chain
             if selected_block is not None:
@@ -240,7 +239,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("==========")
             
         counter += 1
-        if counter >= 2000:
+        if counter >= 100:
             return chain, total_proposer_balance, total_builder_balance
             
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], initial_balance: float):
@@ -287,13 +286,7 @@ if __name__ == "__main__":
     chain.builders = builders
     chain.normal_users = normal_users
 
-    print(sum(user.balance for user in normal_users + proposers + builders))
-
     chain, total_proposer_balance, total_builder_balance = simulate(chain)
-    
-    data_path = FIGURE_PATH / "figures"
-    # plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
-
 
     # for user in chain.normal_users:
     #     print(user.address, user.balance)
@@ -339,8 +332,9 @@ if __name__ == "__main__":
         #     print(f"  Fee: {transaction.fee}")
         #     print()
 
-        # print()
+        print()
 
-
+    data_path = FIGURE_PATH / "figures"
+    plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
 
     
