@@ -292,7 +292,7 @@ if __name__ == "__main__":
     chain, total_proposer_balance, total_builder_balance = simulate(chain)
     
     data_path = FIGURE_PATH / "figures"
-    plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
+    # plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
 
 
     # for user in chain.normal_users:

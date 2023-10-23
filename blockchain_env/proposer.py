@@ -69,6 +69,3 @@ class Proposer(Account):
         
     def clear_blockpool(self):
         self.blockpool = Blockpool()
-
-
-
