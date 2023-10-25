@@ -53,8 +53,6 @@ class Transaction:
         """
         self.dict_timestamp[proposer_address] = confirm_timestamp
 
-
-
 if __name__ == "__main__":
     # Create a Transaction instance
     transaction = Transaction(
@@ -67,10 +65,6 @@ if __name__ == "__main__":
         base_fee=2.0,
         priority_fee=1.0,
     )
-
-    # Record timestamps
-    transaction.enter_mempool("Builder1", 10)
-    transaction.enter_blockpool("Builder1", 20)
 
     # Print the timestamps
     print("Create Timestamp:", transaction.create_timestamp)

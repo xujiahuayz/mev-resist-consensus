@@ -52,7 +52,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
             # Get the sender object
             sender_balance = sender.balance
             # Generate a valid transaction
-            amount = random.uniform(0.1, sender_balance)
+            amount = random.uniform(0.1, 1)
             transaction = Transaction(
                 transaction_id=transaction_id,
                 timestamp=timestamp,
@@ -65,10 +65,10 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 fee = fee
             )
         else:
-            # Generate an invalid transaction if the number of valid transactions has reached the limit
-            sender_balance = sender.balance
-            # Ensure the amount is greater than the sender's balance for an invalid transaction
-            amount = sender_balance + random.uniform(1.0, 100.0)
+            # # Generate an invalid transaction if the number of valid transactions has reached the limit
+            # sender_balance = sender.balance
+            # # Ensure the amount is greater than the sender's balance for an invalid transaction
+            # amount = sender_balance
             
             transaction = Transaction(
                 transaction_id=transaction_id,
@@ -311,22 +311,22 @@ if __name__ == "__main__":
         # for proposer in chain.proposers:
         #     print(proposer.address, proposer.balance)
 
-        # for transaction in selected_block.transactions:
-        #     print("Create Timestamp:", transaction.create_timestamp)
-        #     # for builder_address, timestamp in transaction.dict_timestamp.items():
-        #     #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
-        #     # print("Blockpool Timestamps:", transaction.select_timestamp)
-        #     # print("Confirm Timestamps:", transaction.confirm_timestamp)
+        for transaction in selected_block.transactions:
+            # print("Create Timestamp:", transaction.create_timestamp)
+            # for builder_address, timestamp in transaction.dict_timestamp.items():
+            #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
+            # print("Blockpool Timestamps:", transaction.select_timestamp)
+            # print("Confirm Timestamps:", transaction.confirm_timestamp)
 
-        #     print(f"  Transaction ID: {transaction.transaction_id}")
-        #     print(f"  Sender: {transaction.sender}")
-        #     print(f"  Recipient: {transaction.recipient}")
-        #     print(f"  Gas: {transaction.gas}")
-        #     print(f"  Amount: {transaction.amount}")
-        #     print(f"  Base Fee: {transaction.base_fee}")
-        #     print(f"  Priority Fee: {transaction.priority_fee}")
-        #     print(f"  Fee: {transaction.fee}")
-        #     print()
+            print(f"  Transaction ID: {transaction.transaction_id}")
+            print(f"  Sender: {transaction.sender}")
+            print(f"  Recipient: {transaction.recipient}")
+            print(f"  Gas: {transaction.gas}")
+            print(f"  Amount: {transaction.amount}")
+            print(f"  Base Fee: {transaction.base_fee}")
+            print(f"  Priority Fee: {transaction.priority_fee}")
+            print(f"  Fee: {transaction.fee}")
+            print()
 
         print()
 
