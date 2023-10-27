@@ -8,9 +8,12 @@ class Blockpool:
     # block should consist of a list of transactions
     # blockpool should be a list of blocks
     def __init__(self, address=None) -> None:
-        self.blocks = []
+        self.blocks = None
         # here, the address is the address of the proposer
         self.address = address
+
+        if self.blocks is None:
+            self.blocks = []
 
     def add_block(self, block: Block, select_time) -> None:
         self.blocks.append(block)

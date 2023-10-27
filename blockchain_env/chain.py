@@ -11,11 +11,10 @@ from blockchain_env.block import Block
 
 class Chain:
     def __init__(self,
-        normal_users: list[Account] = [],
-        proposers: list[Proposer] = [],
-        builders: list[Builder] = [],
-        all_accounts: list[Account] = [],
-        blocks: list[Block] = [],
+        normal_users: list[Account] = None,
+        proposers: list[Proposer] = None,
+        builders: list[Builder] = None,
+        blocks: list[Block] = None,
     ):
         """
         Initialize a new chain.
@@ -26,6 +25,15 @@ class Chain:
         self.builders = copy.deepcopy(builders)
         self.all_accounts = self.normal_users + self.proposers + self.builders
         self.blocks = copy.deepcopy(blocks)
+
+        if self.normal_users is None:
+            self.normal_users = []
+        if self.proposers is None:
+            self.proposers = []
+        if self.builders is None:
+            self.builders = []
+        if self.blocks is None:
+            self.blocks = []
 
     def add_block(self, block: Block, confirm_time: float, transaction: Transaction, proposer: Proposer):
         """

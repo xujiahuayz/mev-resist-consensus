@@ -10,9 +10,12 @@ from blockchain_env.proposer import Proposer
 
 class Mempool:
     def __init__(self, address) -> None:
-        self.transactions = []
+        self.transactions = None
         # here, the address is the address of the builder
         self.address = address
+
+        if self.transactions is None:
+            self.transactions = []
 
     def add_transaction(self, transaction: Transaction, enter_time) -> None:
         self.transactions.append(transaction)
