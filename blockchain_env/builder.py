@@ -96,6 +96,12 @@ class Builder(Account):
             priority_fee=0
         )
         return bid_transaction
+    
+    def mev_front(self):
+        # front running strategy for the builder
+        # identify profitable bid
+        
+
 
 
 if __name__ == "__main__":
