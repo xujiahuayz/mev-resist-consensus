@@ -1,6 +1,5 @@
 import copy
 import random
-import uuid
 
 from blockchain_env.account import Account
 from blockchain_env.proposer import Proposer
@@ -23,7 +22,6 @@ class Chain:
         self.normal_users = copy.deepcopy(normal_users)
         self.proposers = copy.deepcopy(proposers)
         self.builders = copy.deepcopy(builders)
-        self.all_accounts = self.normal_users + self.proposers + self.builders
         self.blocks = copy.deepcopy(blocks)
 
         if self.normal_users is None:

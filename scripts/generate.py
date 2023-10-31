@@ -69,7 +69,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
             # sender_balance = sender.balance
             # # Ensure the amount is greater than the sender's balance for an invalid transaction
             # amount = sender_balance
-            
+
             transaction = Transaction(
                 transaction_id=transaction_id,
                 timestamp=timestamp,
@@ -81,9 +81,9 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 priority_fee=priority_fee,
                 fee = fee
             )
-        
+
         transactions.append(transaction)
-    
+
     return transactions
 
 
@@ -162,7 +162,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                     total_fee=total_fee,
                     bid=bid_transaction.amount
                 )
-                
+
                 # add the new block to the list of new blocks
                 new_blocks.append(new_block)
 
@@ -222,9 +222,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                     # update balance
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
-                
+
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
-            total_builder_balance.append(sum(builder.balance for builder in builders))  
+            total_builder_balance.append(sum(builder.balance for builder in builders))
 
             # Calculate the total balance
             # total_balance = sum(user.balance for user in normal_users + proposers + builders)
@@ -233,11 +233,11 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("Proposer total balance:", sum(proposer.balance for proposer in proposers))
             # print("Builder total balance:", sum(builder.balance for builder in builders))
             # print("==========")
-            
+
         counter += 1
         if counter >= 1000:
             return chain, total_proposer_balance, total_builder_balance
-            
+
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], initial_balance: float):
     block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
 
@@ -263,7 +263,7 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.show()
     plt.savefig('./profit_distribution.pdf')
 
-        
+
 if __name__ == "__main__":
 
     num_users = 1000
@@ -333,4 +333,3 @@ if __name__ == "__main__":
     data_path = FIGURE_PATH / "figures"
     plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
 
-    
