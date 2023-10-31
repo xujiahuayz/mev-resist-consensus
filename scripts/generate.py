@@ -65,9 +65,11 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 fee = fee
             )
         else:
-            # # Generate an invalid transaction if the number of valid transactions has reached the limit
+            # Generate an invalid transaction if the number of valid transactions 
+            # has reached the limit
             # sender_balance = sender.balance
-            # # Ensure the amount is greater than the sender's balance for an invalid transaction
+            # Ensure the amount is greater than the sender's balance for an invalid 
+            # transaction
             # amount = sender_balance
 
             transaction = Transaction(
@@ -90,7 +92,8 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 def generate_builders(num_builders):
     builders = []
     for i in range(num_builders):
-        builder = Builder(address=f"Builder{i}", balance=initial_balance, builder_strategy="greedy")
+        builder = Builder(address=f"Builder{i}", balance=initial_balance, 
+                          builder_strategy="greedy")
         builders.append(builder)
     return builders
 
@@ -99,7 +102,8 @@ def generate_proposers(num_proposers):
     for i in range(num_proposers):
         proposer_address = f"Proposer{i}"
         blockpool = Blockpool(address=proposer_address)
-        proposer = Proposer(address=proposer_address, balance=initial_balance, proposer_strategy="greedy", blockpool=blockpool)
+        proposer = Proposer(address=proposer_address, balance=initial_balance, 
+                            proposer_strategy="greedy", blockpool=blockpool)
         proposers.append(proposer)
     return proposers
 
@@ -141,7 +145,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                 # add a bid for the selected list of transactions
                 bid_transaction = builder.bid(selected_proposer.address)
 
-                # update the selected transactions by adding the bid transaction into the selected list of transactions (covered in Body class)
+                # update the selected transactions by adding the bid transaction into 
+                # the selected list of transactions (covered in Body class)
                 selected_transactions.append(copy.deepcopy(bid_transaction))
 
                 # record the time
@@ -178,7 +183,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # add the selected block to the longest chain
             if selected_block is not None:
                 confirm_time = counter
-                chain.add_block(block=selected_block, confirm_time=confirm_time, transaction=transaction, proposer=selected_proposer)
+                chain.add_block(block=selected_block, confirm_time=confirm_time, 
+                                transaction=transaction, proposer=selected_proposer)
                 selected_proposer.blockpool.remove_block(selected_block)
                 for transaction in selected_block.transactions:
                     transaction.confirm(selected_proposer.address, confirm_time)
@@ -186,7 +192,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                         builder.mempool.remove_transaction(transaction)
 
             # balance change for each account after block put on chain
-            # for each block, update the balance of proposer and builder e.g. proposer get the trasnaction total fee - bid and builder get the bid
+            # for each block, update the balance of proposer and builder e.g. proposer 
+            # get the trasnaction total fee - bid and builder get the bid
             # for each transaction in the block, update the balance of sender and recipient
             # use the withdraw and deposit method in account class
 
@@ -238,7 +245,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
         if counter >= 1000:
             return chain, total_proposer_balance, total_builder_balance
 
-def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], initial_balance: float):
+def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float], 
+                      initial_balance: float):
     block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
 
     # Calculate the total profit (ignoring initial balances) for each block
@@ -253,8 +261,10 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     builder_percentage = (total_profit_builder / total_profit) * 100
 
     plt.figure(figsize=(10, 6))
-    plt.stackplot(block_numbers, proposer_percentage, builder_percentage, labels=['Proposer Profit', 'Builder Profit'], alpha=0.7)
-    plt.plot(block_numbers, np.ones_like(block_numbers) * 100, color='black', linestyle='--', label='Total (100%)')
+    plt.stackplot(block_numbers, proposer_percentage, builder_percentage, 
+                  labels=['Proposer Profit', 'Builder Profit'], alpha=0.7)
+    plt.plot(block_numbers, np.ones_like(block_numbers) * 100, color='black', 
+             linestyle='--', label='Total (100%)')
     plt.xlabel('Block Number')
     plt.ylabel('Percentage')
     plt.legend(loc='upper left')
