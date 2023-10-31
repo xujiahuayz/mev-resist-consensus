@@ -10,12 +10,9 @@ from blockchain_env.proposer import Proposer
 
 class Mempool:
     def __init__(self, address) -> None:
-        self.transactions = None
+        self.transactions = []
         # here, the address is the address of the builder
         self.address = address
-
-        if self.transactions is None:
-            self.transactions = []
 
     def add_transaction(self, transaction: Transaction, enter_time) -> None:
         self.transactions.append(transaction)
@@ -100,9 +97,8 @@ class Builder(Account):
     def mev_front(self):
         # front running strategy for the builder
         # identify profitable bid
-        
 
-
+        pass
 
 if __name__ == "__main__":
     # selected_transactions.append(bid_transaction)

@@ -12,7 +12,7 @@ class Block:
         builder_id,
         timestamp: int,
         total_fee: float,
-        transactions: list[Transaction] = None,
+        transactions: list[Transaction] | None = None,
         proposer_address = None,
         bid = None,
     ):

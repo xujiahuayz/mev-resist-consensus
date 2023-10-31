@@ -11,10 +11,10 @@ from blockchain_env.block import Block
 
 class Chain:
     def __init__(self,
-        normal_users: list[Account] = None,
-        proposers: list[Proposer] = None,
-        builders: list[Builder] = None,
-        blocks: list[Block] = None,
+        normal_users: list[Account] | None = None,
+        proposers: list[Proposer] | None = None,
+        builders: list[Builder] | None = None,
+        blocks: list[Block] | None = None,
     ):
         """
         Initialize a new chain.
