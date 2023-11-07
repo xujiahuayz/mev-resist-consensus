@@ -34,6 +34,16 @@ class Builder(Account):
         self.builder_strategy = builder_strategy
         # Initialize a mempool for the builder, which should have the same address as the builder
         self.mempool = Mempool(self.address)
+        self.notebook: []
+
+    def update_notebook(self, transaction):
+        self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
+
+    def revert_notebook(self, transaction):
+        pass
+
+    def get_balance(self, address):
+        pass
 
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions

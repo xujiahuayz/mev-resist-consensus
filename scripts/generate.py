@@ -273,7 +273,6 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.show()
     plt.savefig('./profit_distribution.pdf')
 
-
 if __name__ == "__main__":
 
     num_users = 1000

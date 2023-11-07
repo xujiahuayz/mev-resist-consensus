@@ -1,9 +1,7 @@
 import uuid
-import copy
 
 from blockchain_env.transaction import Transaction
 from blockchain_env.constants import BASE_FEE
-
 
 class Block:
     def __init__(self,
