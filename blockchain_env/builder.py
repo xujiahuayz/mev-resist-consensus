@@ -6,7 +6,7 @@ import copy
 from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
 from blockchain_env.transaction import Transaction
-from blockchain_env.proposer import Proposer
+
 
 class Mempool:
     def __init__(self, address) -> None:
@@ -38,12 +38,19 @@ class Builder(Account):
 
     def update_notebook(self, transaction):
         self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
+        self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, self.get_balance(transaction.recipient)) + transaction.amount
 
     def revert_notebook(self, transaction):
+        self.notebook[transaction.sender] += (transaction.amount + transaction.fee)
+        self.notebook[transaction.recipient] -= transaction.amount
         pass
 
     def get_balance(self, address):
-        pass
+        from blockchain_env.chain import Chain
+        for account in Chain.normal_users + Chain.proposers + Chain.builders:
+            if account.address == address:
+                return account.balance
+        raise ValueError(f"No account found for address {address}")
 
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
