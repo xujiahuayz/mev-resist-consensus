@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scripts.generate import total_proposer_balance, total_builder_balance
-
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
                       initial_balance: float):
     block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
@@ -30,6 +28,32 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.title('Percentage Distribution of Proposer and Builder Profits Over Blocks')
     plt.show()
     plt.savefig('./profit_distribution.pdf')
+    pass
+
+def plot_payoff():
+
+    # Constants
+    k = 0.1
+    T_avg = 100
+    T_values = [50, 100, 150]
+
+    # Bid range
+    b = np.linspace(0, 100, 400)
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot for each T value
+    for T in T_values:
+        P_acceptance = np.minimum(1, np.exp(-k * b) * T / T_avg)
+        plt.plot(b, P_acceptance, label=f'T={T}')
+
+    plt.title('Probability of Acceptance vs Bid')
+    plt.xlabel('Bid (b)')
+    plt.ylabel('Probability of Acceptance')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 
 if __name__ == "__main__":
-    plot_distribution(total_proposer_balance, total_builder_balance, 1000.0)
+    plot_payoff()

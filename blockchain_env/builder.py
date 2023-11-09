@@ -34,7 +34,7 @@ class Builder(Account):
         self.builder_strategy = builder_strategy
         # Initialize a mempool for the builder, which should have the same address as the builder
         self.mempool = Mempool(self.address)
-        self.notebook: []
+        self.notebook = {}
 
     def update_notebook(self, transaction):
         self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
@@ -45,12 +45,12 @@ class Builder(Account):
         self.notebook[transaction.recipient] -= transaction.amount
         pass
 
-    def get_balance(self, address):
-        from blockchain_env.chain import Chain
-        for account in Chain.normal_users + Chain.proposers + Chain.builders:
+    def get_balance(self, address, chain):
+        for account in chain.normal_users + chain.proposers + chain.builders:
             if account.address == address:
                 return account.balance
         raise ValueError(f"No account found for address {address}")
+
 
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
@@ -58,6 +58,11 @@ class Builder(Account):
 
         if self.builder_strategy == "greedy":
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
+        elif self.builder_strategy == "mev":
+            sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
+            for transaction in sorted_transactions:
+                pass
+
         elif self.builder_strategy == "random":
             random.shuffle(self.mempool.transactions)
             sorted_transactions = self.mempool.transactions
@@ -70,8 +75,12 @@ class Builder(Account):
         for transaction in sorted_transactions:
             transaction_gas = transaction.gas
             if remaining_gas >= transaction_gas:
-                selected_transactions.append(transaction)
-                remaining_gas -= transaction_gas
+                self.update_notebook(transaction)
+                if self.notebook.get(transaction.sender) < 0 or self.notebook.get(transaction.recipient) < 0:
+                    self.revert_notebook(transaction)
+                else:
+                    selected_transactions.append(transaction)
+                    remaining_gas -= transaction_gas
             else:
                 break
         return selected_transactions
@@ -111,9 +120,7 @@ class Builder(Account):
         )
         return bid_transaction
 
-    def mev_front(self):
-        # front running strategy for the builder
-        # identify profitable bid
+    def mev(self):
 
         pass
 

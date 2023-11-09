@@ -242,7 +242,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("==========")
 
         counter += 1
-        if counter >= 1000:
+        if counter >= 100:
             return chain, total_proposer_balance, total_builder_balance
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
