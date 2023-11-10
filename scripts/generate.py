@@ -93,7 +93,7 @@ def generate_builders(num_builders):
     builders = []
     for i in range(num_builders):
         builder = Builder(address=f"Builder{i}", balance=initial_balance,
-                          builder_strategy="greedy")
+                          builder_strategy="mev")
         builders.append(builder)
     return builders
 
@@ -208,6 +208,12 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                 proposer.deposit(selected_block.total_fee - bid_transaction.amount)
                 builder.deposit(bid_transaction.amount)
 
+                # add mev profit to builder balance
+                builder = builder_mapping.get(selected_block.builder_id)
+                if builder.builder_strategy == "mev":
+                    builder.balance += builder.mev_profits
+                    print(f"Block ID: {selected_block.block_id}, MEV Profit: {builder.mev_profits}")
+
                 # determine if the sender is proposer or normal user
                 for transaction in selected_block.transactions:
                     sender = transaction.sender
@@ -242,7 +248,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("==========")
 
         counter += 1
-        if counter >= 100:
+        if counter >= 2000:
             return chain, total_proposer_balance, total_builder_balance
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
@@ -302,14 +308,14 @@ if __name__ == "__main__":
     # for proposer in chain.proposers:
     #     print(proposer.address, proposer.balance)
 
-    for selected_block in chain.blocks:
-        print(f"Block Header ID: {selected_block.block_id}")
-        print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-        print(f"Total Fee: {selected_block.total_fee}")
-        print(f"Number of Transactions: {len(selected_block.transactions)}")
+    # for selected_block in chain.blocks:
+    #     print(f"Block Header ID: {selected_block.block_id}")
+    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
+    #     print(f"Total Fee: {selected_block.total_fee}")
+    #     print(f"Number of Transactions: {len(selected_block.transactions)}")
 
-        print(f"Proposer: {selected_block.proposer_address}")
-        print(f"Builder ID: {selected_block.builder_id}")
+    #     print(f"Proposer: {selected_block.proposer_address}")
+    #     print(f"Builder ID: {selected_block.builder_id}")
 
         # for user in chain.normal_users:
         #     print(user.address, user.balance)
@@ -320,24 +326,24 @@ if __name__ == "__main__":
         # for proposer in chain.proposers:
         #     print(proposer.address, proposer.balance)
 
-        for transaction in selected_block.transactions:
+        # for transaction in selected_block.transactions:
             # print("Create Timestamp:", transaction.create_timestamp)
             # for builder_address, timestamp in transaction.dict_timestamp.items():
             #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
             # print("Blockpool Timestamps:", transaction.select_timestamp)
             # print("Confirm Timestamps:", transaction.confirm_timestamp)
 
-            print(f"  Transaction ID: {transaction.transaction_id}")
-            print(f"  Sender: {transaction.sender}")
-            print(f"  Recipient: {transaction.recipient}")
-            print(f"  Gas: {transaction.gas}")
-            print(f"  Amount: {transaction.amount}")
-            print(f"  Base Fee: {transaction.base_fee}")
-            print(f"  Priority Fee: {transaction.priority_fee}")
-            print(f"  Fee: {transaction.fee}")
-            print()
+            # print(f"  Transaction ID: {transaction.transaction_id}")
+            # print(f"  Sender: {transaction.sender}")
+            # print(f"  Recipient: {transaction.recipient}")
+            # print(f"  Gas: {transaction.gas}")
+            # print(f"  Amount: {transaction.amount}")
+            # print(f"  Base Fee: {transaction.base_fee}")
+            # print(f"  Priority Fee: {transaction.priority_fee}")
+            # print(f"  Fee: {transaction.fee}")
+            # print()
 
-        print()
+        # print()
 
     data_path = FIGURE_PATH / "figures"
     plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)

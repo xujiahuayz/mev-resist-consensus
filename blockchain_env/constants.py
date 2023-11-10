@@ -8,5 +8,5 @@ CACHE_PATH = PROJECT_ROOT / ".cache"
 
 BASE_FEE = 0.1
 GAS_LIMIT = 1400
-BUILDER_STRATEGY_LIST = ["greedy", "random", "FCFS"]
+BUILDER_STRATEGY_LIST = ["greedy", "random", "FCFS", "mev"]
 PROPOSER_STRATEGY_LIST = ["greedy", "random", "cheap"]

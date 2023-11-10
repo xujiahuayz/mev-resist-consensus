@@ -26,7 +26,7 @@ class Builder(Account):
     def __init__(self,
                 address,
                 balance: float,
-                builder_strategy: str = "greedy",
+                builder_strategy: str = "mev",
     ):
         super().__init__(address, balance)
         # make sure builder_strategy is a str from the list of available strategies
@@ -35,34 +35,34 @@ class Builder(Account):
         # Initialize a mempool for the builder, which should have the same address as the builder
         self.mempool = Mempool(self.address)
         self.notebook = {}
+        self.mev_profits = 0
 
-    def update_notebook(self, transaction):
-        self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
-        self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, self.get_balance(transaction.recipient)) + transaction.amount
+    # def update_notebook(self, transaction):
+    #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
+    #     self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, self.get_balance(transaction.recipient)) + transaction.amount
 
-    def revert_notebook(self, transaction):
-        self.notebook[transaction.sender] += (transaction.amount + transaction.fee)
-        self.notebook[transaction.recipient] -= transaction.amount
-        pass
+    # def revert_notebook(self, transaction):
+    #     self.notebook[transaction.sender] += (transaction.amount + transaction.fee)
+    #     self.notebook[transaction.recipient] -= transaction.amount
+    #     pass
 
-    def get_balance(self, address, chain):
-        for account in chain.normal_users + chain.proposers + chain.builders:
-            if account.address == address:
-                return account.balance
-        raise ValueError(f"No account found for address {address}")
+    # def get_balance(self, address, chain):
+    #     for account in chain.normal_users + chain.proposers + chain.builders:
+    #         if account.address == address:
+    #             return account.balance
+    #     raise ValueError(f"No account found for address {address}")
 
 
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
         remaining_gas = GAS_LIMIT
+        self.mev_profits = 0
 
         if self.builder_strategy == "greedy":
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "mev":
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
-            for transaction in sorted_transactions:
-                pass
-
+            mev_target = random.sample(sorted_transactions, 10)
         elif self.builder_strategy == "random":
             random.shuffle(self.mempool.transactions)
             sorted_transactions = self.mempool.transactions
@@ -75,12 +75,16 @@ class Builder(Account):
         for transaction in sorted_transactions:
             transaction_gas = transaction.gas
             if remaining_gas >= transaction_gas:
-                self.update_notebook(transaction)
-                if self.notebook.get(transaction.sender) < 0 or self.notebook.get(transaction.recipient) < 0:
-                    self.revert_notebook(transaction)
-                else:
-                    selected_transactions.append(transaction)
-                    remaining_gas -= transaction_gas
+                # self.update_notebook(transaction)
+                # if self.notebook.get(transaction.sender) < 0 or self.notebook.get(transaction.recipient) < 0:
+                #     self.revert_notebook(transaction)
+                # else:
+                selected_transactions.append(transaction)
+                remaining_gas -= transaction_gas
+                if self.builder_strategy == "mev" and transaction in mev_target:
+                    mev_deduction = random.uniform(0.1, 0.3) * transaction.amount
+                    transaction.amount -= mev_deduction
+                    self.mev_profits += mev_deduction 
             else:
                 break
         return selected_transactions
