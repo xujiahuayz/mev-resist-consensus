@@ -62,7 +62,8 @@ class Builder(Account):
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "mev":
             sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
-            mev_target = random.sample(sorted_transactions, 10)
+            num_to_sample = min(len(sorted_transactions), 10)  
+            mev_target = random.sample(sorted_transactions, num_to_sample)
         elif self.builder_strategy == "random":
             random.shuffle(self.mempool.transactions)
             sorted_transactions = self.mempool.transactions

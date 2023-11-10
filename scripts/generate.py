@@ -236,6 +236,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
 
+                    if builder.builder_strategy == "mev":
+                        builder.mev_profits += transaction.fee
+
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
 
