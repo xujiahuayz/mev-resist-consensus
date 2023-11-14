@@ -30,8 +30,50 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.savefig('./profit_distribution.pdf')
     pass
 
-def plot_payoff():
+def plot_equilibrium():
 
+    def probability_of_acceptance(bid, T, k, T_avg):
+        return min(1, np.exp(-k * bid) * (T / T_avg))
+
+    def expected_payout(bid, T, k, T_avg):
+        return probability_of_acceptance(bid, T, k, T_avg) * bid
+
+    def find_equilibrium(T, k, T_avg, bid_range):
+        best_bid = 0
+        max_payout = 0
+
+        for bid in bid_range:
+            payout = expected_payout(bid, T, k, T_avg)
+            if payout > max_payout:
+                max_payout = payout
+                best_bid = bid
+
+        return best_bid, max_payout
+
+    # Constants
+    k = 0.1  
+    T_avg = 50  
+    Ts = [30, 50, 70, 90]  
+
+    bid_range = np.linspace(0, 100, 1000)
+
+    # Find the equilibrium
+    for T in Ts:
+        best_bid, max_payout = find_equilibrium(T, k, T_avg, bid_range)
+        print(f"Total Fee: {T} - Best Bid: {best_bid}, Max Expected Payout: {max_payout}")
+
+    # # Output the results
+    # print("Best Bid:", best_bid)
+    # print("Max Expected Payout:", max_payout)
+
+        plt.plot(bid_range, [expected_payout(bid, T, k, T_avg) for bid in bid_range], label=f"T={T}")
+
+    plt.xlabel('Bid')
+    plt.ylabel('Expected Payout')
+    plt.title('Expected Payout vs. Bid')
+    plt.show()
+
+def plot_payoff():
     # Constants
     k = 0.1
     T_avg = 100
@@ -55,5 +97,7 @@ def plot_payoff():
     plt.show()
 
 
+
 if __name__ == "__main__":
-    plot_payoff()
+    # plot_payoff()
+    plot_equilibrium()
