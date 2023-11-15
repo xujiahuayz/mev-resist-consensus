@@ -97,7 +97,6 @@ def plot_payoff():
     plt.show()
 
 
-
 if __name__ == "__main__":
     # plot_payoff()
     plot_equilibrium()

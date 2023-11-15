@@ -26,13 +26,15 @@ class Builder(Account):
     def __init__(self,
                 address,
                 balance: float,
-                builder_strategy: str = "mev",
+                # builder_strategy: str = "mev",
+                builder_strategy: None = None,
+                builder_character: str = "short",
     ):
         super().__init__(address, balance)
-        # make sure builder_strategy is a str from the list of available strategies
-        assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
+        # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
+        # self.builder_strategy = builder_strategy
         self.builder_strategy = builder_strategy
-        # Initialize a mempool for the builder, which should have the same address as the builder
+        self.builder_character = builder_character
         self.mempool = Mempool(self.address)
         self.notebook = {}
         self.mev_profits = 0
