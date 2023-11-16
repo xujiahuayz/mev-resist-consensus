@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 import random
 import copy
+import numpy as np
 
 from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
@@ -28,16 +29,17 @@ class Builder(Account):
                 balance: float,
                 # builder_strategy: str = "mev",
                 builder_strategy: None = None,
-                builder_character: str = "short",
+                discount: float = None,
+                private: bool = False,
     ):
         super().__init__(address, balance)
         # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
-        # self.builder_strategy = builder_strategy
         self.builder_strategy = builder_strategy
-        self.builder_character = builder_character
+        self.discount = discount if discount is not None else np.random.random()
         self.mempool = Mempool(self.address)
         self.notebook = {}
         self.mev_profits = 0
+        self.private = private
 
     # def update_notebook(self, transaction):
     #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)

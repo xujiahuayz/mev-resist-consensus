@@ -127,10 +127,16 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # set a random delay for the time recieving transaction
             mempool_timestamp = create_timestamp + random.uniform(0, 1)
 
-            broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
-            for builder in broadcasted_builders:
-                builder.mempool.add_transaction(transaction, mempool_timestamp)
-
+            if transaction.is_private:
+                # For private transactions, broadcast to builders with private order flow
+                private_builders = [builder for builder in chain.builders if builder.private]
+                for builder in private_builders:
+                    builder.mempool.add_transaction(transaction, mempool_timestamp)
+            else:
+                # For public transactions, broadcast to a random set of builders
+                broadcasted_builders = random.sample(chain.builders, len(chain.builders) // 2)
+                for builder in broadcasted_builders:
+                    builder.mempool.add_transaction(transaction, mempool_timestamp)
 
         # for each slot, a block should be built and added on chain
         if counter % 12 == 0:

@@ -11,6 +11,7 @@ class Transaction:
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
         fee: float = None,
+        is_private: bool = False,
     ):
         """
         Initialize a new transaction.
@@ -24,11 +25,12 @@ class Transaction:
         self.base_fee = base_fee
         self.priority_fee = priority_fee
         self.fee = self.calculate_total_fee()
+        self.is_private = is_private
 
         self.dict_timestamp = dict()
         self.builder_timestamp = dict()
         self.proposer_timestamp = dict()
-
+        
     def calculate_total_fee(self):
         """
         Calculate the total fee of the transaction.
