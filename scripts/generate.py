@@ -6,7 +6,7 @@ import numpy as np
 
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
-from blockchain_env.builder import Builder, Mempool
+from blockchain_env.builder import Builder
 from blockchain_env.constants import BASE_FEE, FIGURE_PATH
 from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
@@ -29,8 +29,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
 
-    for transaction in range(num_transactions):
-        
+    for transaction in range(num_transactions):      
         sender = random.choice(normal_users)
         recipient = random.choice(normal_users)
         sender_address = sender.address

@@ -1,16 +1,15 @@
 import uuid
 from datetime import datetime
 import random
-import copy
 import numpy as np
 
-from blockchain_env.constants import BUILDER_STRATEGY_LIST, BASE_FEE, GAS_LIMIT
+from blockchain_env.constants import BASE_FEE, GAS_LIMIT
 from blockchain_env.account import Account
 from blockchain_env.transaction import Transaction
 
 
 class Mempool:
-    def __init__(self, address) -> None:
+    def __init__(self, address: str) -> None:
         self.transactions = []
         # here, the address is the address of the builder
         self.address = address
@@ -29,11 +28,12 @@ class Builder(Account):
                 balance: float,
                 # builder_strategy: str = "mev",
                 builder_strategy: None = None,
-                discount: float = None,
+                discount: float | None = None,
                 private: bool = False,
     ):
         super().__init__(address, balance)
-        # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must be one of {BUILDER_STRATEGY_LIST}."
+        # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must 
+        # be one of {BUILDER_STRATEGY_LIST}."
         self.builder_strategy = builder_strategy
         self.discount = discount if discount is not None else np.random.random()
         self.mempool = Mempool(self.address)
@@ -42,8 +42,10 @@ class Builder(Account):
         self.private = private
 
     # def update_notebook(self, transaction):
-    #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender, self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
-    #     self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, self.get_balance(transaction.recipient)) + transaction.amount
+    #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender, 
+    # self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
+    #     self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, 
+    # self.get_balance(transaction.recipient)) + transaction.amount
 
     # def revert_notebook(self, transaction):
     #     self.notebook[transaction.sender] += (transaction.amount + transaction.fee)
@@ -63,9 +65,11 @@ class Builder(Account):
         self.mev_profits = 0
 
         if self.builder_strategy == "greedy":
-            sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
+            sorted_transactions = sorted(self.mempool.transactions, 
+                                         key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "mev":
-            sorted_transactions = sorted(self.mempool.transactions, key=lambda x: x.priority_fee, reverse=True)
+            sorted_transactions = sorted(self.mempool.transactions, 
+                                         key=lambda x: x.priority_fee, reverse=True)
             num_to_sample = min(len(sorted_transactions), 10)  
             mev_target = random.sample(sorted_transactions, num_to_sample)
         elif self.builder_strategy == "random":
@@ -81,7 +85,8 @@ class Builder(Account):
             transaction_gas = transaction.gas
             if remaining_gas >= transaction_gas:
                 # self.update_notebook(transaction)
-                # if self.notebook.get(transaction.sender) < 0 or self.notebook.get(transaction.recipient) < 0:
+                # if self.notebook.get(transaction.sender) < 0 or 
+                # self.notebook.get(transaction.recipient) < 0:
                 #     self.revert_notebook(transaction)
                 # else:
                 selected_transactions.append(transaction)
@@ -103,8 +108,8 @@ class Builder(Account):
         for transaction in transactions:
             if balance < transaction.amount:
                 return False
-            balance >= transaction.amount
-        return True
+            else:
+                return True
 
     # Method to add bid for the transactions
     # Input: selected_transactions, proposer_address, self.address
@@ -114,7 +119,8 @@ class Builder(Account):
         # call the select_transactions method to get the selected_transactions
         selected_transactions = self.select_transactions()
         # calculate the 10% of the total transaction fee
-        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for transaction in selected_transactions)
+        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for 
+                         transaction in selected_transactions)
 
         # create a bid transaction
         bid_transaction = Transaction(
@@ -135,4 +141,3 @@ class Builder(Account):
 
 if __name__ == "__main__":
     # selected_transactions.append(bid_transaction)
-    pass

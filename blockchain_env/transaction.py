@@ -10,7 +10,7 @@ class Transaction:
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
-        fee: float = None,
+        fee: float | None = None,
         is_private: bool = False,
     ):
         """
