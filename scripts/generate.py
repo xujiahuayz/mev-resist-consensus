@@ -29,7 +29,8 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
 
-    for _ in range(num_transactions):
+    for transaction in range(num_transactions):
+        
         sender = random.choice(normal_users)
         recipient = random.choice(normal_users)
         sender_address = sender.address
@@ -47,6 +48,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
         base_fee = BASE_FEE
         priority_fee = random.uniform(0.0, 1)
         fee = gas * (base_fee + priority_fee)
+        is_private = random.choice([True, False])
 
         if len(transactions) < num_valid:
             # Get the sender object
@@ -62,7 +64,8 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 amount=amount,
                 base_fee=base_fee,
                 priority_fee=priority_fee,
-                fee = fee
+                fee = fee,
+                is_private=is_private
             )
         else:
             # Generate an invalid transaction if the number of valid transactions
@@ -92,8 +95,9 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 def generate_builders(num_builders):
     builders = []
     for i in range(num_builders):
+        private = random.choice([True, False])
         builder = Builder(address=f"Builder{i}", balance=initial_balance,
-                          builder_strategy="mev")
+                          builder_strategy="mev", private=private)
         builders.append(builder)
     return builders
 
