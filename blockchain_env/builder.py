@@ -109,8 +109,7 @@ class Builder(Account):
         for transaction in transactions:
             if balance < transaction.amount:
                 return False
-            else:
-                return True
+            return True
 
     # Method to add bid for the transactions
     # Input: selected_transactions, proposer_address, self.address

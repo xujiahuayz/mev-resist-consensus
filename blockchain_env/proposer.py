@@ -15,7 +15,7 @@ class Blockpool:
     def add_block(self, block: Block, select_time) -> None:
         self.blocks.append(block)
         for transaction in block.transactions:
-            transaction.enter_blockpool(proposer_address=self.address, 
+            transaction.enter_blockpool(proposer_address=self.address,
                                         selected_timestamp=select_time)
 
     def remove_block(self, block) -> None:
@@ -35,19 +35,20 @@ class Proposer(Account):
         super().__init__(address, balance)
         self.proposer_strategy = proposer_strategy
 
+    def calculate_profit(self, block):
+        return sum((tx.priority_fee * tx.gas) - block.bid for tx in block.transactions)
+
     def select_block(self) -> Block | None:
         if self.proposer_strategy == "greedy":
-            if not self.blockpool:
+            if not self.blockpool.blocks:
                 return None
 
-            def calculate_profit(block):
-                total_profit = 0
-                for transaction in block.transactions:
-                    total_profit += (transaction.priority_fee * transaction.gas) - block.bid
-                return total_profit
-
-            selected_block = max(self.blockpool.blocks, key=lambda block:
-                                 calculate_profit(block), default=None)
+            selected_block = max(
+                self.blockpool.blocks,
+                key=lambda block: sum((tx.priority_fee * tx.gas) - block.bid
+                                      for tx in block.transactions),
+                default=None
+            )
             return selected_block
 
         elif self.proposer_strategy == "random":

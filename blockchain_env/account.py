@@ -1,5 +1,4 @@
-from blockchain_env.constants import BASE_FEE
-from blockchain_env.transaction import Transaction
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 class Account:
     def __init__(self, address, balance: float):
@@ -20,7 +19,8 @@ class Account:
         Withdraw amount from the account.
         """
         # if self.balance < amount:
-        #     print(f"Insufficient balance. the amount to withdraw is {amount} but address {self.address} only has {self.balance}")
+        #     print(f"Insufficient balance. the amount to withdraw is {amount} but address
+        #     {self.address} only has {self.balance}")
         #     return
         self.balance -= amount
 

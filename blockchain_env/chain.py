@@ -33,7 +33,8 @@ class Chain:
         if self.blocks is None:
             self.blocks = []
 
-    def add_block(self, block: Block, confirm_time: float, transaction: Transaction, proposer: Proposer):
+    def add_block(self, block: Block, confirm_time: float, transaction: Transaction,
+                  proposer: Proposer):
         """
         Add a block to the chain.
         """
@@ -53,7 +54,8 @@ class Chain:
         block_previous_block = {block.block_id: block.previous_block_id for block in self.blocks}
         block_previous_chain = {block.block_id: [block.block_id] for block in self.blocks}
 
-        def find_previous_block(block_id, block_iterated, block_previous_block, block_previous_chain):
+        def find_previous_block(block_id, block_iterated, block_previous_block,
+                                block_previous_chain):
             """
             Find the previous blocks of a block, including itself.
             """
@@ -67,13 +69,15 @@ class Chain:
                 return block_previous_chain[block_id]
 
             result = block_previous_chain[block_id] + \
-                find_previous_block(block_previous_block[block_id], block_iterated, block_previous_block, block_previous_chain)
+                find_previous_block(block_previous_block[block_id], block_iterated,
+                                    block_previous_block, block_previous_chain)
             block_previous_chain[block_id] = result
             block_iterated[block_id] = True
             return result
 
         for block_id in block_iterated:
-            find_previous_block(block_id, block_iterated, block_previous_block, block_previous_chain)
+            find_previous_block(block_id, block_iterated, block_previous_block,
+                                block_previous_chain)
 
         #iterate through the block_previous_chain to find the longest chain
         longest_chain = []
