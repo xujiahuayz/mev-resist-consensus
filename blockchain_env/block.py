@@ -1,11 +1,10 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring, too-many-instance-attributes, too-many-arguments,too-few-public-methods
 import uuid
 
 from blockchain_env.transaction import Transaction
-from blockchain_env.constants import BASE_FEE
 
 class Block:
     def __init__(self,
-        block_id,
         previous_block_id,
         builder_id,
         timestamp: int,
@@ -14,9 +13,6 @@ class Block:
         proposer_address = None,
         bid = None,
     ):
-        """
-        Initialize a new block.
-        """
         self.block_id = str(uuid.uuid4())
         self.previous_block_id = previous_block_id
         self.builder_id = builder_id

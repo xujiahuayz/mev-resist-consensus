@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import random
 import uuid
 import copy
@@ -63,7 +64,6 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 amount=amount,
                 base_fee=base_fee,
                 priority_fee=priority_fee,
-                fee = fee,
                 is_private=is_private
             )
         else:
@@ -83,7 +83,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
                 amount=amount,
                 base_fee=base_fee,
                 priority_fee=priority_fee,
-                fee = fee
+                is_private=is_private
             )
 
         transactions.append(transaction)
@@ -167,7 +167,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
 
                 # create a new block with the selected transactions
                 new_block = Block(
-                    block_id=uuid.uuid4(),
+
                     previous_block_id=previous_block_id,
                     timestamp=selecte_time,
                     proposer_address=selected_proposer.address,

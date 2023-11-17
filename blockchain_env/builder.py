@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring, too-many-instance-attributes, too-many-arguments,too-few-public-methods
 import uuid
 from datetime import datetime
 import random
@@ -32,7 +33,7 @@ class Builder(Account):
                 private: bool = False,
     ):
         super().__init__(address, balance)
-        # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must 
+        # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must
         # be one of {BUILDER_STRATEGY_LIST}."
         self.builder_strategy = builder_strategy
         self.discount = discount if discount is not None else np.random.random()
@@ -42,9 +43,9 @@ class Builder(Account):
         self.private = private
 
     # def update_notebook(self, transaction):
-    #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender, 
+    #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender,
     # self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
-    #     self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient, 
+    #     self.notebook[transaction.recipient] = self.notebook.get(transaction.recipient,
     # self.get_balance(transaction.recipient)) + transaction.amount
 
     # def revert_notebook(self, transaction):
@@ -65,12 +66,12 @@ class Builder(Account):
         self.mev_profits = 0
 
         if self.builder_strategy == "greedy":
-            sorted_transactions = sorted(self.mempool.transactions, 
+            sorted_transactions = sorted(self.mempool.transactions,
                                          key=lambda x: x.priority_fee, reverse=True)
         elif self.builder_strategy == "mev":
-            sorted_transactions = sorted(self.mempool.transactions, 
+            sorted_transactions = sorted(self.mempool.transactions,
                                          key=lambda x: x.priority_fee, reverse=True)
-            num_to_sample = min(len(sorted_transactions), 10)  
+            num_to_sample = min(len(sorted_transactions), 10)
             mev_target = random.sample(sorted_transactions, num_to_sample)
         elif self.builder_strategy == "random":
             random.shuffle(self.mempool.transactions)
@@ -85,7 +86,7 @@ class Builder(Account):
             transaction_gas = transaction.gas
             if remaining_gas >= transaction_gas:
                 # self.update_notebook(transaction)
-                # if self.notebook.get(transaction.sender) < 0 or 
+                # if self.notebook.get(transaction.sender) < 0 or
                 # self.notebook.get(transaction.recipient) < 0:
                 #     self.revert_notebook(transaction)
                 # else:
@@ -94,7 +95,7 @@ class Builder(Account):
                 if self.builder_strategy == "mev" and transaction in mev_target:
                     mev_deduction = random.uniform(0.1, 0.3) * transaction.amount
                     transaction.amount -= mev_deduction
-                    self.mev_profits += mev_deduction 
+                    self.mev_profits += mev_deduction
             else:
                 break
         return selected_transactions
@@ -119,7 +120,7 @@ class Builder(Account):
         # call the select_transactions method to get the selected_transactions
         selected_transactions = self.select_transactions()
         # calculate the 10% of the total transaction fee
-        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for 
+        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for
                          transaction in selected_transactions)
 
         # create a bid transaction
@@ -141,3 +142,4 @@ class Builder(Account):
 
 if __name__ == "__main__":
     # selected_transactions.append(bid_transaction)
+    pass

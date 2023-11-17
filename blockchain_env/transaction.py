@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-instance-attributes, too-many-arguments
 from blockchain_env.constants import BASE_FEE
 
 class Transaction:
@@ -10,7 +11,6 @@ class Transaction:
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
-        fee: float | None = None,
         is_private: bool = False,
     ):
         """
@@ -27,10 +27,10 @@ class Transaction:
         self.fee = self.calculate_total_fee()
         self.is_private = is_private
 
-        self.dict_timestamp = dict()
-        self.builder_timestamp = dict()
-        self.proposer_timestamp = dict()
-        
+        self.dict_timestamp = {}
+        self.builder_timestamp = {}
+        self.proposer_timestamp = {}
+
     def calculate_total_fee(self):
         """
         Calculate the total fee of the transaction.

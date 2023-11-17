@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-instance-attributes, too-many-arguments
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -6,8 +8,13 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
 
     # Calculate the total profit (ignoring initial balances) for each block
-    total_profit_proposer = np.array(total_proposer_balance) - len(total_proposer_balance) * [initial_balance]
-    total_profit_builder = np.array(total_builder_balance) - len(total_builder_balance) * [initial_balance]
+    total_profit_proposer = (
+        np.array(total_proposer_balance) - len(total_proposer_balance) * [initial_balance]
+    )
+
+    total_profit_builder = (
+        np.array(total_builder_balance) - len(total_builder_balance) * [initial_balance]
+    )
 
     # Calculate the total profit for each block
     total_profit = total_profit_proposer + total_profit_builder
@@ -50,9 +57,9 @@ def plot_equilibrium():
         return best_bid, max_payout
 
     # Constants
-    k = 0.1  
-    t_avg = 50  
-    ts = [30, 50, 70, 90]  
+    k = 0.1
+    t_avg = 50
+    ts = [30, 50, 70, 90]
 
     bid_range = np.linspace(0, 100, 1000)
 
@@ -86,8 +93,8 @@ def plot_payoff():
 
     # Plot for each T value
     for t in t_values:
-        P_acceptance = np.minimum(1, np.exp(-k * b) * t / t_avg)
-        plt.plot(b, P_acceptance, label=f'T={t}')
+        p_acceptance = np.minimum(1, np.exp(-k * b) * t / t_avg)
+        plt.plot(b, p_acceptance, label=f'T={t}')
 
     plt.title('Probability of Acceptance vs Bid')
     plt.xlabel('Bid (b)')

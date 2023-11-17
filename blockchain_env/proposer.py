@@ -1,7 +1,7 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import random
 
 from blockchain_env.account import Account
-from blockchain_env.constants import PROPOSER_STRATEGY_LIST
 from blockchain_env.block import Block
 
 class Blockpool:
@@ -15,7 +15,8 @@ class Blockpool:
     def add_block(self, block: Block, select_time) -> None:
         self.blocks.append(block)
         for transaction in block.transactions:
-            transaction.enter_blockpool(proposer_address=self.address, selected_timestamp=select_time)
+            transaction.enter_blockpool(proposer_address=self.address, 
+                                        selected_timestamp=select_time)
 
     def remove_block(self, block) -> None:
         if block in self.blocks:
@@ -32,7 +33,6 @@ class Proposer(Account):
         else:
             self.blockpool = blockpool
         super().__init__(address, balance)
-        assert proposer_strategy in PROPOSER_STRATEGY_LIST, f"The proposer_strategy must be one of {PROPOSER_STRATEGY_LIST}."
         self.proposer_strategy = proposer_strategy
 
     def select_block(self) -> Block | None:
