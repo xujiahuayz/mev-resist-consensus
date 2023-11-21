@@ -93,10 +93,27 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
 def generate_builders(num_builders):
     builders = []
+    strategies = ['greedy', 'mev', 'random']  # Example strategies
+    discount_factor_range = (0.0, 1.0)  # Range of discount factors
+    credit_range = (0.0, 1.0)  # Range of credit scores
+    inclusion_rate_range = (0.0, 1.0)  # Range of inclusion rates
+
     for i in range(num_builders):
+        builder_strategy = random.choice(strategies)
+        discount_factor = random.uniform(*discount_factor_range)
+        credit = random.uniform(*credit_range)
+        inclusion_rate = random.uniform(*inclusion_rate_range)
         private = random.choice([True, False])
-        builder = Builder(address=f"Builder{i}", balance=initial_balance,
-                          builder_strategy="mev", private=private)
+
+        builder = Builder(
+            address=f"Builder{i}",
+            balance=initial_balance,
+            builder_strategy=builder_strategy,
+            discount=discount_factor,
+            private=private,
+            credit=credit,
+            inclusion_rate=inclusion_rate
+        )
         builders.append(builder)
     return builders
 
@@ -109,7 +126,6 @@ def generate_proposers(num_proposers):
                             proposer_strategy="greedy", blockpool=blockpool)
         proposers.append(proposer)
     return proposers
-
 
 def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
     counter = 0
