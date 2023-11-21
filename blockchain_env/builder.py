@@ -31,7 +31,7 @@ class Builder(Account):
                 builder_strategy: None = None,
                 discount: float | None = None,
                 private: bool = False,
-                credit=0.0, 
+                credit=0.0,
                 inclusion_rate=0.0
     ):
         super().__init__(address, balance)
