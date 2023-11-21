@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import copy
 import random
 
@@ -5,7 +7,6 @@ from blockchain_env.account import Account
 from blockchain_env.proposer import Proposer
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
-from blockchain_env.constants import BASE_FEE
 from blockchain_env.block import Block
 
 class Chain:
@@ -63,7 +64,7 @@ class Chain:
                 # If the block has been iterated, return None
                 return block_previous_chain[block_id]
 
-            if block_previous_block[block_id] == None:
+            if block_previous_block[block_id] is None:
                 # If the previous block is None, return None
                 block_iterated[block_id] = True
                 return block_previous_chain[block_id]

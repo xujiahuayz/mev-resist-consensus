@@ -31,6 +31,8 @@ class Builder(Account):
                 builder_strategy: None = None,
                 discount: float | None = None,
                 private: bool = False,
+                credit=0.0, 
+                inclusion_rate=0.0
     ):
         super().__init__(address, balance)
         # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must
@@ -38,9 +40,11 @@ class Builder(Account):
         self.builder_strategy = builder_strategy
         self.discount = discount if discount is not None else np.random.random()
         self.mempool = Mempool(self.address)
+        self.private = private
+        self.credit = credit
+        self.inclusion_rate = inclusion_rate
         self.notebook = {}
         self.mev_profits = 0
-        self.private = private
 
     # def update_notebook(self, transaction):
     #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender,
@@ -135,9 +139,12 @@ class Builder(Account):
         )
         return bid_transaction
 
-    def mev(self):
+    def update(self, won_bid, used_mev):
+        if won_bid:
+            self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)
+        if used_mev:
+            self.credit = max(self.credit - 0.1, 0.0)
 
-        pass
 
 if __name__ == "__main__":
     # selected_transactions.append(bid_transaction)
