@@ -107,7 +107,7 @@ def generate_builders(num_builders):
 
         builder = Builder(
             address=f"Builder{i}",
-            balance=initial_balance,
+            balance=INIT_BALANCE,
             builder_strategy=builder_strategy,
             discount=discount_factor,
             private=private,
@@ -122,7 +122,7 @@ def generate_proposers(num_proposers):
     for i in range(num_proposers):
         proposer_address = f"Proposer{i}"
         blockpool = Blockpool(address=proposer_address)
-        proposer = Proposer(address=proposer_address, balance=initial_balance,
+        proposer = Proposer(address=proposer_address, balance=INIT_BALANCE,
                             proposer_strategy="greedy", blockpool=blockpool)
         proposers.append(proposer)
     return proposers
@@ -309,17 +309,17 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
 
 if __name__ == "__main__":
 
-    num_users = 1000
-    num_transactions = 200
-    initial_balance = 100.0
-    num_builders = 20
-    num_proposers = 20
+    NUM_USERS = 1000
+    NUM_TXS = 200
+    INIT_BALANCE = 100.0
+    NUM_BUILDERS = 20
+    NUM_PROPOSERS = 20
 
     chain = Chain()
 
-    normal_users = generate_normal_users(num_users)
-    builders = generate_builders(num_builders)
-    proposers = generate_proposers(num_proposers)
+    normal_users = generate_normal_users(NUM_USERS)
+    builders = generate_builders(NUM_BUILDERS)
+    proposers = generate_proposers(NUM_PROPOSERS)
 
     chain.proposers = proposers
     chain.builders = builders
@@ -374,5 +374,4 @@ if __name__ == "__main__":
         # print()
 
     data_path = FIGURE_PATH / "figures"
-    plot_distribution(total_proposer_balance, total_builder_balance, initial_balance)
-
+    plot_distribution(total_proposer_balance, total_builder_balance, INIT_BALANCE)
