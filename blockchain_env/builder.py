@@ -139,8 +139,8 @@ class Builder(Account):
         )
         return bid_transaction
 
-    def update(self, won_bid, used_mev):
-        if won_bid:
+    def update(self, selected, used_mev):
+        if selected:
             self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)
         if used_mev:
             self.credit = max(self.credit - 0.1, 0.0)

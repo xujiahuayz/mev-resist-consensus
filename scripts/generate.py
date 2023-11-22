@@ -4,6 +4,7 @@ import uuid
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
@@ -14,6 +15,12 @@ from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
 
 random.seed(1)
+
+NUM_USERS = 1000
+NUM_TXS = 200
+INIT_BALANCE = 100.0
+NUM_BUILDERS = 50
+NUM_PROPOSERS = 20
 
 def generate_normal_users(num_users):
     normal_users = []
@@ -93,10 +100,10 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
 def generate_builders(num_builders):
     builders = []
-    strategies = ['greedy', 'mev', 'random']  # Example strategies
-    discount_factor_range = (0.0, 1.0)  # Range of discount factors
-    credit_range = (0.0, 1.0)  # Range of credit scores
-    inclusion_rate_range = (0.0, 1.0)  # Range of inclusion rates
+    strategies = ['greedy', 'mev', 'random']  
+    discount_factor_range = (0.0, 1.0)  
+    credit_range = (0.0, 1.0)  
+    inclusion_rate_range = (0.0, 1.0)  
 
     for i in range(num_builders):
         builder_strategy = random.choice(strategies)
@@ -127,7 +134,7 @@ def generate_proposers(num_proposers):
         proposers.append(proposer)
     return proposers
 
-def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
+def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
     counter = 0
 
     # Lists to store balances after each block publication
@@ -136,6 +143,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
 
     # generate a random number of transactions
     random_number = random.randint(1, 10)
+
+    builder_data = []
 
     while True:
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
@@ -213,7 +222,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
                 selected_proposer.blockpool.remove_block(selected_block)
                 for transaction in selected_block.transactions:
                     transaction.confirm(selected_proposer.address, confirm_time)
-                    for builder in builders:
+                    for builder in chain.builders:
                         builder.mempool.remove_transaction(transaction)
 
             # balance change for each account after block put on chain
@@ -275,9 +284,18 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float]]:
             # print("Builder total balance:", sum(builder.balance for builder in builders))
             # print("==========")
 
+        for builder in chain.builders:
+            builder_data.append({
+                'address': builder.address,
+                'discount_factor': builder.discount,
+                'private_order_flow': builder.private,
+                'credit': builder.credit,
+                'inclusion_number': builder.inclusion_rate,
+            })
+
         counter += 1
-        if counter >= 2000:
-            return chain, total_proposer_balance, total_builder_balance
+        if counter >= 5000:
+            return chain, total_proposer_balance, total_builder_balance, builder_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
                       initial_balance: float):
@@ -307,13 +325,21 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.show()
     plt.savefig('./profit_distribution.pdf')
 
-if __name__ == "__main__":
+def plot_discount(builder_data):
+    plt.figure(figsize=(10, 6))
 
-    NUM_USERS = 1000
-    NUM_TXS = 200
-    INIT_BALANCE = 100.0
-    NUM_BUILDERS = 20
-    NUM_PROPOSERS = 20
+    for private in [True, False]:
+        subset = builder_data_df[builder_data_df['private_order_flow'] == private]
+        plt.scatter(subset['discount_factor'], subset['profit'], label=f"Private Order Flow: {private}")
+
+    plt.title('Profit vs. Discount Factor for Builders')
+    plt.xlabel('Discount Factor')
+    plt.ylabel('Total Profit')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+if __name__ == "__main__":
 
     chain = Chain()
 
@@ -325,7 +351,11 @@ if __name__ == "__main__":
     chain.builders = builders
     chain.normal_users = normal_users
 
-    chain, total_proposer_balance, total_builder_balance = simulate(chain)
+    chain, total_proposer_balance, total_builder_balance, builder_data = simulate(chain)
+
+    builder_data_df = pd.DataFrame(builder_data)
+    print(builder_data_df)
+
 
     # for user in chain.normal_users:
     #     print(user.address, user.balance)
@@ -373,5 +403,20 @@ if __name__ == "__main__":
 
         # print()
 
-    data_path = FIGURE_PATH / "figures"
-    plot_distribution(total_proposer_balance, total_builder_balance, INIT_BALANCE)
+    # plot_distribution(total_proposer_balance, total_builder_balance, INIT_BALANCE)
+
+
+    discount_factors = [data['discount_factor'] for data in builder_data]
+    credits = [data['credit'] for data in builder_data]
+    inclusion_numbers = [data['inclusion_number'] for data in builder_data]
+
+    # Visualization
+    plt.figure(figsize=(10, 6))
+    sc = plt.scatter(discount_factors, credits, alpha=0.7, c=inclusion_numbers, cmap='viridis')
+    plt.colorbar(sc, label='Inclusion Number')
+    plt.title('Relationship Between Discount Factor, Credit, and Inclusion Number of Builders')
+    plt.xlabel('Discount Factor (Future Importance)')
+    plt.ylabel('Credit Score')
+    plt.grid(True)
+    plt.show()
+    
