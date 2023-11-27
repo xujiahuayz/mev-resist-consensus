@@ -46,6 +46,7 @@ class Builder(Account):
         self.notebook = {}
         self.mev_profits = 0
 
+
     # def update_notebook(self, transaction):
     #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender,
     # self.get_balance(transaction.sender)) - (transaction.amount + transaction.fee)
@@ -63,6 +64,8 @@ class Builder(Account):
     #             return account.balance
     #     raise ValueError(f"No account found for address {address}")
 
+    def inclusion_count(self):
+        self.inclusion_rate += 1
 
     def select_transactions(self):
         selected_transactions = []  # Initialize an empty list for selected transactions
@@ -142,8 +145,9 @@ class Builder(Account):
     def update(self, selected, used_mev):
         if selected:
             self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)
+            self.credit = max(self.credit + 0.1, 0.0)
         if used_mev:
-            self.credit = max(self.credit - 0.1, 0.0)
+            self.credit = max(self.credit - 0.2, 0.0)
 
 
 if __name__ == "__main__":

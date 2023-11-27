@@ -16,10 +16,10 @@ from blockchain_env.block import Block
 
 random.seed(1)
 
-NUM_USERS = 1000
-NUM_TXS = 200
+NUM_USERS = 5000
+NUM_TXS = 500
 INIT_BALANCE = 100.0
-NUM_BUILDERS = 50
+NUM_BUILDERS = 200
 NUM_PROPOSERS = 20
 
 def generate_normal_users(num_users):
@@ -37,7 +37,7 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
 
-    for transaction in range(num_transactions):      
+    for transaction in range(num_transactions): 
         sender = random.choice(normal_users)
         recipient = random.choice(normal_users)
         sender_address = sender.address
@@ -242,6 +242,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
                 proposer.deposit(selected_block.total_fee - bid_transaction.amount)
                 builder.deposit(bid_transaction.amount)
 
+                # add inclusion count for builder
+                builder.inclusion_count()
+
                 # add mev profit to builder balance
                 builder = builder_mapping.get(selected_block.builder_id)
                 if builder.builder_strategy == "mev":
@@ -285,16 +288,16 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
             # print("==========")
 
         for builder in chain.builders:
+            inclusion_number = builder.inclusion_rate
             builder_data.append({
-                'address': builder.address,
                 'discount_factor': builder.discount,
-                'private_order_flow': builder.private,
                 'credit': builder.credit,
-                'inclusion_number': builder.inclusion_rate,
+                'inclusion_number': inclusion_number
             })
 
+
         counter += 1
-        if counter >= 5000:
+        if counter >= 1000:
             return chain, total_proposer_balance, total_builder_balance, builder_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
@@ -325,20 +328,6 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.show()
     plt.savefig('./profit_distribution.pdf')
 
-def plot_discount(builder_data):
-    plt.figure(figsize=(10, 6))
-
-    for private in [True, False]:
-        subset = builder_data_df[builder_data_df['private_order_flow'] == private]
-        plt.scatter(subset['discount_factor'], subset['profit'], label=f"Private Order Flow: {private}")
-
-    plt.title('Profit vs. Discount Factor for Builders')
-    plt.xlabel('Discount Factor')
-    plt.ylabel('Total Profit')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
 if __name__ == "__main__":
 
     chain = Chain()
@@ -356,56 +345,6 @@ if __name__ == "__main__":
     builder_data_df = pd.DataFrame(builder_data)
     print(builder_data_df)
 
-
-    # for user in chain.normal_users:
-    #     print(user.address, user.balance)
-
-    # for builder in chain.builders:
-    #     print(builder.address, builder.balance)
-
-    # for proposer in chain.proposers:
-    #     print(proposer.address, proposer.balance)
-
-    # for selected_block in chain.blocks:
-    #     print(f"Block Header ID: {selected_block.block_id}")
-    #     print(f"Previous Block Header ID: {selected_block.previous_block_id}")
-    #     print(f"Total Fee: {selected_block.total_fee}")
-    #     print(f"Number of Transactions: {len(selected_block.transactions)}")
-
-    #     print(f"Proposer: {selected_block.proposer_address}")
-    #     print(f"Builder ID: {selected_block.builder_id}")
-
-        # for user in chain.normal_users:
-        #     print(user.address, user.balance)
-
-        # for builder in chain.builders:
-        #     print(builder.address, builder.balance)
-
-        # for proposer in chain.proposers:
-        #     print(proposer.address, proposer.balance)
-
-        # for transaction in selected_block.transactions:
-            # print("Create Timestamp:", transaction.create_timestamp)
-            # for builder_address, timestamp in transaction.dict_timestamp.items():
-            #     print(f"  Mempool Timestamp ({builder_address}): {timestamp}")
-            # print("Blockpool Timestamps:", transaction.select_timestamp)
-            # print("Confirm Timestamps:", transaction.confirm_timestamp)
-
-            # print(f"  Transaction ID: {transaction.transaction_id}")
-            # print(f"  Sender: {transaction.sender}")
-            # print(f"  Recipient: {transaction.recipient}")
-            # print(f"  Gas: {transaction.gas}")
-            # print(f"  Amount: {transaction.amount}")
-            # print(f"  Base Fee: {transaction.base_fee}")
-            # print(f"  Priority Fee: {transaction.priority_fee}")
-            # print(f"  Fee: {transaction.fee}")
-            # print()
-
-        # print()
-
-    # plot_distribution(total_proposer_balance, total_builder_balance, INIT_BALANCE)
-
-
     discount_factors = [data['discount_factor'] for data in builder_data]
     credits = [data['credit'] for data in builder_data]
     inclusion_numbers = [data['inclusion_number'] for data in builder_data]
@@ -419,4 +358,3 @@ if __name__ == "__main__":
     plt.ylabel('Credit Score')
     plt.grid(True)
     plt.show()
-    

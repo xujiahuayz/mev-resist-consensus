@@ -104,6 +104,34 @@ def plot_payoff():
     plt.show()
 
 
+def plot_utility():
+
+# Utility function calculation
+    def calculate_utility(bid, transaction_fees, mev_profits, kb):
+        acceptance_probability = np.minimum(1, np.exp(kb * bid))
+        return acceptance_probability * (transaction_fees - bid + mev_profits)
+
+    # Constants and ranges
+    kb = -0.1  # Negative as higher bids should decrease the probability
+    bids = np.linspace(0, 10, 100)  # Range of bids from 0 to 10
+    transaction_fees = 5  # Constant transaction fees
+    mev_profits = 2  # Constant MEV profits
+
+    # Calculate utilities for each bid
+    utilities = [calculate_utility(bid, transaction_fees, mev_profits, kb) for bid in bids]
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(bids, utilities, label='Builder Utility')
+    plt.xlabel('Bid')
+    plt.ylabel('Utility')
+    plt.title('Builder Utility as a Function of Bid')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 if __name__ == "__main__":
     # plot_payoff()
-    plot_equilibrium()
+    # plot_equilibrium()
+
+    plot_utility()
