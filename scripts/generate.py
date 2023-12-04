@@ -100,10 +100,10 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
 def generate_builders(num_builders):
     builders = []
-    strategies = ['greedy', 'mev', 'random']  
-    discount_factor_range = (0.0, 1.0)  
-    credit_range = (0.0, 1.0)  
-    inclusion_rate_range = (0.0, 1.0)  
+    strategies = ['greedy', 'mev', 'random']
+    discount_factor_range = (0.0, 1.0)
+    credit_range = (0.0, 1.0)
+    inclusion_rate_range = (0.0, 1.0)
 
     for i in range(num_builders):
         builder_strategy = random.choice(strategies)
