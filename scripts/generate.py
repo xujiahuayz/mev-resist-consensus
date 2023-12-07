@@ -354,6 +354,22 @@ def plot_bid():
     plt.grid(True)
     plt.show()
 
+def plot_inclusion():
+    discount_factors = np.random.uniform(low=0.1, high=1.0, size=100)
+    inclusion_times = np.random.uniform(low=5, high=20, size=100) + (discount_factors * np.random.uniform(5, 10))
+
+    # Adding a slight trend to simulate a positive correlation
+    inclusion_times += discount_factors * 5
+
+    # Plotting the hypothetical results
+    plt.figure(figsize=(10, 6))
+    plt.scatter(discount_factors, inclusion_times, alpha=0.7)
+    plt.title('Hypothetical Relationship Between Discount Factor and Inclusion Time')
+    plt.xlabel('Discount Factor')
+    plt.ylabel('Inclusion Time (in blocks)')
+    plt.grid(True)
+    plt.show()
+
 if __name__ == "__main__":
 
     chain = Chain()
@@ -376,3 +392,5 @@ if __name__ == "__main__":
     inclusion_numbers = [data['inclusion_number'] for data in builder_data]
 
     plot_credit()
+    plot_inclusion()
+    

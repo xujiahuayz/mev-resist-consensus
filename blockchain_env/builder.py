@@ -123,26 +123,15 @@ class Builder(Account):
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
     def bid(self, proposer_address, historical_bids):
-        # call the select_transactions method to get the selected_transactions
-        selected_transactions = self.select_transactions()
 
-        # calculate the 10% of the total transaction fee as base bid
-        base_bid = sum(transaction.fee * random.uniform(0.1, 0.3) for
-                         transaction in selected_transactions)
+        historical_average = np.mean(historical_bids) if historical_bids else 0
+        bid_increase_factor = 0.1 if self.discount > 0.8 else 0.05  # more aggressive if discount factor is high
+        bid_amount = historical_average * (1 + bid_increase_factor)
         
-        discount_adj = self.discount * random.uniform(0.05, 0.1)
-
-        # Adjust bid based on historical winning bids
-        if historical_bids:
-            average_historical= np.mean(historical_bids)
-            historical_adj = base_bid * (average_historical / base_bid - 1) * random.uniform(0.05, 0.1)
-        else:
-            historical_adj = 0
-
-        final_bid = base_bid + base_bid * discount_adj + historical_adj
-
-        # Ensure bid amount is not less than zero
-        final_bid = max(final_bid, 0.01)
+        # If this builder's transactions are particularly profitable, consider increasing the bid
+        transaction_fees = sum(t.fee for t in self.mempool.transactions)
+        if transaction_fees > 1.2 * historical_average:
+            bid_amount *= 1.1  # 10% more if the builder has high fee transactions
 
         # Create and return the bid transaction
         bid_transaction = Transaction(
@@ -151,12 +140,11 @@ class Builder(Account):
             sender=proposer_address,
             recipient=self.address,
             gas=1,
-            amount=final_bid,
+            amount=bid_amount,
             base_fee=BASE_FEE,
             priority_fee=0
         )
-        
-        return bid_transaction        
+        return bid_transaction
 
     def update(self, selected, used_mev):
         if selected:
