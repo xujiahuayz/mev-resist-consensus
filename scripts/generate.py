@@ -173,11 +173,18 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
             selected_proposer = chain.select_proposer()
             # list to store new blocks
             new_blocks = []
+
+            selected_block = selected_proposer.select_block()
+            if selected_block is not None:
+
+                historical_bids.append(selected_block.bid)
+                historical_bids = historical_bids[-100:]  # keep last 100 bids
+
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
-                bid_transaction = builder.bid(selected_proposer.address)
+                bid_transaction = builder.bid(selected_proposer.address, historical_bids )
 
                 # update the selected transactions by adding the bid transaction into
                 # the selected list of transactions (covered in Body class)
@@ -328,6 +335,25 @@ def plot_distribution(total_proposer_balance: list[float], total_builder_balance
     plt.show()
     plt.savefig('./profit_distribution.pdf')
 
+def plot_credit():
+    plt.figure(figsize=(10, 6))
+    sc = plt.scatter(discount_factors, credits, alpha=0.7, c=inclusion_numbers, cmap='viridis')
+    plt.colorbar(sc, label='Inclusion Number')
+    plt.title('Relationship Between Discount Factor, Credit, and Inclusion Number of Builders')
+    plt.xlabel('Discount Factor (Future Importance)')
+    plt.ylabel('Credit Score')
+    plt.grid(True)
+    plt.show()
+
+def plot_bid():
+    plt.figure(figsize=(10, 6))
+    plt.scatter(discount_factors, bid_amounts, alpha=0.7, c='blue')
+    plt.title('Relationship Between Discount Factor and Bid Amount for Selected Blocks')
+    plt.xlabel('Discount Factor (Future Importance)')
+    plt.ylabel('Bid Amount')
+    plt.grid(True)
+    plt.show()
+
 if __name__ == "__main__":
 
     chain = Chain()
@@ -349,12 +375,4 @@ if __name__ == "__main__":
     credits = [data['credit'] for data in builder_data]
     inclusion_numbers = [data['inclusion_number'] for data in builder_data]
 
-    # Visualization
-    plt.figure(figsize=(10, 6))
-    sc = plt.scatter(discount_factors, credits, alpha=0.7, c=inclusion_numbers, cmap='viridis')
-    plt.colorbar(sc, label='Inclusion Number')
-    plt.title('Relationship Between Discount Factor, Credit, and Inclusion Number of Builders')
-    plt.xlabel('Discount Factor (Future Importance)')
-    plt.ylabel('Credit Score')
-    plt.grid(True)
-    plt.show()
+    plot_credit()

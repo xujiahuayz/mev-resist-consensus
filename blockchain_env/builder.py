@@ -122,25 +122,41 @@ class Builder(Account):
     # Input: selected_transactions, proposer_address, self.address
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
-    def bid(self, proposer_address):
+    def bid(self, proposer_address, historical_bids):
         # call the select_transactions method to get the selected_transactions
         selected_transactions = self.select_transactions()
-        # calculate the 10% of the total transaction fee
-        bid_amount = sum(transaction.fee * random.uniform(0.1, 0.3) for
-                         transaction in selected_transactions)
 
-        # create a bid transaction
+        # calculate the 10% of the total transaction fee as base bid
+        base_bid = sum(transaction.fee * random.uniform(0.1, 0.3) for
+                         transaction in selected_transactions)
+        
+        discount_adj = self.discount * random.uniform(0.05, 0.1)
+
+        # Adjust bid based on historical winning bids
+        if historical_bids:
+            average_historical= np.mean(historical_bids)
+            historical_adj = base_bid * (average_historical / base_bid - 1) * random.uniform(0.05, 0.1)
+        else:
+            historical_adj = 0
+
+        final_bid = base_bid + base_bid * discount_adj + historical_adj
+
+        # Ensure bid amount is not less than zero
+        final_bid = max(final_bid, 0.01)
+
+        # Create and return the bid transaction
         bid_transaction = Transaction(
             transaction_id=str(uuid.uuid4()),
             timestamp=int(datetime.now().timestamp()),
             sender=proposer_address,
             recipient=self.address,
             gas=1,
-            amount=bid_amount,
+            amount=final_bid,
             base_fee=BASE_FEE,
             priority_fee=0
         )
-        return bid_transaction
+        
+        return bid_transaction        
 
     def update(self, selected, used_mev):
         if selected:
