@@ -9,7 +9,7 @@ import pandas as pd
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
 from blockchain_env.builder import Builder
-from blockchain_env.constants import BASE_FEE, FIGURE_PATH
+from blockchain_env.constants import BASE_FEE
 from blockchain_env.proposer import Proposer, Blockpool
 from blockchain_env.transaction import Transaction
 from blockchain_env.block import Block
@@ -134,7 +134,7 @@ def generate_proposers(num_proposers):
         proposers.append(proposer)
     return proposers
 
-def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
+def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]:
     counter = 0
 
     # Lists to store balances after each block publication
@@ -145,6 +145,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
     random_number = random.randint(1, 10)
 
     builder_data = []
+    bid_amounts = []
 
     while True:
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
@@ -176,15 +177,14 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
 
             selected_block = selected_proposer.select_block()
             if selected_block is not None:
-
-                historical_bids.append(selected_block.bid)
-                historical_bids = historical_bids[-100:]  # keep last 100 bids
+                historical_bids.append(selected_block.bid)  # Update historical bids
+                # historical_bids = historical_bids[-100:] # Keep only the last 100 bids
 
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
-                bid_transaction = builder.bid(selected_proposer.address, historical_bids )
+                bid_transaction = builder.bid(selected_proposer.address, historical_bids)
 
                 # update the selected transactions by adding the bid transaction into
                 # the selected list of transactions (covered in Body class)
@@ -301,11 +301,12 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list]:
                 'credit': builder.credit,
                 'inclusion_number': inclusion_number
             })
+            bid_amounts.append(bid_transaction.amount)
 
 
         counter += 1
         if counter >= 1000:
-            return chain, total_proposer_balance, total_builder_balance, builder_data
+            return chain, total_proposer_balance, total_builder_balance, builder_data, bid_amounts
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
                       initial_balance: float):
@@ -349,22 +350,16 @@ def plot_bid():
     plt.figure(figsize=(10, 6))
     plt.scatter(discount_factors, bid_amounts, alpha=0.7, c='blue')
     plt.title('Relationship Between Discount Factor and Bid Amount for Selected Blocks')
-    plt.xlabel('Discount Factor (Future Importance)')
+    plt.xlabel('Discount Factor')
     plt.ylabel('Bid Amount')
     plt.grid(True)
     plt.show()
 
 def plot_inclusion():
-    discount_factors = np.random.uniform(low=0.1, high=1.0, size=100)
-    inclusion_times = np.random.uniform(low=5, high=20, size=100) + (discount_factors * np.random.uniform(5, 10))
 
-    # Adding a slight trend to simulate a positive correlation
-    inclusion_times += discount_factors * 5
-
-    # Plotting the hypothetical results
     plt.figure(figsize=(10, 6))
     plt.scatter(discount_factors, inclusion_times, alpha=0.7)
-    plt.title('Hypothetical Relationship Between Discount Factor and Inclusion Time')
+    plt.title('Relationship Between Discount Factor and Inclusion Time')
     plt.xlabel('Discount Factor')
     plt.ylabel('Inclusion Time (in blocks)')
     plt.grid(True)
@@ -373,6 +368,7 @@ def plot_inclusion():
 if __name__ == "__main__":
 
     chain = Chain()
+    historical_bids = []
 
     normal_users = generate_normal_users(NUM_USERS)
     builders = generate_builders(NUM_BUILDERS)
@@ -382,7 +378,7 @@ if __name__ == "__main__":
     chain.builders = builders
     chain.normal_users = normal_users
 
-    chain, total_proposer_balance, total_builder_balance, builder_data = simulate(chain)
+    chain, total_proposer_balance, total_builder_balance, builder_data, bid_amounts = simulate(chain)
 
     builder_data_df = pd.DataFrame(builder_data)
     print(builder_data_df)
@@ -391,6 +387,4 @@ if __name__ == "__main__":
     credits = [data['credit'] for data in builder_data]
     inclusion_numbers = [data['inclusion_number'] for data in builder_data]
 
-    plot_credit()
-    plot_inclusion()
-    
+    plot_bid()

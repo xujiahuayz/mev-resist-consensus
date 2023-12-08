@@ -122,16 +122,17 @@ class Builder(Account):
     # Input: selected_transactions, proposer_address, self.address
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
-    def bid(self, proposer_address, historical_bids):
 
-        historical_average = np.mean(historical_bids) if historical_bids else 0
-        bid_increase_factor = 0.1 if self.discount > 0.8 else 0.05  # more aggressive if discount factor is high
-        bid_amount = historical_average * (1 + bid_increase_factor)
+    def bid(self, proposer_address, historical_bids):
+        # Calculate bid based on historical bids and discount factor
+        historical_average = np.mean(historical_bids) if historical_bids else 0.01  # Ensure it's never zero
+        bid_increase_factor = self.discount  # Direct correlation with discount factor
+        bid_amount = max(historical_average * (1 + bid_increase_factor), 0.01)  # Ensure bid is never zero
         
-        # If this builder's transactions are particularly profitable, consider increasing the bid
+        # Adjust bid based on transaction fees in the mempool
         transaction_fees = sum(t.fee for t in self.mempool.transactions)
-        if transaction_fees > 1.2 * historical_average:
-            bid_amount *= 1.1  # 10% more if the builder has high fee transactions
+        if transaction_fees > historical_average:
+            bid_amount *= 1.1  # Increase by 10% if high fee transactions are present
 
         # Create and return the bid transaction
         bid_transaction = Transaction(
