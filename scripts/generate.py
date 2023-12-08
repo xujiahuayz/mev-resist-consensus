@@ -145,7 +145,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
     random_number = random.randint(1, 10)
 
     builder_data = []
-    bid_amounts = []
+    block_data = []
+
+
 
     while True:
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
@@ -283,16 +285,18 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     if builder.builder_strategy == "mev":
                         builder.mev_profits += transaction.fee
 
+              
+                block_data.append({
+                    'inclusion_number': builder.inclusion_rate,
+                    'bid_amount': bid_transaction.amount,
+                    'discount_factor': builder.discount,
+                    'credit': builder.credit,
+                    'total_fee': selected_block.total_fee
+                })                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           b
+
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
 
-            # Calculate the total balance
-            # total_balance = sum(user.balance for user in normal_users + proposers + builders)
-            # print("Total Balance:", total_balance)
-            # print("Normal User total balance:", sum(user.balance for user in normal_users))
-            # print("Proposer total balance:", sum(proposer.balance for proposer in proposers))
-            # print("Builder total balance:", sum(builder.balance for builder in builders))
-            # print("==========")
 
         for builder in chain.builders:
             inclusion_number = builder.inclusion_rate
@@ -301,7 +305,6 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                 'credit': builder.credit,
                 'inclusion_number': inclusion_number
             })
-            bid_amounts.append(bid_transaction.amount)
 
 
         counter += 1
@@ -368,7 +371,6 @@ def plot_inclusion():
 if __name__ == "__main__":
 
     chain = Chain()
-    historical_bids = []
 
     normal_users = generate_normal_users(NUM_USERS)
     builders = generate_builders(NUM_BUILDERS)
@@ -380,11 +382,11 @@ if __name__ == "__main__":
 
     chain, total_proposer_balance, total_builder_balance, builder_data, bid_amounts = simulate(chain)
 
-    builder_data_df = pd.DataFrame(builder_data)
-    print(builder_data_df)
+    block_data_df = pd.DataFrame(block_data)
+    print(block_data_df)
 
-    discount_factors = [data['discount_factor'] for data in builder_data]
-    credits = [data['credit'] for data in builder_data]
+    discount_factors = [data['discount_factor'] for data in block_data]
+    credits = [data['credit'] for data in block_data]
     inclusion_numbers = [data['inclusion_number'] for data in builder_data]
 
     plot_bid()
