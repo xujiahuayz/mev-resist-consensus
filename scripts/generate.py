@@ -145,9 +145,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
     random_number = random.randint(1, 10)
 
     builder_data = []
-    block_data = []
-
-
+    block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee', 'Inclusion Rate', 'Credit'])
 
     while True:
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
@@ -287,16 +285,15 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
 
               
                 block_data.append({
-                    'inclusion_number': builder.inclusion_rate,
-                    'bid_amount': bid_transaction.amount,
-                    'discount_factor': builder.discount,
-                    'credit': builder.credit,
-                    'total_fee': selected_block.total_fee
-                })                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           b
+                    'Discount Factor': selected_block.builder.discount,
+                    'Bid Amount': selected_block.bid,
+                    'Total Transaction Fee': sum(tx.fee for tx in selected_block.transactions),
+                    'Inclusion Rate': selected_block.builder.inclusion_rate,
+                    'Credit': selected_block.builder.credit
+                })
 
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
-
 
         for builder in chain.builders:
             inclusion_number = builder.inclusion_rate
