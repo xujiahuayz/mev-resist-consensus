@@ -123,12 +123,19 @@ class Builder(Account):
     # Output: bid_transaction
     # Steps: 10% of the transaction fee is put for bid
 
-    def bid(self, proposer_address, historical_bids):
-        # Calculate bid based on historical bids and discount factor
-        historical_average = np.mean(historical_bids) if historical_bids else 0.01  # Ensure it's never zero
-        bid_increase_factor = self.discount  # Direct correlation with discount factor
+    def bid(self, proposer_address, block_data):
+        # Check if block_data DataFrame is empty
+        if block_data.empty:
+            historical_average = 0.01
+        else:
+            # Extract historical bids from block_data DataFrame
+            historical_bids = block_data['Bid Amount']
+            historical_average = historical_bids.mean()
+
+        # Calculate bid based on historical average and discount factor
+        bid_increase_factor = self.discount
         bid_amount = max(historical_average * (1 + bid_increase_factor), 0.01)  # Ensure bid is never zero
-        
+
         # Adjust bid based on transaction fees in the mempool
         transaction_fees = sum(t.fee for t in self.mempool.transactions)
         if transaction_fees > historical_average:
@@ -146,7 +153,6 @@ class Builder(Account):
             priority_fee=0
         )
         return bid_transaction
-
     def update(self, selected, used_mev):
         if selected:
             self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)

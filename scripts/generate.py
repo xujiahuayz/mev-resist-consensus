@@ -146,6 +146,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
 
     builder_data = []
     block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee', 'Inclusion Rate', 'Credit'])
+    block_data_rows = []
 
     while True:
         new_transactions = generate_transactions(chain.normal_users, random_number, 1)
@@ -176,15 +177,12 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
             new_blocks = []
 
             selected_block = selected_proposer.select_block()
-            if selected_block is not None:
-                historical_bids.append(selected_block.bid)  # Update historical bids
-                # historical_bids = historical_bids[-100:] # Keep only the last 100 bids
 
             for builder in chain.builders:
                 # select transactions
                 selected_transactions = builder.select_transactions()
                 # add a bid for the selected list of transactions
-                bid_transaction = builder.bid(selected_proposer.address, historical_bids)
+                bid_transaction = builder.bid(selected_proposer.address, block_data)
 
                 # update the selected transactions by adding the bid transaction into
                 # the selected list of transactions (covered in Body class)
@@ -252,6 +250,15 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                 # add inclusion count for builder
                 builder.inclusion_count()
 
+                new_row = {
+                    'Discount Factor': builder.discount,
+                    'Bid Amount': selected_block.bid,
+                    'Total Transaction Fee': sum(tx.fee for tx in selected_block.transactions),
+                    'Inclusion Rate': builder.inclusion_rate,
+                    'Credit': builder.credit
+                }
+                block_data_rows.append(new_row)
+
                 # add mev profit to builder balance
                 builder = builder_mapping.get(selected_block.builder_id)
                 if builder.builder_strategy == "mev":
@@ -283,17 +290,10 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     if builder.builder_strategy == "mev":
                         builder.mev_profits += transaction.fee
 
-              
-                block_data.append({
-                    'Discount Factor': selected_block.builder.discount,
-                    'Bid Amount': selected_block.bid,
-                    'Total Transaction Fee': sum(tx.fee for tx in selected_block.transactions),
-                    'Inclusion Rate': selected_block.builder.inclusion_rate,
-                    'Credit': selected_block.builder.credit
-                })
-
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
+
+            block_data = pd.concat([block_data, pd.DataFrame(block_data_rows)], ignore_index=True)
 
         for builder in chain.builders:
             inclusion_number = builder.inclusion_rate
