@@ -210,14 +210,16 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                 # add the new block to the list of new blocks
                 new_blocks.append(new_block)
 
-            selected_proposer.blockpool.add_block(new_block, selecte_time)
+                selected_proposer.blockpool.add_block(new_block, selecte_time)
 
-        # for proposer in proposers:
-            # the selected proposer select a block from the blockpool
+            print(f"Iteration {counter}: Blockpool Contents")
+            for block in selected_proposer.blockpool.blocks:
+                print(f"Block ID: {block.block_id}, Builder ID: {block.builder_id}, Bid: {block.bid}")
+
             selected_block = selected_proposer.select_block()
 
             # clear the blockpool for the next slot
-            # selected_proposer.clear_blockpool()
+            selected_proposer.clear_blockpool()
 
             # add the selected block to the longest chain
             if selected_block is not None:
@@ -230,11 +232,6 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     for builder in chain.builders:
                         builder.mempool.remove_transaction(transaction)
 
-            # balance change for each account after block put on chain
-            # for each block, update the balance of proposer and builder e.g. proposer
-            # get the trasnaction total fee - bid and builder get the bid
-            # for each transaction in the block, update the balance of sender and recipient
-            # use the withdraw and deposit method in account class
 
             # Create a mapping from builder_id to Builder object
             builder_mapping = {builder.address: builder for builder in chain.builders}
@@ -263,7 +260,6 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                 builder = builder_mapping.get(selected_block.builder_id)
                 if builder.builder_strategy == "mev":
                     builder.balance += builder.mev_profits
-                    print(f"Block ID: {selected_block.block_id}, MEV Profit: {builder.mev_profits}")
 
                 # determine if the sender is proposer or normal user
                 for transaction in selected_block.transactions:
@@ -290,22 +286,15 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     if builder.builder_strategy == "mev":
                         builder.mev_profits += transaction.fee
 
+                print(f"Selected Block: {selected_block.block_id}, Builder: {builder.address}, Bid: {selected_block.bid}, Discount Factor: {builder.discount}")
+
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
 
             block_data = pd.concat([block_data, pd.DataFrame(block_data_rows)], ignore_index=True)
 
-        for builder in chain.builders:
-            inclusion_number = builder.inclusion_rate
-            builder_data.append({
-                'discount_factor': builder.discount,
-                'credit': builder.credit,
-                'inclusion_number': inclusion_number
-            })
-
-
         counter += 1
-        if counter >= 100:
+        if counter >= 1000:
             return chain, total_proposer_balance, total_builder_balance, builder_data, block_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],

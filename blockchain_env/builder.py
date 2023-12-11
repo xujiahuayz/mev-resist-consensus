@@ -126,7 +126,7 @@ class Builder(Account):
     def bid(self, proposer_address, block_data):
         # Check if block_data DataFrame is empty
         if block_data.empty:
-            historical_average = 0.01
+            historical_average = 1
         else:
             # Extract historical bids from block_data DataFrame
             historical_bids = block_data['Bid Amount']
@@ -134,12 +134,14 @@ class Builder(Account):
 
         # Calculate bid based on historical average and discount factor
         bid_increase_factor = self.discount
-        bid_amount = max(historical_average * (1 + bid_increase_factor), 0.01)  # Ensure bid is never zero
+        bid_amount = max(historical_average * (0.5 + bid_increase_factor), 1)
 
         # Adjust bid based on transaction fees in the mempool
         transaction_fees = sum(t.fee for t in self.mempool.transactions)
         if transaction_fees > historical_average:
-            bid_amount *= 1.1  # Increase by 10% if high fee transactions are present
+            bid_amount += 0.1*(transaction_fees - historical_average)
+        if transaction_fees < historical_average:
+            bid_amount -= 0.1*(historical_average - transaction_fees)
 
         # Create and return the bid transaction
         bid_transaction = Transaction(

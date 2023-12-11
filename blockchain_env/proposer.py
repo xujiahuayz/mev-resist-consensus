@@ -43,7 +43,7 @@ class Proposer(Account):
             # Select the block with the highest bid
             selected_block = max(self.blockpool.blocks, key=lambda block: block.bid, default=None)
             return selected_block
-    
+
         elif self.proposer_strategy == "random":
             # Choose a block randomly from the blockpool
             if not self.blockpool:
