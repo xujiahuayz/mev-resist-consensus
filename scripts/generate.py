@@ -305,8 +305,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
 
 
         counter += 1
-        if counter >= 1000:
-            return chain, total_proposer_balance, total_builder_balance, builder_data, bid_amounts
+        if counter >= 100:
+            return chain, total_proposer_balance, total_builder_balance, builder_data, block_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
                       initial_balance: float):
@@ -377,13 +377,14 @@ if __name__ == "__main__":
     chain.builders = builders
     chain.normal_users = normal_users
 
-    chain, total_proposer_balance, total_builder_balance, builder_data, bid_amounts = simulate(chain)
+    chain, total_proposer_balance, total_builder_balance, builder_data, block_data = simulate(chain)
 
     block_data_df = pd.DataFrame(block_data)
     print(block_data_df)
 
-    discount_factors = [data['discount_factor'] for data in block_data]
-    credits = [data['credit'] for data in block_data]
-    inclusion_numbers = [data['inclusion_number'] for data in builder_data]
+    discount_factors = block_data_df['Discount Factor'].tolist()
+    credits = block_data['Credit'].tolist()
+    inclusion_numbers = block_data['Inclusion Rate'].tolist()
+    bid_amounts = block_data['Bid Amount'].tolist()
 
     plot_bid()

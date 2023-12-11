@@ -29,28 +29,21 @@ class Proposer(Account):
                  blockpool: Blockpool | None = None
     ):
         if blockpool is None:
-            blockpool = Blockpool()
+            self.blockpool = Blockpool()
         else:
             self.blockpool = blockpool
         super().__init__(address, balance)
         self.proposer_strategy = proposer_strategy
-
-    def calculate_profit(self, block):
-        return sum((tx.priority_fee * tx.gas) - block.bid for tx in block.transactions)
 
     def select_block(self) -> Block | None:
         if self.proposer_strategy == "greedy":
             if not self.blockpool.blocks:
                 return None
 
-            selected_block = max(
-                self.blockpool.blocks,
-                key=lambda block: sum((tx.priority_fee * tx.gas) - block.bid
-                                      for tx in block.transactions),
-                default=None
-            )
+            # Select the block with the highest bid
+            selected_block = max(self.blockpool.blocks, key=lambda block: block.bid, default=None)
             return selected_block
-
+    
         elif self.proposer_strategy == "random":
             # Choose a block randomly from the blockpool
             if not self.blockpool:
