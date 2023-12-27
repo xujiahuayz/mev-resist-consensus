@@ -155,14 +155,10 @@ class Builder(Account):
             priority_fee=0
         )
         return bid_transaction
+    
     def update(self, selected, used_mev):
         if selected:
             self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)
             self.credit = max(self.credit + 0.1, 0.0)
         if used_mev:
             self.credit = max(self.credit - 0.2, 0.0)
-
-
-if __name__ == "__main__":
-    # selected_transactions.append(bid_transaction)
-    pass

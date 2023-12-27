@@ -212,9 +212,9 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
 
                 selected_proposer.blockpool.add_block(new_block, selecte_time)
 
-            print(f"Iteration {counter}: Blockpool Contents")
-            for block in selected_proposer.blockpool.blocks:
-                print(f"Block ID: {block.block_id}, Builder ID: {block.builder_id}, Bid: {block.bid}")
+            # print(f"Iteration {counter}: Blockpool Contents")
+            # for block in selected_proposer.blockpool.blocks:
+            #     print(f"Block ID: {block.block_id}, Builder ID: {block.builder_id}, Bid: {block.bid}")
 
             selected_block = selected_proposer.select_block()
 
@@ -286,7 +286,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     if builder.builder_strategy == "mev":
                         builder.mev_profits += transaction.fee
 
-                print(f"Selected Block: {selected_block.block_id}, Builder: {builder.address}, Bid: {selected_block.bid}, Discount Factor: {builder.discount}")
+                # print(f"Selected Block: {selected_block.block_id}, Builder: {builder.address}, Bid: {selected_block.bid}, Discount Factor: {builder.discount}")
 
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
@@ -336,12 +336,26 @@ def plot_credit():
     plt.show()
 
 def plot_bid():
+    x = block_data_df['Discount Factor']
+    y = block_data_df['Bid Amount']
+    sizes = block_data_df['Total Transaction Fee']
+    colors = sizes
+
+    sizes = (sizes - sizes.min()) / (sizes.max() - sizes.min()) * 100 + 20 #normalize
+
     plt.figure(figsize=(10, 6))
-    plt.scatter(discount_factors, bid_amounts, alpha=0.7, c='blue')
-    plt.title('Relationship Between Discount Factor and Bid Amount for Selected Blocks')
+    scatter = plt.scatter(x, y, c=colors, s=sizes, alpha=0.7, cmap='viridis', marker='x', edgecolor='black')
+
+    # Creating a color bar
+    cbar = plt.colorbar(scatter)
+    cbar.set_label('Total Transaction Fee')
+
+    # Adding title and labels
+    plt.title('Discount Factor vs Bid Amount (Color: Total Transaction Fee)')
     plt.xlabel('Discount Factor')
     plt.ylabel('Bid Amount')
     plt.grid(True)
+
     plt.show()
 
 def plot_inclusion():
@@ -369,7 +383,6 @@ if __name__ == "__main__":
     chain, total_proposer_balance, total_builder_balance, builder_data, block_data = simulate(chain)
 
     block_data_df = pd.DataFrame(block_data)
-    print(block_data_df)
 
     discount_factors = block_data_df['Discount Factor'].tolist()
     credits = block_data['Credit'].tolist()
