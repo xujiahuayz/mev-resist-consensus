@@ -124,26 +124,16 @@ class Builder(Account):
     # Steps: 10% of the transaction fee is put for bid
 
     def bid(self, proposer_address, block_data):
-        # Check if block_data DataFrame is empty
-        if block_data.empty:
-            historical_average = 1
-        else:
-            # Extract historical bids from block_data DataFrame
+        expected_value = self.calculate_expected_value()
+
+        if not block_data.empty:
             historical_bids = block_data['Bid Amount']
             historical_average = historical_bids.mean()
+        else:
+            historical_average = 1
 
-        # Calculate bid based on historical average and discount factor
-        bid_increase_factor = self.discount
-        bid_amount = max(historical_average * (0.5 + bid_increase_factor), 1)
+        bid_amount = self.calculate_optimal_bid(historical_average, expected_value)
 
-        # Adjust bid based on transaction fees in the mempool
-        transaction_fees = sum(t.fee for t in self.mempool.transactions)
-        if transaction_fees > historical_average:
-            bid_amount += 0.1*(transaction_fees - historical_average)
-        if transaction_fees < historical_average:
-            bid_amount -= 0.1*(historical_average - transaction_fees)
-
-        # Create and return the bid transaction
         bid_transaction = Transaction(
             transaction_id=str(uuid.uuid4()),
             timestamp=int(datetime.now().timestamp()),
@@ -155,7 +145,21 @@ class Builder(Account):
             priority_fee=0
         )
         return bid_transaction
-    
+
+    def calculate_expected_value(self):
+        total_value = sum(t.priority_fee * t.gas for t in self.mempool.transactions)
+        return total_value / GAS_LIMIT if self.mempool.transactions else 0
+
+    def calculate_optimal_bid(self, historical_average, expected_value):
+        discount_factor = self.discount
+        credit_factor = self.credit
+        inclusion_factor = self.inclusion_rate
+        
+        aggressiveness = credit_factor + inclusion_factor - discount_factor
+        bid_amount = ((historical_average + expected_value) / 2) * (1 + aggressiveness)
+        
+        return max(bid_amount, BASE_FEE)
+
     def update(self, selected, used_mev):
         if selected:
             self.inclusion_rate = min(self.inclusion_rate + 0.1, 1.0)
