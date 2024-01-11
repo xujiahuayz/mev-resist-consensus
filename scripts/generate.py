@@ -368,6 +368,25 @@ def plot_inclusion():
     plt.grid(True)
     plt.show()
 
+def plot_bid_time(block_data_df):
+    plt.figure(figsize=(10, 6))
+
+    # Define color mapping for each strategy
+    strategy_colors = {'strategy1': 'blue', 'strategy2': 'green', 'strategy3': 'red'}
+
+    for strategy in block_data_df['Bidding Strategy'].unique():
+        # Filter data by strategy
+        strategy_data = block_data_df[block_data_df['Bidding Strategy'] == strategy]
+        plt.scatter(strategy_data['Slot'], strategy_data['Bid Amount'], color=strategy_colors[strategy], label=strategy)
+
+    plt.xlabel('Slot')
+    plt.ylabel('Bid Amount')
+    plt.title('Selected Bids for Each Slot by Bidding Strategy')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 if __name__ == "__main__":
 
     chain = Chain()
@@ -389,4 +408,4 @@ if __name__ == "__main__":
     inclusion_numbers = block_data['Inclusion Rate'].tolist()
     bid_amounts = block_data['Bid Amount'].tolist()
 
-    plot_bid()
+    plot_bid_time(block_data_df)
