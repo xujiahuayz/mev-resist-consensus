@@ -159,6 +159,29 @@ class Builder(Account):
         bid_amount = ((historical_average + expected_value) / 2) * (1 + aggressiveness)
         
         return max(bid_amount, BASE_FEE)
+    
+    def decide_bid_amount(self, visible_bids, strategy, block_value, counter):
+        if strategy == 'fraction_based':
+            fraction = 0.10 
+            bid_amount = block_value * fraction
+
+        elif strategy == 'reactive':
+            if not visible_bids:
+                bid_amount = block_value * fraction 
+            else:
+                highest_bid = max(visible_bids)
+                increment_factor = 0.05  
+                bid_amount = highest_bid * (1 + increment_factor)
+
+        elif strategy == 'last_minute':
+            fraction = 0.10  
+            bid_amount = block_value * fraction
+            if counter % 12 == 11:
+                return bid_amount
+            else:
+                return None
+
+        return bid_amount
 
     def update(self, selected, used_mev):
         if selected:
