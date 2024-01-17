@@ -18,9 +18,11 @@ class BiddingGame:
         self.alpha = alpha
         self.num_simulations = num_simulations
         self.timesteps = timesteps
+        self.max_bids:list[list[float]] = []
 
     def simulate(self):
-        results = []
+        results:list[bool] = []
+        self.max_bids.append([])
         b1_char:float = pareto.rvs(self.alpha)
         b2_char:float = pareto.rvs(self.alpha)
         for _ in range(self.num_simulations):
@@ -33,6 +35,7 @@ class BiddingGame:
 
             auction: Auction = Auction(builder1, builder2, self.timesteps)
             results.append(auction.run())
+            self.max_bids[-1].append(auction.max_bid)
 
         return results
 
@@ -62,8 +65,8 @@ class Builder:
 
 class Auction:
     def __init__(self, builder1: Builder, 
-                 builder2: Builder, 
-                 timesteps: int):
+                builder2: Builder, 
+                timesteps: int):
         self.builder1 = builder1
         self.builder2 = builder2
         self.timesteps = timesteps
@@ -83,6 +86,8 @@ class Auction:
             W_t = random.randint(-1, 1) / 10
             self.builder1.update_bid(W_t)
             self.builder2.update_bid(W_t)
+        
+        self.max_bid:float = max(self.builder1.bid, self.builder2.bid)
 
         return self.builder1.bid > self.builder2.bid
 
@@ -92,16 +97,16 @@ def main():
     lambda_m: float = 1
     alpha: float = 2
     timesteps: int = 24
-    num_simulations: int = 1000
-    num_universes: int = 1000
+    num_simulations: int = 100
+    num_universes: int = 10
 
     # Simulation
     bidding_game = BiddingGame(lambda_g, 
-                               lambda_m, 
-                               alpha, 
-                               num_simulations, 
-                               timesteps)
-    results: list[bool] = [bidding_game.simulate() for universe in range(num_universes)]
+                                lambda_m, 
+                                alpha, 
+                                num_simulations, 
+                                timesteps)
+    results = [bidding_game.simulate() for universe in range(num_universes)]
 
     # Extract results
     nmev_probabilities: float = sum([sum(result) for result in results]) / (num_simulations * num_universes)
@@ -109,9 +114,21 @@ def main():
     print(f"Non-MEV Winner P: {nmev_probabilities} and MEV Winner P: {mev_probabilities}")
 
     # Plotting
+    # Probability plot
+    plt.subplot(2, 1, 1)
     labels = ["Probability for Non-MEV Builder", "Probability for MEV Builder"]
     plt.bar(labels, [nmev_probabilities, mev_probabilities])
     plt.ylabel("Probability")
+
+    # Maximum bids over time plot
+    plt.subplot(2, 1, 2)
+    for i, max_bids in enumerate(bidding_game.max_bids):
+        plt.plot(range(1, num_simulations + 1), max_bids, label=f"Universe {i + 1}")
+
+    plt.xlabel("Time Step")
+    plt.ylabel("Maximum Bid")
+    plt.legend()
+
     plt.show()
 
 if __name__ == "__main__":
