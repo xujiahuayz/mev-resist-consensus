@@ -23,8 +23,8 @@ class BiddingGame:
         results = []
 
         for _ in range(self.num_simulations):
-            builder1: Builder = Builder(self.lambda_g, 0, pareto.rvs(alpha))
-            builder2: Builder = Builder(self.lambda_g, self.lambda_m, pareto.rvs(alpha))
+            builder1: Builder = Builder(self.lambda_g, 0, pareto.rvs(self.alpha))
+            builder2: Builder = Builder(self.lambda_g, self.lambda_m, pareto.rvs(self.alpha))
 
             auction: Auction = Auction(builder1, builder2, self.timesteps)
             results.append(auction.run())
@@ -66,7 +66,7 @@ class Auction:
         self.builder2.calculate_bid(W_t)
 
         # The proposer can end the auction at any time in the block time
-        end_time: int = random.randint(0, timesteps)
+        end_time: int = random.randint(0, self.timesteps)
 
         for _ in range(end_time):
             W_t = random.randint(-1, 1) / 10
@@ -75,25 +75,28 @@ class Auction:
 
         return self.builder1.bid > self.builder2.bid
 
+def main():
+    # Parameters
+    lambda_g: float = 1
+    lambda_m: float = 1
+    alpha: float = 2
+    timesteps: int = 24
+    num_simulations: int = 10000
 
-# Parameters
-lambda_g: float = 1
-lambda_m: float = 1
-alpha: float = 2
-timesteps: int = 24
-num_simulations: int = 10000
+    # Simulation
+    bidding_game = BiddingGame(lambda_g, lambda_m, alpha, num_simulations, timesteps)
+    results: list[bool] = bidding_game.simulate()
 
-# Simulation
-bidding_game = BiddingGame(lambda_g, lambda_m, alpha, num_simulations, timesteps)
-results: list[bool] = bidding_game.simulate()
+    # Extract results
+    nmev_probabilities: float = sum(results) / num_simulations
+    mev_probabilities: float = 1 - nmev_probabilities
+    print(f"Non-MEV Winner P: {nmev_probabilities} and MEV Winner P: {mev_probabilities}")
 
-# Extract results
-nmev_probabilities: float = sum(results) / num_simulations
-mev_probabilities: float = 1 - nmev_probabilities
-print(f"Non-MEV Winner P: {nmev_probabilities} and MEV Winner P: {mev_probabilities}")
-
-# Plotting
-labels = ["Probability for Non-MEV Builder", "Probability for MEV Builder"]
-plt.bar(labels, [nmev_probabilities, mev_probabilities])
-plt.ylabel("Probability")
-plt.show()
+    # Plotting
+    labels = ["Probability for Non-MEV Builder", "Probability for MEV Builder"]
+    plt.bar(labels, [nmev_probabilities, mev_probabilities])
+    plt.ylabel("Probability")
+    plt.show()
+    
+if __name__ == '__main__':
+    main()
