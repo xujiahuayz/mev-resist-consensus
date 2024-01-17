@@ -23,15 +23,14 @@ class BiddingGame:
     def simulate(self):
         results:list[bool] = []
         self.max_bids.append([])
-        b1_char:float = pareto.rvs(self.alpha)
-        b2_char:float = pareto.rvs(self.alpha)
+        b_char:list[float] = pareto.rvs(self.alpha, size = 2)
         for _ in range(self.num_simulations):
             # These are random changes to builder characteristics in each block. As of now the distribution of the change 
             # is a pure assumption without any empirical research.
-            b1_char += b1_char * random.normalvariate(0,1)/100
-            b2_char += b2_char * random.normalvariate(0,1)/100
-            builder1: Builder = Builder(self.lambda_g, 0, b1_char)
-            builder2: Builder = Builder(self.lambda_g, self.lambda_m, b2_char)
+            b_char[0] += b_char[0] * random.normalvariate(0,1)/10
+            b_char[1] += b_char[1] * random.normalvariate(0,1)/10
+            builder1: Builder = Builder(self.lambda_g, 0, b_char[0])
+            builder2: Builder = Builder(self.lambda_g, self.lambda_m, b_char[1])
 
             auction: Auction = Auction(builder1, builder2, self.timesteps)
             results.append(auction.run())
@@ -48,6 +47,7 @@ class Builder:
         self.gas_scaling = gas_scaling
         self.charateristic = characteristic
         self.mev_scaling = mev_scaling
+        self.bid:float = 0
 
     def calculate_bid(self, W_t: int):
         self.bid = (
@@ -70,6 +70,7 @@ class Auction:
         self.builder1 = builder1
         self.builder2 = builder2
         self.timesteps = timesteps
+        self.max_bid:float = 0
 
     def run(self):
         # This generated Wiener process, the specification of which doesn't 
@@ -87,7 +88,7 @@ class Auction:
             self.builder1.update_bid(W_t)
             self.builder2.update_bid(W_t)
         
-        self.max_bid:float = max(self.builder1.bid, self.builder2.bid)
+        self.max_bid = max(self.builder1.bid, self.builder2.bid)
 
         return self.builder1.bid > self.builder2.bid
 
@@ -132,5 +133,4 @@ def main():
     plt.show()
 
 if __name__ == "__main__":
-    
     main()
