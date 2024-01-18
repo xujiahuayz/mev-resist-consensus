@@ -18,7 +18,9 @@ def main():
                                 lambda_m, 
                                 alpha, 
                                 num_simulations, 
-                                timesteps)
+                                timesteps,
+                                50,
+                                50)
     results = [bidding_game.simulate() for universe in range(num_universes)]
 
     # Extract results

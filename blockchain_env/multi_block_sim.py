@@ -10,27 +10,29 @@ class BiddingGame:
         alpha: float,
         num_simulations: int,
         timesteps: int,
+        nmev_builders: int,
+        mev_builders:int
     ):
         self.lambda_g = lambda_g
         self.lambda_m = lambda_m
         self.alpha = alpha
         self.num_simulations = num_simulations
         self.timesteps = timesteps
+        self.nmev_builders = nmev_builders
+        self.mev_builders = mev_builders
         self.max_bids:list[list[float]] = []
 
     def simulate(self):
         results:list[bool] = []
         self.max_bids.append([])
-        b_char:list[float] = pareto.rvs(self.alpha, size = 2)
+        b_char:list[float] = pareto.rvs(self.alpha, size = self.mev_builders + self.nmev_builders)
         for _ in range(self.num_simulations):
             # These are random changes to builder characteristics in each block. As of now the distribution of the change 
             # is a pure assumption without any empirical research.
-            b_char[0] += b_char[0] * random.normalvariate(0,1)/10
-            b_char[1] += b_char[1] * random.normalvariate(0,1)/10
-            builder1: Builder = Builder(self.lambda_g, 0, b_char[0])
-            builder2: Builder = Builder(self.lambda_g, self.lambda_m, b_char[1])
-
-            auction: Auction = Auction(builder1, builder2, self.timesteps)
+            b_char = [char + char * random.normalvariate(0,1)/10 for char in b_char]
+            builders:list[Builder] = [Builder(self.lambda_g, self.lambda_m, char) for char in b_char[:self.nmev_builders]]
+            builders += [Builder(self.lambda_g, 0, char) for char in b_char[-self.mev_builders:]]
+            auction: Auction = Auction(builders, self.timesteps)
             results.append(auction.run())
             self.max_bids[-1].append(auction.max_bid)
 
@@ -62,11 +64,9 @@ class Builder:
 
 
 class Auction:
-    def __init__(self, builder1: Builder, 
-                builder2: Builder, 
+    def __init__(self, builders:list[Builder],
                 timesteps: int):
-        self.builder1 = builder1
-        self.builder2 = builder2
+        self.builders = builders
         self.timesteps = timesteps
         self.max_bid:float = 0
 
@@ -75,17 +75,16 @@ class Auction:
         # change the result of the simulations (the scale does)
         W_t: int = random.randint(-1, 1) / 10
 
-        self.builder1.calculate_bid(W_t)
-        self.builder2.calculate_bid(W_t)
+        [builder.calculate_bid(W_t) for builder in self.builders]
 
         # The proposer can end the auction at any time in the block time
         end_time: int = random.randint(0, self.timesteps)
 
         for _ in range(end_time):
             W_t = random.randint(-1, 1) / 10
-            self.builder1.update_bid(W_t)
-            self.builder2.update_bid(W_t)
+            [builder.update_bid(W_t) for builder in self.builders]
         
-        self.max_bid = max(self.builder1.bid, self.builder2.bid)
+        max_builder = max(self.builders, key = lambda builder: builder.bid)
+        self.max_bid = max_builder.bid
 
-        return self.builder1.bid > self.builder2.bid
+        return not(max_builder.mev_scaling)
