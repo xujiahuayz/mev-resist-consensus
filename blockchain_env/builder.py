@@ -160,7 +160,7 @@ class Builder(Account):
      
         return max(bid_amount, BASE_FEE)
     
-    def decide_bid_amount(self, visible_bids, strategy, block_value, counter):
+    def decide_bid_amount(self, visible_bids, block_data, strategy, block_value, counter):
         if strategy == 'fraction_based':
             fraction = 0.10
             bid_amount = block_value * fraction
@@ -180,8 +180,22 @@ class Builder(Account):
                 return bid_amount
             else:
                 return None
+            
+        elif strategy == 'historical':
+            historical_bids = block_data['Bid Amount']
+            average_past_bid = np.mean(historical_bids) if historical_bids else block_value * fraction
+            bid_amount = average_past_bid
+
+        elif strategy == 'bluff':
+            bluff_increment = 0.20  # Start with a bid 20% higher than the block value
+            bluff_decrement = 0.01  # Decrement by 1% of the block value each counter
+            bid_amount = block_value * (bluff_increment - (counter % 12) * bluff_decrement)
+            bid_amount = max(bid_amount, block_value * fraction)  # Ensure bid does not go below a certain threshold
 
         return bid_amount
+    
+    def alter_strategy(self, strategy, block_data):
+        pass
 
     def update(self, selected, used_mev):
         if selected:
