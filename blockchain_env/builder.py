@@ -162,7 +162,7 @@ class Builder(Account):
     
     def decide_bid_amount(self, visible_bids, block_data, strategy, block_value, counter):
         if strategy == 'fraction_based':
-            fraction = 0.10
+            fraction = 0.50
             bid_amount = block_value * fraction
 
         elif strategy == 'reactive':
@@ -187,11 +187,11 @@ class Builder(Account):
             bid_amount = average_past_bid
 
         elif strategy == 'bluff':
-            bluff_increment = 0.20  # Start with a bid 20% higher than the block value
-            bluff_decrement = 0.01  # Decrement by 1% of the block value each counter
-            bid_amount = block_value * (bluff_increment - (counter % 12) * bluff_decrement)
-            bid_amount = max(bid_amount, block_value * fraction)  # Ensure bid does not go below a certain threshold
-
+            high_bid_multiplier = 1.5
+            low_bid_multiplier = 0.8
+            bid_multiplier = np.interp(counter, [0, 11], [high_bid_multiplier, low_bid_multiplier])
+            bid_amount = block_value * bid_multiplier
+            
         return bid_amount
     
     def alter_strategy(self, strategy, block_data):
