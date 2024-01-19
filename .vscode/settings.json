@@ -1,13 +1,15 @@
 {
   "editor.formatOnSave": true,
-  "python.linting.pylintArgs": [
-    "--disable=C0111"
-  ],
   "editor.formatOnSaveMode": "file",
   "python.formatting.provider": "none",
   "python.linting.enabled": true,
   "editor.formatOnPaste": false,
+  "python.linting.pylintArgs": [
+    "--rcfile",
+    "${workspaceFolder}/backend/.pylintrc"
+  ],
   "todo-tree.tree.scanMode": "workspace",
+  "python.linting.pylintEnabled": true,
   "python.testing.pytestArgs": [
     "tests"
   ],
@@ -15,13 +17,11 @@
   "python.testing.nosetestsEnabled": false,
   "python.testing.pytestEnabled": true,
   "jupyter.notebookFileRoot": "${workspaceFolder}",
-  "cSpell.words": [
-    "collateralized"
-  ],
+  "python.languageServer": "Pylance",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
-  "python.analysis.extraPaths": [
-    "./market_env"
+  "githubPullRequests.ignoredPullRequestBranches": [
+    "main"
   ]
 }

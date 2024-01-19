@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-instance-attributes, too-many-arguments
 from blockchain_env.constants import BASE_FEE
 
 class Transaction:
@@ -10,7 +11,7 @@ class Transaction:
         amount: float,
         base_fee: float = BASE_FEE,
         priority_fee: float = 0,
-        bid: float = 0
+        is_private: bool = False,
     ):
         """
         Initialize a new transaction.
@@ -24,24 +25,18 @@ class Transaction:
         self.base_fee = base_fee
         self.priority_fee = priority_fee
         self.fee = self.calculate_total_fee()
-        self.bid = bid
+        self.is_private = is_private
 
-        self.dict_timestamp = dict()
-        # create time (one), enter-mempool time (multiple: dict), building time (multiple: dict), confirm time
-        # # builder 1, proposer 1
-        # self.create_timestamp
-        # self.builder_timestamp[1]
-        # self.proposer_timestamp[1]
-        # self.confirm_timestamp
-        self.builder_timestamp = dict()
-        self.proposer_timestamp = dict()
-    
+        self.dict_timestamp = {}
+        self.builder_timestamp = {}
+        self.proposer_timestamp = {}
+
     def calculate_total_fee(self):
         """
         Calculate the total fee of the transaction.
         """
-        return self.amount * (self.base_fee + self.priority_fee)
-    
+        return self.gas * (self.base_fee + self.priority_fee)
+
     def enter_mempool(self, builder_address, enter_timestamp):
         """
         Enter the transaction into the mempool.
@@ -60,8 +55,6 @@ class Transaction:
         """
         self.dict_timestamp[proposer_address] = confirm_timestamp
 
-
-
 if __name__ == "__main__":
     # Create a Transaction instance
     transaction = Transaction(
@@ -69,16 +62,11 @@ if __name__ == "__main__":
         timestamp=0,
         sender="SenderAddress",
         recipient="RecipientAddress",
-        gas=21000,
+        gas=1,
         amount=5.0,
         base_fee=2.0,
         priority_fee=1.0,
-        bid=0.5
     )
-
-    # Record timestamps
-    transaction.enter_mempool("Builder1", 10)
-    transaction.enter_blockpool("Builder1", 20)
 
     # Print the timestamps
     print("Create Timestamp:", transaction.create_timestamp)
