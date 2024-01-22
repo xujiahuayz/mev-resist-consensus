@@ -56,7 +56,6 @@ class Builder:
 
     def calculate_bid(self, W_t: int):
         self.bid = (
-            self.charateristic = self.ch
             (self.gas_scaling + self.mev_scaling) * random.normalvariate(self.charateristic,0.1)
             + (self.gas_scaling * W_t
             + self.mev_scaling * W_t) 
