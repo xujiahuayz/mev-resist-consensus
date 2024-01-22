@@ -202,16 +202,18 @@ class Builder(Account):
         return bid_amount
     
     def alter_strategy(self, block_data):
-        # Determine the winning bid strategy and builder strategy
-        win_bid_str = block_data['Bid Strategy'].value_counts().idxmax()
-        win_builder_str = block_data['Builder Strategy'].value_counts().idxmax()
+        try:
+            winning_bid_strategy = block_data['Bid Strategy'].value_counts().idxmax()
+            winning_builder_strategy = block_data['Builder Strategy'].value_counts().idxmax()
+        except KeyError:
+            print("Bid Strategy or Builder Strategy column not found in block_data")
+            return
 
-        for builder in self.builders_per_strategy:
-            if random.random() < 0.20: 
-                if builder.bid_strategy != win_bid_str:
-                    builder.bid_strategy = win_bid_str
-                if builder.builder_strategy != win_builder_str:
-                    builder.builder_strategy = win_builder_str
+        if random.random() < 0.20:
+            if self.bid_strategy != winning_bid_strategy:
+                self.bid_strategy = winning_bid_strategy
+            if self.builder_strategy != winning_builder_strategy:
+                self.builder_strategy = winning_builder_strategy
 
 
     def update(self, selected, used_mev):
