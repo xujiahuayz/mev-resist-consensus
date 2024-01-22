@@ -7,11 +7,13 @@ from blockchain_env.multi_block_sim import BiddingGame
 def main():
     # Parameters
     lambda_g: float = 1
-    lambda_m: float = 1
+    lambda_m: float = 10
     alpha: float = 2
     timesteps: int = 24
-    num_simulations: int = 100
-    num_universes: int = 10
+    num_simulations: int = 10000
+    num_universes: int = 1
+    nmev_builders: int = 50
+    mev_builders: int = 50
 
     # Simulation
     bidding_game = BiddingGame(lambda_g, 
@@ -19,8 +21,8 @@ def main():
                                 alpha, 
                                 num_simulations, 
                                 timesteps,
-                                50,
-                                50)
+                                nmev_builders,
+                                mev_builders)
     results = [bidding_game.simulate() for universe in range(num_universes)]
 
     # Extract results
