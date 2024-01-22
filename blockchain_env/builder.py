@@ -24,20 +24,28 @@ class Mempool:
             self.transactions.remove(transaction)
 
 class Builder(Account):
+    builders_per_strategy = {
+        'fraction_based': 10,
+        'reactive': 10,
+        'historical': 10,
+        'last_minute': 10,
+        'bluff': 10,
+    }
     def __init__(self,
                 address,
                 balance: float,
-                # builder_strategy: str = "mev",
                 builder_strategy: None = None,
                 discount: float | None = None,
                 private: bool = False,
                 credit: float = 0.0,
-                inclusion_rate: float = 0.0
+                inclusion_rate: float = 0.0,
+                bid_strategy: None = None,
     ):
         super().__init__(address, balance)
         # assert builder_strategy in BUILDER_STRATEGY_LIST, f"The builder_strategy must
         # be one of {BUILDER_STRATEGY_LIST}."
         self.builder_strategy = builder_strategy
+        self.bid_strategy = bid_strategy
         self.discount = discount if discount is not None else np.random.random()
         self.mempool = Mempool(self.address)
         self.private = private
@@ -45,7 +53,6 @@ class Builder(Account):
         self.inclusion_rate = inclusion_rate
         self.notebook = {}
         self.mev_profits = 0
-
 
     # def update_notebook(self, transaction):
     #     self.notebook[transaction.sender] = self.notebook.get(transaction.sender,
@@ -160,12 +167,12 @@ class Builder(Account):
      
         return max(bid_amount, BASE_FEE)
     
-    def decide_bid_amount(self, visible_bids, block_data, strategy, block_value, counter):
-        if strategy == 'fraction_based':
+    def decide_bid_amount(self, visible_bids, block_data, bid_strategy, block_value, counter):
+        if bid_strategy == 'fraction_based':
             fraction = 0.50
             bid_amount = block_value * fraction
 
-        elif strategy == 'reactive':
+        elif bid_strategy == 'reactive':
             if not visible_bids:
                 bid_amount = block_value * fraction
             else:
@@ -173,7 +180,7 @@ class Builder(Account):
                 increment_factor = 0.05
                 bid_amount = highest_bid * (1 + increment_factor)
 
-        elif strategy == 'last_minute':
+        elif bid_strategy == 'last_minute':
             fraction = 0.10
             bid_amount = block_value * fraction
             if counter % 12 == 11:
@@ -181,21 +188,31 @@ class Builder(Account):
             else:
                 return None
             
-        elif strategy == 'historical':
+        elif bid_strategy == 'historical':
             historical_bids = block_data['Bid Amount']
             average_past_bid = np.mean(historical_bids) if historical_bids else block_value * fraction
             bid_amount = average_past_bid
 
-        elif strategy == 'bluff':
+        elif bid_strategy == 'bluff':
             high_bid_multiplier = 1.5
             low_bid_multiplier = 0.8
             bid_multiplier = np.interp(counter, [0, 11], [high_bid_multiplier, low_bid_multiplier])
             bid_amount = block_value * bid_multiplier
-            
+
         return bid_amount
     
-    def alter_strategy(self, strategy, block_data):
-        pass
+    def alter_strategy(self, block_data):
+        # Determine the winning bid strategy and builder strategy
+        win_bid_str = block_data['Bid Strategy'].value_counts().idxmax()
+        win_builder_str = block_data['Builder Strategy'].value_counts().idxmax()
+
+        for builder in self.builders_per_strategy:
+            if random.random() < 0.20: 
+                if builder.bid_strategy != win_bid_str:
+                    builder.bid_strategy = win_bid_str
+                if builder.builder_strategy != win_builder_str:
+                    builder.builder_strategy = win_builder_str
+
 
     def update(self, selected, used_mev):
         if selected:
