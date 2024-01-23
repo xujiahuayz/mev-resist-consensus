@@ -11,8 +11,8 @@ fig, axes = plt.subplots(nrows=3, ncols=1)
 
 df['Bid Value'].plot(ax=axes[0], label='Bid Value'); 
 df['Bid Value'].rolling(window=10).mean().plot(ax=axes[0], label='Moving Average over 10 blocks')
-axes[1].set_title('Winning Bids')
-axes[1].legend()
+axes[0].set_title('Winning Bids')
+axes[0].legend()
 
 df['Reward'].plot(ax=axes[1], label='Reward'); 
 df['Reward'].rolling(window=10).mean().plot(ax=axes[1], label='Moving Average over 10 blocks')
