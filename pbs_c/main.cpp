@@ -1,7 +1,7 @@
 #include "blockchain_env/Blockchain.h"
 int main() {
-    int numBuilders = 5;
-    Blockchain blockchain(200,numBuilders);
+    int numBuilders = 4;
+    Blockchain blockchain(100,numBuilders);
     blockchain.startChain();
     blockchain.printBlockStats();
     blockchain.saveBlockData();

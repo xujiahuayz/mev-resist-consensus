@@ -37,6 +37,9 @@ public:
     double expectedUtility(double yourBid, int numSimulations);
     double findOptimalBid(int numSimulations);
 
+    double expectedFutureUtility(double yourBid, int numSimulations, int depth, int discountFactor, int bidIncrement, std::vector<double> bids);
+    std::pair<double, double> findOptimalFutureBid(int numSimulations, int depth, int discountFactor, int bidIncrement, std::vector<double> bids);
+
 
 };
 

@@ -32,13 +32,13 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 27,
+				"line" : 28,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 25,
+				"line" : 26,
 				"parent" : 0
 			}
 		]
@@ -144,7 +144,8 @@
 			"sourceIndexes" : 
 			[
 				3,
-				5
+				5,
+				7
 			]
 		}
 	],
@@ -189,6 +190,11 @@
 			"compileGroupIndex" : 0,
 			"path" : "blockchain_env/Blockchain.cpp",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "include/Random.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"

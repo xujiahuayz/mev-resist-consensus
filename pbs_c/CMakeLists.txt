@@ -19,6 +19,7 @@ add_executable(pbs_c main.cpp
         game_env/Auction.cpp
         blockchain_env/Blockchain.h
         blockchain_env/Blockchain.cpp
+        include/Random.h
 )
 
 

@@ -5,6 +5,7 @@
 #include "Auction.h"
 #include "iostream"
 #include <time.h>
+#include <thread>
 
 Auction::Auction(BuilderMap &aBuilders):builders(aBuilders){}
 
@@ -13,7 +14,18 @@ void Auction::runAuction(){
     auto endT = rand() % 24;
     endT = 0;
     for(int i = -1; i < endT; i++){
-        std::for_each(builders.begin(), builders.end(), [](Builder &ep){ep.calculatedBid();});
+        std::vector<std::thread> threads;
+        for (Builder& builder : builders) {
+            threads.emplace_back([&builder]() {
+                builder.calculatedBid();
+            });
+        }
+
+        for (std::thread& thread : threads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
+        }
         winningBuilder = &(*std::max_element(builders.begin(), builders.end(),
                                              [](const Builder &a, const Builder &b) {
                                                  return a.currBid < b.currBid; // Compare currBid values
