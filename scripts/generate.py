@@ -297,7 +297,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
             block_data = pd.concat([block_data, pd.DataFrame(block_data_rows)], ignore_index=True)
 
         counter += 1
-        if counter >= 1000:
+        if counter >= 100:
             return chain, total_proposer_balance, total_builder_balance, builder_data, block_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
@@ -392,31 +392,29 @@ def plot_bid_time(block_data_df):
 def plot_strategy(block_data_df):
     plt.figure(figsize=(12, 6))
 
-    # Extract unique strategies
-    strategies = block_data_df['Bid Strategy'].unique()
-    block_numbers = block_data_df['Block Number'].unique()
-
+    # Get the total number of blocks for x-axis
+    max_block_number = block_data_df['Block Number'].max() + 1
+    block_numbers = list(range(max_block_number))
+    
     # Initialize a dictionary to store strategy counts per block
-    strategy_counts = {strategy: [] for strategy in strategies}
+    strategy_counts = {strategy: [0] * max_block_number for strategy in block_data_df['Bid Strategy'].unique()}
+    
+    # Populate the strategy counts for each block
+    for index, row in block_data_df.iterrows():
+        strategy_counts[row['Bid Strategy']][row['Block Number']] += 1
 
-    # Count the number of builders per strategy for each block
-    for block in block_numbers:
-        block_data = block_data_df[block_data_df['Block Number'] == block]
-        counts = block_data['Bid Strategy'].value_counts()
-        for strategy in strategies:
-            strategy_counts[strategy].append(counts.get(strategy, 0))
+    # Prepare data for stacked plot
+    data_for_plot = np.array([strategy_counts[strategy] for strategy in strategy_counts])
 
-    # Plotting
-    for strategy, counts in strategy_counts.items():
-        plt.plot(block_numbers, counts, label=strategy, marker='o')
-
+    # Plotting a stacked graph
+    plt.stackplot(block_numbers, data_for_plot, labels=strategy_counts.keys())
+    
     plt.xlabel('Block Number')
     plt.ylabel('Number of Builders')
-    plt.title('Number of Builders per Strategy Over Blocks')
-    plt.legend()
+    plt.title('Number of Builders per Strategy Over Blocks (Stacked)')
+    plt.legend(loc='upper left')
     plt.grid(True)
     plt.show()
-
 
 
 if __name__ == "__main__":
@@ -440,4 +438,6 @@ if __name__ == "__main__":
     inclusion_numbers = block_data['Inclusion Rate'].tolist()
     bid_amounts = block_data['Bid Amount'].tolist()
 
-    plot_strategy(block_data_df)
+    print(block_data_df)
+
+    # plot_strategy(block_data_df)
