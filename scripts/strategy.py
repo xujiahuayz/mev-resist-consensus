@@ -18,12 +18,13 @@ class Builder:
         self.capability = capability
 
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
+        '''Return the bid amount for the builder based on the strategy.'''
         if self.strategy == 'fraction_based':
             fraction = 0.5
             return block_value * fraction
         elif self.strategy == 'reactive':
             if block_bid_his:
-                last_bid = block_bid_his[-1]['bid']
+                last_bid = max(block_bid_his[-1].values())
                 increment = 0.1
                 return last_bid * (1 + increment)
             else:
@@ -39,12 +40,20 @@ class Builder:
 
 class Simulation:
     def __init__(self, num_builders, num_blocks):
-        self.builders = [Builder(i, random.choice(STRATEGIES), np.random.uniform(1, 10)) for i in range(num_builders)]
         self.num_blocks = num_blocks
         self.winning_bid = []
         self.winning_strategy = []
+        self.strategy_counts_per_block = []
+
+        # Equally distribute strategies among builders
+        strategies_per_builder = len(STRATEGIES)
+        builders_strategies = STRATEGIES * (num_builders // strategies_per_builder) + STRATEGIES[:num_builders % strategies_per_builder]
+        random.shuffle(builders_strategies)
+
+        self.builders = [Builder(i, builders_strategies[i], np.random.uniform(1, 10)) for i in range(num_builders)]
 
     def simulate_block(self):
+        '''Simulate a block'''
         for _ in range(self.num_blocks):
             block_value = np.random.normal(1, 0.1)  # Base value for the block
             auction_end = False
@@ -66,14 +75,25 @@ class Simulation:
             self.update_strategies(winning_builder_strategy)
 
     def update_strategies(self, winning_strategy):
+        '''Update the strategy of each builder with a probability of CHANGE_STRATEGY_RATE.'''
         for builder in self.builders:
             if random.random() < CHANGE_STRATEGY_RATE:
                 builder.strategy = winning_strategy
 
+    def track_strategies(self):
+        """Track the number of builders for each strategy after each block."""
+        count_per_strategy = {strategy: 0 for strategy in STRATEGIES}
+        for builder in self.builders:
+            count_per_strategy[builder.strategy] += 1
+        self.strategy_counts_per_block.append(count_per_strategy)
+
+
     def run(self):
+        '''run'''
         self.simulate_block()
 
-    def plot_results(self):
+    def plot_cumulative_win(self):
+        '''Plot the cumulative win for each strategy'''
         plt.figure(figsize=(12, 6))
         strategies_count = {strategy: [0] * self.num_blocks for strategy in STRATEGIES}
         for i, strategy in enumerate(self.winning_strategy):
@@ -87,7 +107,26 @@ class Simulation:
         plt.grid(True)
         plt.show()
 
+    def plot_strategy_num(self):
+        """Plot the number of builders for each strategy over blocks."""
+        plt.figure(figsize=(12, 6))
+
+        # Prepare data for plotting
+        block_numbers = list(range(len(self.strategy_counts_per_block)))
+        for strategy in STRATEGIES:
+            counts = [count[strategy] for count in self.strategy_counts_per_block]
+            plt.plot(block_numbers, counts, label=strategy)
+
+        # Plot settings
+        plt.title('Number of Builders per Strategy Over Blocks')
+        plt.xlabel('Block Number')
+        plt.ylabel('Number of Builders')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
-simulation.plot_results()
+simulation.plot_cumulative_win()
+simulation.plot_strategy_num()
