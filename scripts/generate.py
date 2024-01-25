@@ -36,7 +36,6 @@ def generate_normal_users(num_users):
 def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
-
     for transaction in range(num_transactions): 
         sender = random.choice(normal_users)
         recipient = random.choice(normal_users)
@@ -100,13 +99,16 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
 def generate_builders(num_builders):
     builders = []
-    strategies = ['greedy', 'mev', 'random']
+    build_strategies = ['greedy', 'mev', 'random']
+    bid_strategies = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
+    bid = []
     discount_factor_range = (0.0, 1.0)
     credit_range = (0.0, 1.0)
     inclusion_rate_range = (0.0, 1.0)
 
     for i in range(num_builders):
-        builder_strategy = random.choice(strategies)
+        builder_strategy = random.choice(build_strategies)
+        bid_strategy = random.choice(bid_strategies)
         discount_factor = random.uniform(*discount_factor_range)
         credit = random.uniform(*credit_range)
         inclusion_rate = random.uniform(*inclusion_rate_range)
@@ -119,7 +121,8 @@ def generate_builders(num_builders):
             discount=discount_factor,
             private=private,
             credit=credit,
-            inclusion_rate=inclusion_rate
+            inclusion_rate=inclusion_rate,
+            bid_strategy=bid_strategy
         )
         builders.append(builder)
     return builders
@@ -145,7 +148,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
     random_number = random.randint(1, 10)
 
     builder_data = []
-    block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee', 'Inclusion Rate', 'Credit'])
+    block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee', 
+                                       'Inclusion Rate', 'Credit', 'Bid Strategy', 'Builder Strategy', 'Block Number'])
     block_data_rows = []
 
     while True:
@@ -197,7 +201,6 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
 
                 # create a new block with the selected transactions
                 new_block = Block(
-
                     previous_block_id=previous_block_id,
                     timestamp=selecte_time,
                     proposer_address=selected_proposer.address,
@@ -232,7 +235,6 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     for builder in chain.builders:
                         builder.mempool.remove_transaction(transaction)
 
-
             # Create a mapping from builder_id to Builder object
             builder_mapping = {builder.address: builder for builder in chain.builders}
 
@@ -252,9 +254,12 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     'Bid Amount': selected_block.bid,
                     'Total Transaction Fee': sum(tx.fee for tx in selected_block.transactions),
                     'Inclusion Rate': builder.inclusion_rate,
-                    'Credit': builder.credit
+                    'Credit': builder.credit,
+                    'Builder Strategy': builder.builder_strategy,
+                    'Bid Strategy': builder.bid_strategy,
+                    'Block Number': counter // 12,
                 }
-                block_data_rows.append(new_row)
+                block_data = pd.concat([block_data, pd.DataFrame([new_row])], ignore_index=True)
 
                 # add mev profit to builder balance
                 builder = builder_mapping.get(selected_block.builder_id)
@@ -283,10 +288,8 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
                     sender_object.withdraw(transaction.amount)
                     recipient_object.deposit(transaction.amount-transaction.fee)
 
-                    if builder.builder_strategy == "mev":
-                        builder.mev_profits += transaction.fee
-
-                # print(f"Selected Block: {selected_block.block_id}, Builder: {builder.address}, Bid: {selected_block.bid}, Discount Factor: {builder.discount}")
+            for builder in chain.builders:
+                builder.alter_strategy(block_data)
 
             total_proposer_balance.append(sum(proposer.balance for proposer in proposers))
             total_builder_balance.append(sum(builder.balance for builder in builders))
@@ -294,7 +297,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
             block_data = pd.concat([block_data, pd.DataFrame(block_data_rows)], ignore_index=True)
 
         counter += 1
-        if counter >= 1000:
+        if counter >= 100:
             return chain, total_proposer_balance, total_builder_balance, builder_data, block_data
 
 def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
@@ -386,6 +389,33 @@ def plot_bid_time(block_data_df):
     plt.grid(True)
     plt.show()
 
+def plot_strategy(block_data_df):
+    plt.figure(figsize=(12, 6))
+
+    # Get the total number of blocks for x-axis
+    max_block_number = block_data_df['Block Number'].max() + 1
+    block_numbers = list(range(max_block_number))
+    
+    # Initialize a dictionary to store strategy counts per block
+    strategy_counts = {strategy: [0] * max_block_number for strategy in block_data_df['Bid Strategy'].unique()}
+    
+    # Populate the strategy counts for each block
+    for index, row in block_data_df.iterrows():
+        strategy_counts[row['Bid Strategy']][row['Block Number']] += 1
+
+    # Prepare data for stacked plot
+    data_for_plot = np.array([strategy_counts[strategy] for strategy in strategy_counts])
+
+    # Plotting a stacked graph
+    plt.stackplot(block_numbers, data_for_plot, labels=strategy_counts.keys())
+    
+    plt.xlabel('Block Number')
+    plt.ylabel('Number of Builders')
+    plt.title('Number of Builders per Strategy Over Blocks (Stacked)')
+    plt.legend(loc='upper left')
+    plt.grid(True)
+    plt.show()
+
 
 if __name__ == "__main__":
 
@@ -408,4 +438,6 @@ if __name__ == "__main__":
     inclusion_numbers = block_data['Inclusion Rate'].tolist()
     bid_amounts = block_data['Bid Amount'].tolist()
 
-    plot_bid_time(block_data_df)
+    print(block_data_df)
+
+    # plot_strategy(block_data_df)
