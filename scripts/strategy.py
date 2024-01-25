@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import random
 
-# random.seed(1)
+random.seed(42)
 
 # Constants
 NUM_BUILDERS = 50
-NUM_BLOCKS = 100
+NUM_BLOCKS = 2000
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
@@ -27,23 +27,24 @@ class Builder:
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
         '''Return the bid amount for the builder based on the strategy.'''
         if self.strategy == 'fraction_based':
-            fraction = 0.5
+            fraction = random.uniform(0.4, 0.6)
             return block_value * fraction
         elif self.strategy == 'reactive':
             if block_bid_his:
                 last_bid = max(block_bid_his[-1].values())
-                increment = 0.1
+                increment = 0.2
                 return min(last_bid * (1 + increment), block_value)
             else:
                 return block_value * 0.5
         elif self.strategy == 'historical':
-            return min(np.mean(winning_bid), block_value) if winning_bid else block_value * 0.5
+            last_10_bids = winning_bid[-10:]
+            return min(np.mean(last_10_bids), block_value) if last_10_bids else block_value * 0.5
         elif self.strategy == 'last_minute':
-            if counter % 24 == 23:
+            if counter % 24 == 22:
                 return block_value * 0.5
             return 0
         elif self.strategy == 'bluff':
-            return block_value * (1.5 if counter < 23 else 0.5)
+            return block_value * (1 if counter < 22 else 0.5)
 
 class Simulation:
     def __init__(self, num_builders, num_blocks):
@@ -83,6 +84,7 @@ class Simulation:
             self.update_strategies(winning_builder_strategy, winning_builder_id)
             self.update_strategy_counts()
             self.block_bid_his.append(block_bid_his)
+            # print(block_bid_his)
 
     def update_strategies(self, winning_strategy, winning_builder_id):
         last_winning_strategy = self.winning_strategy[-1] if self.winning_strategy else None
@@ -93,6 +95,9 @@ class Simulation:
                 # Assign a new strategy randomly, excluding 'bluff'
                 non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
                 builder.strategy = random.choice(non_bluff_strategies)
+            # elif random.random() < CHANGE_STRATEGY_RATE/5:
+            #     # a percentage of builders change to some random strategy
+            #     builder.strategy = random.choice(STRATEGIES)
             elif random.random() < CHANGE_STRATEGY_RATE:
                 # Change strategy to the last winning strategy for a percentage of builders
                 if last_winning_strategy and builder.strategy != last_winning_strategy:
@@ -128,14 +133,12 @@ class Simulation:
         """Plot the number of builders for each strategy over blocks."""
         plt.figure(figsize=(12, 6))
 
-        # Prepare data for plotting
         block_numbers = list(range(len(self.strategy_counts_per_block)))
         for strategy in STRATEGIES:
             counts = [count[strategy] for count in self.strategy_counts_per_block]
-            print(simulation.strategy_counts_per_block)
+            # print(simulation.strategy_counts_per_block)
             plt.plot(block_numbers, counts, label=strategy)
 
-        # Plot settings
         plt.title('Number of Builders per Strategy Over Blocks')
         plt.xlabel('Block Number')
         plt.ylabel('Number of Builders')
@@ -144,31 +147,47 @@ class Simulation:
         plt.show()
 
     def plot_bids_for_block(self, block_number):
-        """Plot the bid values for each builder in a specific block."""
-        plt.figure(figsize=(15, 7))
-
-        # Extract the bid history for the specified block
+        plt.figure(figsize=(12, 6))
+        strategy_colors = {'fraction_based': 'blue', 'reactive': 'green', 'historical': 'red', 'last_minute': 'cyan', 'bluff': 'magenta'}
+        
         block_bid_his = self.block_bid_his[block_number]
-
-        # Color map for different strategies
-        colors = list(mcolors.TABLEAU_COLORS.keys())
-        strategy_colors = {strategy: colors[i] for i, strategy in enumerate(STRATEGIES)}
-
-        # Plot each builder's bids
+        
         for builder in self.builders:
-            builder_bids = [bid.get(builder.id, 0) for bid in block_bid_his]
+            builder_bids = [None] * 24  # Initialize with None for 24 counters
+            
+            for counter in range(24):
+                if counter < len(block_bid_his):
+                    builder_bids[counter] = block_bid_his[counter].get(builder.id, None)
+            
             plt.plot(range(24), builder_bids, label=builder.strategy, color=strategy_colors[builder.strategy], alpha=0.7)
-
-        plt.title(f'Bids in Block {block_number}')
+        
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
-        plt.legend(loc='upper right')
+        plt.title(f'Bids for Block {block_number}')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def plot_bid_with_value(self):
+        plt.figure(figsize=(12, 6))
+
+        # Assuming self.winning_bids and self.block_values are populated correctly
+        block_numbers = list(range(len(self.winning_bid)))
+
+        plt.plot(block_numbers, self.winning_bid, label='Winning Bid', color='green')
+        plt.plot(block_numbers, self.block_value, label='Block Value', color='blue')
+
+        plt.xlabel('Block Number')
+        plt.ylabel('Value')
+        plt.title('Winning Bids and Block Values Over Blocks')
+        plt.legend()
         plt.grid(True)
         plt.show()
 
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
-# simulation.plot_cumulative_win()
-# simulation.plot_strategy_num()
-simulation.plot_bids_for_block(0)
+simulation.plot_cumulative_win()
+simulation.plot_strategy_num()
+# simulation.plot_bids_for_block(5)
+# simulation.plot_bid_with_value()
