@@ -4,15 +4,20 @@
 
 #ifndef PBS_C_TRANSACTION_H
 #define PBS_C_TRANSACTION_H
-
+#include "Random.h"
 
 class Transaction {
 public:
     double amount,gas,mev;
     int id;
 
-    Transaction(int tId, double tAmount): id(tId), amount(tAmount),gas(tAmount/100),mev(tAmount/100){
+    Transaction(double GAS, double MEV): gas(GAS), mev(MEV){
+        genId();
     }
+    Transaction(double GAS, double MEV, int tId): gas(GAS), mev(MEV), id(tId){
+    }
+    void genId(){
+        id = randomGenerator.genRandInt(0,100000);}
 };
 
 

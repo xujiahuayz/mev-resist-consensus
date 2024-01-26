@@ -7,30 +7,42 @@
 #include <time.h>
 #include <thread>
 
-Auction::Auction(BuilderMap &aBuilders):builders(aBuilders){}
+Auction::Auction(BuilderFactory& mBuilderFactory, TransactionFactory &mTransactionFactory):
+builderFactory(mBuilderFactory), transactionFactory(mTransactionFactory){}
 
 void Auction::runAuction(){
     srand(time(NULL));
     auto endT = rand() % 24;
-    endT = 0;
     for(int i = -1; i < endT; i++){
-        std::vector<std::thread> threads;
-        for (Builder& builder : builders) {
-            threads.emplace_back([&builder]() {
-                builder.calculatedBid();
-            });
+        builderFactory.propagateTransactions();
+        std::for_each(builderFactory.builders.begin(), builderFactory.builders.end(),
+                      [](std::shared_ptr<Builder>& builder) {
+                          builder->buildBlock(10);
+                      });
+//        std::vector<std::thread> threads;
+//        for (std::shared_ptr<Builder> builder : builderFactory.builders) {
+//            threads.emplace_back([&builder]() {
+//                builder->buildBlock(10);
+//            });
+//        }
+//
+//        for (std::thread& thread : threads) {
+//            if (thread.joinable()) {
+//                thread.join();
+//            }
+//        }
+        std::shared_ptr<Builder> winningBuilder = *std::max_element(builderFactory.builders.begin(), builderFactory.builders.end(),
+                                             [](std::shared_ptr<Builder> &a, std::shared_ptr<Builder> &b) {
+                                                 return a -> currBid < b -> currBid; // Compare currBid values
+                                             });
+        auctionBlock = winningBuilder -> currBlock;
+
+        if (winningBuilder->currBlock == nullptr){
+            std::cout<<"Builder "<<winningBuilder->id<<" has mempool size "<<winningBuilder->mempool.size()<<std::endl;
+            std::cerr << "Error: Winning builder does not have a current block."<<std::endl;
+            return;
         }
 
-        for (std::thread& thread : threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-        winningBuilder = &(*std::max_element(builders.begin(), builders.end(),
-                                             [](const Builder &a, const Builder &b) {
-                                                 return a.currBid < b.currBid; // Compare currBid values
-                                             }));
-        maxBid = winningBuilder -> currBid;
     }
 
 }

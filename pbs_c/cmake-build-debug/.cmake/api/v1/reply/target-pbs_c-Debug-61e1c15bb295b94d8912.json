@@ -32,13 +32,13 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 28,
+				"line" : 36,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 26,
+				"line" : 34,
 				"parent" : 0
 			}
 		]
@@ -94,7 +94,11 @@
 				1,
 				2,
 				4,
-				6
+				6,
+				8,
+				10,
+				12,
+				15
 			]
 		}
 	],
@@ -136,7 +140,11 @@
 				1,
 				2,
 				4,
-				6
+				6,
+				8,
+				10,
+				12,
+				15
 			]
 		},
 		{
@@ -145,7 +153,11 @@
 			[
 				3,
 				5,
-				7
+				7,
+				9,
+				11,
+				13,
+				14
 			]
 		}
 	],
@@ -154,7 +166,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "main.cpp",
+			"path" : "MevGame.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -195,6 +207,50 @@
 			"backtrace" : 1,
 			"path" : "include/Random.h",
 			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "include/Random.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "factory/BuilderFactory.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "factory/BuilderFactory.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "factory/TransactionFactory.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "factory/TransactionFactory.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "blockchain_env/Block.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "game_env/Attacker.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "game_env/Attacker.cpp",
+			"sourceGroupIndex" : 0
 		}
 	],
 	"type" : "EXECUTABLE"

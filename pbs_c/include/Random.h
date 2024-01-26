@@ -46,7 +46,7 @@ public:
     std::vector<int> allPossibleNumbers;
 
     Random() {
-        for (int i = 0; i <= 100; ++i) { // Adjust the range according to your needs
+        for (int i = 0; i <= 200; ++i) { // Adjust the range according to your needs
             allPossibleNumbers.push_back(i);
         }
     }
