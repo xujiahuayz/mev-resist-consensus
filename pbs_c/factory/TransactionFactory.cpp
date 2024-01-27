@@ -3,11 +3,11 @@
 
 TransactionFactory::TransactionFactory(int numTransactions, double mevPercentage)
     : numTransactions(numTransactions), mevPercentage(mevPercentage){
-    createTransactions(0.5);
+    createTransactions(1);
 }
 
 void TransactionFactory::createTransactions(int idHint) {
-    int id = idHint*10000;
+    int id = idHint*1000;
     std::uniform_real_distribution<double> distribution(0.0, 100.0);
     for (int i = transactions.size(); i < numTransactions; i++) {
         double gasFee = distribution(randomGenerator.rng);
@@ -19,10 +19,10 @@ void TransactionFactory::createTransactions(Transaction transaction){
     transactions.push_back(transaction);
 }
 
-void TransactionFactory::deleteTransaction(int index) {
-    if (index >= 0 && index < transactions.size()) {
-        transactions.erase(transactions.begin() + index);
-    }
+void TransactionFactory::deleteTransaction(std::shared_ptr<Transaction> transaction) {
+    transactions.erase(std::remove_if(transactions.begin(), transactions.end(),
+                                                         [&](const Transaction& t) { return t.id == transaction->id; }),
+                                          transactions.end());
 }
 
 double TransactionFactory::totalGasFees() const {

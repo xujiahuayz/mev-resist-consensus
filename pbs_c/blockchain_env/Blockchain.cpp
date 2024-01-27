@@ -19,10 +19,10 @@ Blockchain::Blockchain():Blockchain(100,100){}
 
 
 void Blockchain::startChain() {
-    Attacker attacker(transactionFactory);
+    Attacker attacker(transactionFactory, builderFactory);
     for(int i = 0; i < chainSize; i++){
         attacker.attack(i+1);
-        transactionFactory.createTransactions(i+1);
+        transactionFactory.createTransactions(i+2);
         builderFactory.addTransactionsToBuilder(transactionFactory);
         std::cout<<"Block "<<i<<std::endl;
         Auction auction(builderFactory, transactionFactory);
@@ -31,15 +31,10 @@ void Blockchain::startChain() {
         blocks.emplace_back(newBlock);
         for_each(builderFactory.builders.begin(),builderFactory.builders.end(),
                  [&auction](std::shared_ptr<Builder> &b){b -> updateBids(auction.auctionBlock -> bid);});
+        attacker.removeFailedAttack(newBlock);
         for (const auto& transaction : newBlock->transactions) {
-            for (auto& builder : builderFactory.builders) {
-                builder->mempool.erase(std::remove_if(builder->mempool.begin(), builder->mempool.end(),
-                                                      [&](const std::shared_ptr<Transaction>& t) { return t->id == transaction->id; }),
-                                       builder->mempool.end());
-            }
-            transactionFactory.transactions.erase(std::remove_if(transactionFactory.transactions.begin(), transactionFactory.transactions.end(),
-                                                                 [&](const Transaction& t) { return t.id == transaction->id; }),
-                                                  transactionFactory.transactions.end());
+            builderFactory.clearMempools(transaction);
+            transactionFactory.deleteTransaction(transaction);
         }
     }
     attacker.results(blocks);
@@ -75,15 +70,16 @@ void Blockchain::saveToCSV(const std::string& filename) {
     std::ofstream file(filename);
 
     // Write the header
-    file << "Block ID,Transaction ID,Transaction GAS,Transaction MEV\n";
+    file << "Block ID,Block Bid,Builder ID,Transaction ID,Transaction GAS,Transaction MEV\n";
     int blockId = 0;
     for (const auto& block : blocks) {
         blockId++;
+        file << blockId<<"," << block->bid << "," << block->builderId<<"\n";
         for (const auto& transaction : block->transactions) {
-            file << blockId << ","
+            file << "," << "," << ","
                  << transaction->id << ","
                  << transaction->gas << ","
-                 << transaction->mev << "\n";;
+                 << transaction->mev << "\n";
         }
     }
 

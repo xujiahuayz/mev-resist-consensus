@@ -29,7 +29,7 @@ void Builder::updateBids(double bid){
 
 void Builder::calculatedBid() {
     //std::cout<<"Builder "<<id<<" is Calculating Bid ... "<<std::endl;
-    int depth = 0;
+    int depth = 1;
     int numSimulations = 10;
     double discountFactor = 0.9;
     double bidIncrement = 0.5;

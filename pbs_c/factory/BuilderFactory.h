@@ -21,6 +21,7 @@ public:
     void assignNeighbours(int numConnections);
     void addTransactionsToBuilder(TransactionFactory& transactionFactory);
     void propagateTransactions();
+    void clearMempools(std::shared_ptr<Transaction> transaction);
 };
 
 

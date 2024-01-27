@@ -73,3 +73,10 @@ void BuilderFactory::propagateTransactions() {
         }
     }
 }
+void BuilderFactory::clearMempools(std::shared_ptr<Transaction> transaction) {
+    for (auto& builder : builders) {
+        builder->mempool.erase(std::remove_if(builder->mempool.begin(), builder->mempool.end(),
+                                              [&](const std::shared_ptr<Transaction>& t) { return t->id == transaction->id; }),
+                               builder->mempool.end());
+    }
+}

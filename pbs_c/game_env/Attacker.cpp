@@ -3,23 +3,24 @@
 //
 
 #include "Attacker.h"
-#include "factory/TransactionFactory.h"
+#include "factory/BuilderFactory.h"
 
-Attacker::Attacker(TransactionFactory& transactionFactory)
-        : transactionFactory(transactionFactory) {}
+Attacker::Attacker(TransactionFactory& transactionFactory,  BuilderFactory& builderFactory)
+        : transactionFactory(transactionFactory), builderFactory(builderFactory) {}
 
 void Attacker::attack(int idHint) {
-    int attackCounter = 0;
+    int counter = 0;
     for (auto& transaction : transactionFactory.transactions) {
         if (transaction.mev > (transaction.gas) * 2 && find_if(targetTransactions.begin(), targetTransactions.end(),
                                                                [&](std::shared_ptr<Transaction>& t){return t->id == transaction.id;}) == targetTransactions.end()) {
             targetTransactions.push_back(std::make_shared<Transaction>(transaction));
-            frontTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas + 0.01, 0, idHint)));
-            backTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas - 0.01, 0, idHint++ * -1)));
-            attackCounter++;
+            frontTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas + 0.01, 0, attackCounter)));
+            backTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas - 0.01, 0, attackCounter++ * -1)));
+            counter++;
         }
     }
-    for(int i = 0; i < attackCounter; i++) {
+
+    for(int i = 0; i < counter; i++) {
         std::cout<<"Attacker's transactions ID: "<<frontTransactions[frontTransactions.size() - 1 - i]->id<<std::endl;
         std::cout<<"Attacker's transactions ID: "<<backTransactions[frontTransactions.size() - 1 - i]->id<<std::endl;
         transactionFactory.createTransactions(*frontTransactions[frontTransactions.size() - 1 - i]);
@@ -48,4 +49,26 @@ void Attacker::results(std::vector<std::shared_ptr<Block>> blocks) {
     }
 
     std::cout << "Attacker's profit: " << profit << std::endl;
+}
+
+void Attacker::removeFailedAttack(std::shared_ptr<Block> block) {
+    int counter = 0;
+    for (auto& targetTransaction : targetTransactions) {
+        if(targetTransaction == nullptr){
+            continue;
+        }
+        auto trans = std::find_if(block->transactions.begin(), block->transactions.end(),
+                     [&](std::shared_ptr<Transaction> t){return t->id == targetTransaction->id;});
+        // Check if the target transaction is not in the transaction factory
+        if (trans != block->transactions.end()) {
+            builderFactory.clearMempools(frontTransactions[counter]);
+            transactionFactory.deleteTransaction(frontTransactions[counter]);
+            builderFactory.clearMempools(backTransactions[counter]);
+            transactionFactory.deleteTransaction(backTransactions[counter]);
+            frontTransactions.erase(frontTransactions.begin() + counter);
+            backTransactions.erase(backTransactions.begin() + counter);
+            targetTransactions.erase(targetTransactions.begin() + counter);
+        }
+        counter++;
+    }
 }

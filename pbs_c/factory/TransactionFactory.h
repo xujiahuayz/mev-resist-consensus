@@ -12,7 +12,7 @@ public:
     void createTransactions(int idHint);
     void createTransactions(int idHint, double gas, double mev);
     void createTransactions(Transaction transaction);
-    void deleteTransaction(int index);
+    void deleteTransaction(std::shared_ptr<Transaction> transaction);
     double totalGasFees() const;
     double totalMEV() const;
 };

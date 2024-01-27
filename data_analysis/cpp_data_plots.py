@@ -1,7 +1,33 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('pbs_c/cmake-build-debug/blockchain_data.csv')
+# Initialize empty list to store the data
+data = []
+
+# Open the CSV file and read it line by line
+with open('pbs_c/cmake-build-debug/transactions.csv', 'r') as file:
+    for line in file:
+        transaction_data = []
+        # Split the line into columns
+        columns = line.strip().split(',')
+
+        # Check if this is a block row or a transaction row
+        if columns[0] is not "":  # This is a block row
+            block_id = int(columns[0])
+            block_bid = float(columns[1])
+            builder_id = int(columns[2])
+            if len(transaction_data) > 0:
+                row = [block_id, block_bid, builder_id, transaction_data]
+                data.append(row)
+        else:  # This is a transaction row
+            transaction_id = int(columns[3])
+            transaction_gas = float(columns[4])
+            transaction_mev = float(columns[5])
+            transaction_row = [transaction_id, transaction_gas, transaction_mev]
+            transaction_data.append(transaction_row)
+
+# Convert the list of data into a DataFrame
+df = pd.DataFrame(data, columns=['Block ID', 'Block Bid', 'Builder ID', 'Transaction ID', 'Transaction GAS', 'Transaction MEV'])
 
 print(df.columns)
 
