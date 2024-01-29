@@ -10,7 +10,7 @@ random.seed(42)
 
 # Constants
 NUM_BUILDERS = 50
-NUM_BLOCKS = 2000
+NUM_BLOCKS = 200
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
@@ -53,6 +53,7 @@ class Simulation:
         self.winning_strategy = []
         self.strategy_counts_per_block = []
         self.block_bid_his = []
+        self.block_values = []
 
         # Equally distribute strategies among builders
         strategies_per_builder = len(STRATEGIES)
@@ -64,7 +65,8 @@ class Simulation:
     def simulate_block(self):
         '''Simulate a block'''
         for _ in range(self.num_blocks):
-            block_value = np.random.normal(1, 20)
+            block_value = np.random.normal(10, 3)
+            self.block_values.append(block_value)
             auction_end = False
             block_bid_his = []
             counter = 0
@@ -146,36 +148,44 @@ class Simulation:
         plt.grid(True)
         plt.show()
 
+
     def plot_bids_for_block(self, block_number):
         plt.figure(figsize=(12, 6))
-        strategy_colors = {'fraction_based': 'blue', 'reactive': 'green', 'historical': 'red', 'last_minute': 'cyan', 'bluff': 'magenta'}
-        
+        strategy_colors = {
+            'fraction_based': 'blue',
+            'reactive': 'green',
+            'historical': 'red',
+            'last_minute': 'cyan',
+            'bluff': 'magenta'
+        }
+
         block_bid_his = self.block_bid_his[block_number]
-        
+
         for builder in self.builders:
             builder_bids = [None] * 24  # Initialize with None for 24 counters
-            
+
             for counter in range(24):
                 if counter < len(block_bid_his):
                     builder_bids[counter] = block_bid_his[counter].get(builder.id, None)
-            
-            plt.plot(range(24), builder_bids, label=builder.strategy, color=strategy_colors[builder.strategy], alpha=0.7)
-        
+
+            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder.strategy})", color=strategy_colors[builder.strategy], alpha=0.7)
+
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
         plt.title(f'Bids for Block {block_number}')
-        plt.legend()
+        plt.legend(loc='upper left', bbox_to_anchor=(1, 1)) 
         plt.grid(True)
+        plt.tight_layout() 
         plt.show()
 
-    def plot_bid_with_value(self):
+    def plot_bid_value(self):
         plt.figure(figsize=(12, 6))
 
         # Assuming self.winning_bids and self.block_values are populated correctly
         block_numbers = list(range(len(self.winning_bid)))
 
         plt.plot(block_numbers, self.winning_bid, label='Winning Bid', color='green')
-        plt.plot(block_numbers, self.block_value, label='Block Value', color='blue')
+        plt.plot(block_numbers, self.block_values, label='Block Value', color='blue')
 
         plt.xlabel('Block Number')
         plt.ylabel('Value')
@@ -187,7 +197,7 @@ class Simulation:
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
-simulation.plot_cumulative_win()
-simulation.plot_strategy_num()
-# simulation.plot_bids_for_block(5)
-# simulation.plot_bid_with_value()
+# simulation.plot_cumulative_win()
+# simulation.plot_strategy_num()
+simulation.plot_bids_for_block(10)
+# simulation.plot_bid_value()
