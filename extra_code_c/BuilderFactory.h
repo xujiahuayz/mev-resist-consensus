@@ -1,7 +1,6 @@
 #ifndef PBS_C_BUILDERFACTORY_H
 #define PBS_C_BUILDERFACTORY_H
 #include "blockchain_env/Builder.h"
-#include "TransactionFactory.h"
 #include <vector>
 #include <memory>
 
@@ -10,6 +9,7 @@ public:
 
     std::shared_ptr<Builder> createBuilder(int bId, double bCharacteristic);
     std::shared_ptr<Builder> createBuilder(int bId);
+    std::shared_ptr<Builder> createBuilder(int bId, double bCharacteristic, double bConnections, double bDepth, double bNumSim);
 
     // Add a builder to the list
     void addBuilder(const std::shared_ptr<Builder>& builder);

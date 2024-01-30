@@ -92,7 +92,7 @@ axs[2, 0].set_xlabel('Builder ID')
 axs[2, 0].set_ylabel('Percentage of Blocks Built')
 
 def is_attacker_transaction(transaction_id):
-    return abs(transaction_id) < 1000
+    return abs(transaction_id) < 10000
 
 def is_successful_attack(transactions, index):
     if index < len(transactions) - 2:
@@ -124,7 +124,7 @@ for _, row in df.iterrows():
     attacker_rewards.append(attacker_reward)
     block_ids.append(row['Block ID'])
     attacker_transactions_count.append(attacker_transactions)
-    successful_attack_transactions = 2* successful_attacks
+    successful_attack_transactions = 2 * successful_attacks
     successful_attacks_count.append(successful_attack_transactions)
 
 # Plot 6: Attacker's Cumulative Reward

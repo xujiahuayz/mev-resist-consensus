@@ -10,6 +10,10 @@ std::shared_ptr<Builder> BuilderFactory::createBuilder(int bId) {
     std::shared_ptr<Builder> newBuilder = std::make_shared<Builder>(bId);
     return newBuilder;
 }
+std::shared_ptr<Builder> BuilderFactory::createBuilder(int bId, double bCharacteristic, double bConnections, double bDepth, double bNumSim) {
+    std::shared_ptr<Builder> newBuilder = std::make_shared<Builder>(bId, bCharacteristic, bConnections, bDepth, bNumSim);
+    return newBuilder;
+}
 
 void BuilderFactory::addBuilder(const std::shared_ptr<Builder>& builder) {
     builders.push_back(builder);
@@ -30,8 +34,8 @@ void BuilderFactory::assignNeighbours(int numConnections) {
         ),otherBuilders.end());
         std::shuffle(otherBuilders.begin(), otherBuilders.end(), randomGenerator.rng);
         int i = 0;
-        while(builder1->adjBuilders.size() < numConnections) {
-            if (otherBuilders[i]->adjBuilders.size() < numConnections) {
+        while(i<otherBuilders.size() && builder1->adjBuilders.size() < builder1->connections){
+            if (otherBuilders[i]->adjBuilders.size() < otherBuilders[i]->connections){
                 builder1->adjBuilders.push_back(otherBuilders[i]);
                 otherBuilders[i++]->adjBuilders.push_back(builder1);
             }
@@ -44,6 +48,9 @@ void BuilderFactory::assignNeighbours(int numConnections) {
 
 void BuilderFactory::addTransactionsToBuilder(TransactionFactory& transactionFactory) {
     for (auto& transaction : transactionFactory.transactions) {
+        if ( randomGenerator.genRandInt(0, 100) < 25){
+            continue;
+        }
         bool isInMempool = false;
         for (auto& builder : builders) {
             isInMempool = std::find_if(builder->mempool.begin(), builder->mempool.end(),
@@ -67,7 +74,10 @@ void BuilderFactory::propagateTransactions() {
                 bool isInMempool = std::find_if(builder->mempool.begin(), builder->mempool.end(),
                                                 [&](const std::shared_ptr<Transaction>& t) { return t->id == transaction->id; }) != builder->mempool.end();
                 if (!isInMempool) {
-                    builder->mempool.push_back(transaction);
+                    int randomIndex = randomGenerator.genRandInt(0, 100);
+                    if (randomIndex < 50){
+                        builder->mempool.push_back(transaction);
+                    }
                 }
             }
         }

@@ -1,18 +1,12 @@
-//
-// Created by Aaryan Gulia on 18/01/2024.
-//
+#include "factory/TransactionFactory.h"
+#include <memory>
 
-#ifndef PBS_C_USER_H
-#define PBS_C_USER_H
+class Users {
+private:
+    TransactionFactory& transactionFactory;
 
-#include "Transaction.h"
-#include "vector"
-
-class User{
 public:
-    std::vector<Transaction> transactions;
-    void makeTransaction(int tId, double tAmount);
+    Users(TransactionFactory& transactionFactory);
+
+    void createTransaction(double gas, double mev, int id);
 };
-
-
-#endif //PBS_C_USER_H

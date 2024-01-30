@@ -8,52 +8,33 @@
 #include "vector"
 #include "fstream"
 
-Blockchain::Blockchain(size_t bChainSize, size_t numBuilders):chainSize(bChainSize){
-    for(int i = 0; i < numBuilders; i++){
-        builderFactory.addBuilder(builderFactory.createBuilder(i+1));
-    }
-    builderFactory.assignNeighbours(2);
+static int transactionID = 10000;
+std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, double mev){
+    std::shared_ptr<Transaction> transaction= std::make_shared<Transaction> (gas,mev,transactionID++);
+    return transaction;
 }
-Blockchain::Blockchain(size_t bChainSize):Blockchain(bChainSize,100) {}
-Blockchain::Blockchain():Blockchain(100,100){}
-
 
 void Blockchain::startChain() {
-    Attacker attacker(transactionFactory, builderFactory);
     for(int i = 0; i < chainSize; i++){
-        attacker.attack(i+1);
-        transactionFactory.createTransactions(i+2);
-        builderFactory.addTransactionsToBuilder(transactionFactory);
+        for(int j = 0; j < 8; j++){
+            std::uniform_real_distribution<double> distribution(0.0, 100.0);
+            double gasFee = distribution(randomGenerator.rng);
+            double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
+            nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
+        }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
         std::cout<<"Block "<<i<<std::endl;
-        Auction auction(builderFactory, transactionFactory);
+        Auction auction(nodeFactory);
         auction.runAuction();
         std::shared_ptr<Block> newBlock = auction.auctionBlock;
         blocks.emplace_back(newBlock);
-        for_each(builderFactory.builders.begin(),builderFactory.builders.end(),
+        for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
                  [&auction](std::shared_ptr<Builder> &b){b -> updateBids(auction.auctionBlock -> bid);});
-        attacker.removeFailedAttack(newBlock);
         for (const auto& transaction : newBlock->transactions) {
-            builderFactory.clearMempools(transaction);
-            transactionFactory.deleteTransaction(transaction);
+            nodeFactory.clearMempools(transaction);
         }
-    }
-    attacker.results(blocks);
-}
-
-
-void Blockchain::printBlockStats() {
-    auto avgBid = std::reduce(blocks.begin(),blocks.end(),0.0,
-                           [](double a, std::shared_ptr<Block> &b){return a + b -> bid;})/blocks.size();
-    std::cout<<"The Average Winnig Bid is: "<<avgBid<<std::endl;
-    auto avgReward = std::reduce(blocks.begin(),blocks.end(),0.0,
-                              [](double a, std::shared_ptr<Block> &b){return a + (b->blockValue - b->bid);})/blocks.size();
-    std::cout<<"The Average Reward is: "<<avgReward<<std::endl;
-    std::unordered_map<size_t, size_t> freqMap(builderFactory.builders.size());
-    std::for_each(blocks.begin(),blocks.end(),[&freqMap](std::shared_ptr<Block> &a){
-        ++(freqMap[a -> builderId]);
-    });
-    for(const auto &b : freqMap){
-        std::cout<<"Builder "<<b.first<<" Won "<<b.second<<" Times"<<std::endl;
     }
 }
 

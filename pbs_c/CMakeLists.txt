@@ -21,13 +21,14 @@ add_executable(pbs_c MevGame.cpp
         blockchain_env/Blockchain.cpp
         include/Random.h
         include/Random.cpp
-        factory/BuilderFactory.h
-        factory/BuilderFactory.cpp
         factory/TransactionFactory.h
         factory/TransactionFactory.cpp
         blockchain_env/Block.h
         game_env/Attacker.h
         game_env/Attacker.cpp
+        blockchain_env/Node.h
+        factory/NodeFactory.h
+        factory/NodeFactory.cpp
 )
 
 

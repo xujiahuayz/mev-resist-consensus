@@ -4,22 +4,21 @@
 #include "blockchain_env/Transaction.h"
 #include <vector>
 #include "blockchain_env/Block.h"
+#include "blockchain_env/Node.h"
 
-class TransactionFactory;
-class BuilderFactory;
-class Attacker {
+class NodeFactory;
+class Attacker : public Node{
 private:
-    TransactionFactory& transactionFactory;
-    BuilderFactory& builderFactory;
-    std::vector<std::shared_ptr<Transaction>> targetTransactions;
+    NodeFactory& nodeFactory;
     std::vector<std::shared_ptr<Transaction>> frontTransactions;
     std::vector<std::shared_ptr<Transaction>> backTransactions;
     int attackCounter = 0;
 
 public:
-    Attacker(TransactionFactory& transactionFactory, BuilderFactory& builderFactory);
-    void attack(int idHint);
-    void results(std::vector<std::shared_ptr<Block>> blocks);
+    std::vector<std::shared_ptr<Transaction>> targetTransactions;
+    Attacker(size_t aId, int aConnections, double aCharacteristic, NodeFactory& nodeFactory);
+    void attack();
+    void clearAttacks();
     void removeFailedAttack(std::shared_ptr<Block> block);
 };
 

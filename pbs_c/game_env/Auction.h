@@ -5,18 +5,16 @@
 #ifndef PBS_C_AUCTION_H
 #define PBS_C_AUCTION_H
 #include "vector"
-#include "blockchain_env/Builder.h"
-#include "factory/BuilderFactory.h"
+#include "factory/nodeFactory.h"
 
 class Auction {
 
 public:
-    BuilderFactory &builderFactory;
     std::shared_ptr<Block> auctionBlock;
-    TransactionFactory &transactionFactory;
+    NodeFactory& nodeFactory;
     double auctionTime = 0;
 
-    Auction(BuilderFactory &mBuilderFactory,TransactionFactory &mTransactionFactory);
+    Auction(NodeFactory& nodeFactory):nodeFactory(nodeFactory){}
 
     void runAuction();
 };

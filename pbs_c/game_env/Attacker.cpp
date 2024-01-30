@@ -1,54 +1,39 @@
-//
-// Created by Aaryan Gulia on 26/01/2024.
-//
-
 #include "Attacker.h"
-#include "factory/BuilderFactory.h"
+#include "factory/NodeFactory.h"
 
-Attacker::Attacker(TransactionFactory& transactionFactory,  BuilderFactory& builderFactory)
-        : transactionFactory(transactionFactory), builderFactory(builderFactory) {}
+Attacker::Attacker(size_t aId, int aConnections, double aCharacteristic, NodeFactory& nodeFactory)
+        : Node(aId,aConnections,aCharacteristic),nodeFactory(nodeFactory) {}
 
-void Attacker::attack(int idHint) {
-    int counter = 0;
-    for (auto& transaction : transactionFactory.transactions) {
-        if (transaction.mev > (transaction.gas) * 2 && find_if(targetTransactions.begin(), targetTransactions.end(),
-                                                               [&](std::shared_ptr<Transaction>& t){return t->id == transaction.id;}) == targetTransactions.end()) {
-            targetTransactions.push_back(std::make_shared<Transaction>(transaction));
-            frontTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas + 0.01, 0, attackCounter)));
-            backTransactions.push_back(std::make_shared<Transaction>(Transaction(transaction.gas - 0.01, 0, attackCounter++ * -1)));
-            counter++;
+void Attacker::attack() {
+    for (auto& builder : adjNodes) {
+        Builder* b = dynamic_cast<Builder*>(builder.get());
+        if(b)
+        {for (auto &transaction: builder->mempool) {
+                if (transaction->mev > (transaction->gas) * 3 &&
+                    find(targetTransactions.begin(), targetTransactions.end(), transaction) ==
+                    targetTransactions.end()) {
+                    targetTransactions.push_back(transaction);
+                    frontTransactions.push_back(std::make_shared<Transaction>(
+                            Transaction(transaction->gas + 0.01, 0, id * 1000 + attackCounter)));
+                    backTransactions.push_back(std::make_shared<Transaction>(
+                            Transaction(transaction->gas - 0.01, 0, (id * 1000 + attackCounter++) * -1)));
+                    builder->mempool.insert(frontTransactions.back());
+                    builder->mempool.insert(backTransactions.back());
+                }
+            }
         }
-    }
-
-    for(int i = 0; i < counter; i++) {
-        std::cout<<"Attacker's transactions ID: "<<frontTransactions[frontTransactions.size() - 1 - i]->id<<std::endl;
-        std::cout<<"Attacker's transactions ID: "<<backTransactions[frontTransactions.size() - 1 - i]->id<<std::endl;
-        transactionFactory.createTransactions(*frontTransactions[frontTransactions.size() - 1 - i]);
-        transactionFactory.createTransactions(*backTransactions[backTransactions.size() - 1 - i]);
     }
 }
-void Attacker::results(std::vector<std::shared_ptr<Block>> blocks) {
-    double profit = 0.0;
-    for (auto& block : blocks) {
-        for (int i = 0; i < block->transactions.size(); i++) {
-            auto& transaction = block->transactions[i];
-
-            // Check if the transaction is one of the attacker's transactions
-            if (std::find(frontTransactions.begin(), frontTransactions.end(), transaction) != frontTransactions.end() ||
-                std::find(backTransactions.begin(), backTransactions.end(), transaction) != backTransactions.end()) {
-                profit -= transaction->gas;
-            }
-
-            // Check if the transaction is a successful attack
-            if (std::find(targetTransactions.begin(), targetTransactions.end(), transaction) != targetTransactions.end() &&
-                i > 0 && std::find(frontTransactions.begin(), frontTransactions.end(), block->transactions[i - 1]) != frontTransactions.end() &&
-                i < block->transactions.size() - 1 && std::find(backTransactions.begin(), backTransactions.end(), block->transactions[i + 1]) != backTransactions.end()) {
-                profit += transaction->mev;
-            }
+void Attacker::clearAttacks(){
+    if(targetTransactions.size() != 0){
+        for(int i = 0; i < frontTransactions.size(); i++){
+            nodeFactory.clearMempools(frontTransactions[i]);
+            nodeFactory.clearMempools(backTransactions[i]);
         }
+        frontTransactions.clear();
+        backTransactions.clear();
+        targetTransactions.clear();
     }
-
-    std::cout << "Attacker's profit: " << profit << std::endl;
 }
 
 void Attacker::removeFailedAttack(std::shared_ptr<Block> block) {
@@ -58,17 +43,22 @@ void Attacker::removeFailedAttack(std::shared_ptr<Block> block) {
             continue;
         }
         auto trans = std::find_if(block->transactions.begin(), block->transactions.end(),
-                     [&](std::shared_ptr<Transaction> t){return t->id == targetTransaction->id;});
+                                  [&](std::shared_ptr<Transaction> t){return t->id == targetTransaction->id;});
         // Check if the target transaction is not in the transaction factory
         if (trans != block->transactions.end()) {
-            builderFactory.clearMempools(frontTransactions[counter]);
-            transactionFactory.deleteTransaction(frontTransactions[counter]);
-            builderFactory.clearMempools(backTransactions[counter]);
-            transactionFactory.deleteTransaction(backTransactions[counter]);
-            frontTransactions.erase(frontTransactions.begin() + counter);
-            backTransactions.erase(backTransactions.begin() + counter);
-            targetTransactions.erase(targetTransactions.begin() + counter);
+            nodeFactory.clearMempools(frontTransactions[counter]);
+            nodeFactory.clearMempools(backTransactions[counter]);
         }
         counter++;
+    }
+    for(int i = 0; i < frontTransactions.size(); i++){
+        auto trans1 = std::find_if(block->transactions.begin(), block->transactions.end(),
+                                   [&](std::shared_ptr<Transaction> t){return t->id == frontTransactions[i]->id;});
+        auto trans2 = std::find_if(block->transactions.begin(), block->transactions.end(),
+                                   [&](std::shared_ptr<Transaction> t){return t->id == backTransactions[i]->id;});
+        if(trans1 != block->transactions.end() || trans2 != block->transactions.end()){
+            nodeFactory.clearMempools(frontTransactions[i]);
+            nodeFactory.clearMempools(backTransactions[i]);
+        }
     }
 }

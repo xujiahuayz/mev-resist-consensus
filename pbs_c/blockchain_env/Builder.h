@@ -9,30 +9,38 @@
 #include "Mempool.h"
 #include "User.h"
 #include "Block.h"
+#include <map>
+#include <tuple>
+#include "mutex"
+#include "Node.h"
 
-class Blockchain;
+struct KeyHash {
+    std::size_t operator()(const std::tuple<double, int, std::vector<double>>& key) const {
+        std::size_t seed = 0;
+        seed ^= std::hash<double>()(std::get<0>(key)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        seed ^= std::hash<int>()(std::get<1>(key)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        for (double val : std::get<2>(key)) {
+            seed ^= std::hash<double>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
 
-class Builder {
-    friend class Blockchain;
-    std::shared_ptr<Blockchain> blockchain;
+class Builder : public Node {
 private:
-    double characteristic;
     double blockValue;
-
+    std::unordered_map<std::tuple<int,int, std::vector<double>>, std::pair<double, double>, KeyHash> findOptimalBidCache;
+    Random randomEngine;
 
 public:
-    std::vector<std::shared_ptr<Transaction>> mempool;
     std::vector<double> bids;
     std::shared_ptr<Block> currBlock;
     double currBid;
-    int id;
-    std::vector<std::shared_ptr<Builder>> adjBuilders;
-    Builder(int bId, double bCharacteristic, std::vector<std::shared_ptr<Transaction>> bMempool, std::shared_ptr<Blockchain> mBlockchain);
-    Builder(int bId, double bCharacteristic, std::shared_ptr<Blockchain>  mBlockchain);
-    Builder(int bId, std::shared_ptr<Blockchain>  mBlockchain);
-    Builder(int bId, double bCharacteristic): Builder(bId, bCharacteristic, nullptr){}
-    Builder(int bId): Builder(bId, nullptr){}
-    Builder() : blockchain(nullptr) {}
+    int depth;
+    int numSimulations;
+
+    Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim);
+    Builder() : Node(-1,0,1) {}
 
     void buildBlock(int maxBlockSize);
 
@@ -41,10 +49,10 @@ public:
     void calculatedBid();
 
     double calculateUtility(double yourBid);
-    double expectedUtility(double yourBid, int numSimulations, std::vector<double> & bids);
+    double expectedUtility(double yourBid, std::vector<double> & bids);
 
-    double expectedFutureUtility(double yourBid, int numSimulations, int depth, double discountFactor, double bidIncrement, std::vector<double>& bids);
-    std::pair<double, double> findOptimalBid(int numSimulations, int depth, double discountFactor, double bidIncrement);
+    double expectedFutureUtility(double yourBid, int bDepth, double discountFactor, double bidIncrement, std::vector<double>& bids);
+    std::pair<double, double> findOptimalBid(int bDepth, double discountFactor, double bidIncrement);
 
 
 };
