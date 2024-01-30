@@ -5,18 +5,16 @@
 #ifndef PBS_C_AUCTION_H
 #define PBS_C_AUCTION_H
 #include "vector"
-#include "blockchain_env/Builder.h"
+#include "factory/nodeFactory.h"
 
 class Auction {
 
 public:
-    typedef std::vector<Builder> BuilderMap;
-    BuilderMap builders;
-    double maxBid = 0;
-    Builder* winningBuilder;
+    std::shared_ptr<Block> auctionBlock;
+    NodeFactory& nodeFactory;
     double auctionTime = 0;
 
-    Auction(BuilderMap &aBuilders);
+    Auction(NodeFactory& nodeFactory):nodeFactory(nodeFactory){}
 
     void runAuction();
 };

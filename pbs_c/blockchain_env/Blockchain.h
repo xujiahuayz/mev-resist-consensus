@@ -6,28 +6,23 @@
 #define PBS_C_BLOCKCHAIN_H
 #include "game_env/Auction.h"
 #include "vector"
+#include "Block.h"
+
 
 class Blockchain {
     size_t chainSize;
 public:
-    Auction::BuilderMap builders;
-    struct Block{
-        Builder* builder;
-        double bid;
-        double blockValue;
-        double gas;
-        double mev;
-    };
-    std::vector<Block> blocks;
-    Blockchain(size_t bChainSize, size_t numBuilders);
-    Blockchain(size_t bChainSize);
+    NodeFactory nodeFactory;
+    std::vector<std::shared_ptr<Block>> blocks;
+
+    Blockchain(size_t bChainSize, NodeFactory nodeFactory):chainSize(bChainSize),nodeFactory(nodeFactory){};
+    Blockchain(size_t bChainSize):Blockchain(bChainSize,NodeFactory()){};
     Blockchain();
 
     void startChain();
     void printBlockStats();
     void saveBlockData();
-
-    ~Blockchain();
+    void saveToCSV(const std::string& filename);
 };
 
 

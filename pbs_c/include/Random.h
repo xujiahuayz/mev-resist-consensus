@@ -42,18 +42,9 @@ public:
     // Initialize a random number generator
     std::mt19937 rng{std::random_device{}()};
 
-    // Generate all possible random numbers at the start of the program
-    std::vector<int> allPossibleNumbers;
-
-    Random() {
-        for (int i = 0; i <= 100; ++i) { // Adjust the range according to your needs
-            allPossibleNumbers.push_back(i);
-        }
-    }
-
     int genRandInt(int min, int max) {
         std::uniform_int_distribution<int> dist(min, max);
-        return allPossibleNumbers[dist(rng)];
+        return dist(rng);
     }
 };
 static Random randomGenerator;

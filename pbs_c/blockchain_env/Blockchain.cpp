@@ -8,47 +8,33 @@
 #include "vector"
 #include "fstream"
 
-Blockchain::Blockchain(size_t bChainSize, size_t numBuilders):chainSize(bChainSize){
-    for(int i = 0; i < numBuilders; i++){
-        std::shared_ptr<Blockchain> iBlockchain(this);
-        Builder nBuilder(i,iBlockchain);
-        builders.emplace_back(nBuilder);
-    }
-}
-Blockchain::Blockchain(size_t bChainSize):Blockchain(bChainSize,100) {}
-Blockchain::Blockchain():Blockchain(100,100){}
-Blockchain::~Blockchain() {
-    for (auto& block : blocks) {
-        delete block.builder;
-    }
+static int transactionID = 10000;
+std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, double mev){
+    std::shared_ptr<Transaction> transaction= std::make_shared<Transaction> (gas,mev,transactionID++);
+    return transaction;
 }
 
 void Blockchain::startChain() {
     for(int i = 0; i < chainSize; i++){
-        Auction auction(builders);
+        for(int j = 0; j < 8; j++){
+            std::uniform_real_distribution<double> distribution(0.0, 100.0);
+            double gasFee = distribution(randomGenerator.rng);
+            double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
+            nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
+        }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
+        std::cout<<"Block "<<i<<std::endl;
+        Auction auction(nodeFactory);
         auction.runAuction();
-        Block newBlock;
-        newBlock.builder = new Builder(*auction.winningBuilder);
-        newBlock.bid = auction.maxBid;
-        newBlock.blockValue = newBlock.builder -> blockValue;
+        std::shared_ptr<Block> newBlock = auction.auctionBlock;
         blocks.emplace_back(newBlock);
-    }
-}
-
-
-void Blockchain::printBlockStats() {
-    auto avgBid = std::reduce(blocks.begin(),blocks.end(),0.0,
-                           [](double a, Block &b){return a + b.bid;})/blocks.size();
-    std::cout<<"The Average Winnig Bid is: "<<avgBid<<std::endl;
-    auto avgReward = std::reduce(blocks.begin(),blocks.end(),0.0,
-                              [](double a, Block &b){return a + (b.blockValue - b.bid);})/blocks.size();
-    std::cout<<"The Average Reward is: "<<avgReward<<std::endl;
-    std::unordered_map<size_t, size_t> freqMap(builders.size());
-    std::for_each(blocks.begin(),blocks.end(),[&freqMap](Block &a){
-        ++(freqMap[a.builder -> id]);
-    });
-    for(const auto &b : freqMap){
-        std::cout<<"Builder "<<b.first<<" Won "<<b.second<<" Times"<<std::endl;
+        for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
+                 [&auction](std::shared_ptr<Builder> &b){b -> updateBids(auction.auctionBlock -> bid);});
+        for (const auto& transaction : newBlock->transactions) {
+            nodeFactory.clearMempools(transaction);
+        }
     }
 }
 
@@ -57,7 +43,26 @@ void Blockchain::saveBlockData(){
     file.open("blockchain_data.csv");
     file<<"Block Number,Builder ID,Bid Value,Block Value,Reward"<<std::endl;
     for(int i = 0; i < blocks.size(); i++){
-        file<<i<<","<<blocks[i].builder -> id<<","<<blocks[i].bid<<","<<blocks[i].blockValue<<","<<blocks[i].blockValue-blocks[i].bid<<std::endl;
+        file<<i<<","<<blocks[i] -> builderId<<","<<blocks[i]->bid<<","<<blocks[i]->blockValue<<","<<blocks[i]->blockValue-blocks[i]->bid<<std::endl;
     }
+    file.close();
+}
+void Blockchain::saveToCSV(const std::string& filename) {
+    std::ofstream file(filename);
+
+    // Write the header
+    file << "Block ID,Block Bid,Builder ID,Transaction ID,Transaction GAS,Transaction MEV\n";
+    int blockId = 0;
+    for (const auto& block : blocks) {
+        blockId++;
+        file << blockId<<"," << block->bid << "," << block->builderId<<"\n";
+        for (const auto& transaction : block->transactions) {
+            file << "," << "," << ","
+                 << transaction->id << ","
+                 << transaction->gas << ","
+                 << transaction->mev << "\n";
+        }
+    }
+
     file.close();
 }
