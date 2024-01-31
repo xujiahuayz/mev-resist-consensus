@@ -77,8 +77,7 @@ class Simulation:
             while not auction_end and counter < 24:
                 counter_bids = {}
                 for builder in self.builders:
-                    # print(f"Debug: Builder {builder.id} Strategy: {builder.strategy}")
-                    increment_factor = 1 + (0.8 * counter/24)
+                    increment_factor = 1 + (0.5 * counter/24)
                     perceived_block_value = builder.block_value() * increment_factor
                     block_values_per_builder[builder.id] = perceived_block_value
                     bid = builder.bidding_strategy(perceived_block_value, block_bid_his, self.winning_bid, counter)
@@ -208,5 +207,5 @@ simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
 simulation.plot_strategy_num()
-simulation.plot_bids_for_block(5)
+simulation.plot_bids_for_block(1)
 # simulation.plot_bid_value()
