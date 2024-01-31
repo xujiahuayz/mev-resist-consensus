@@ -9,8 +9,8 @@ import random
 random.seed(42)
 
 # Constants
-NUM_BUILDERS = 20
-NUM_BLOCKS = 200
+NUM_BUILDERS = 50
+NUM_BLOCKS = 100
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
@@ -27,13 +27,14 @@ class Builder:
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
         '''Return the bid amount for the builder based on the strategy.'''
         if self.strategy == 'fraction_based':
-            fraction = random.uniform(0.4, 0.6)
+            fraction = 0.7
             return block_value * fraction
         elif self.strategy == 'reactive':
             if block_bid_his:
                 last_bid = max(block_bid_his[-1].values())
-                increment = 0.2
-                return min(last_bid * (1 + increment), block_value)
+                reactivity = 0.05
+                new_bid = np.random.normal(last_bid, last_bid * reactivity)
+                return min(new_bid, block_value)
             else:
                 return block_value * 0.5
         elif self.strategy == 'historical':
@@ -199,7 +200,7 @@ class Simulation:
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
-# simulation.plot_cumulative_win()
-# simulation.plot_strategy_num()
-simulation.plot_bids_for_block(1)
-# simulation.plot_bid_value()
+simulation.plot_cumulative_win()
+simulation.plot_strategy_num()
+simulation.plot_bids_for_block(10)
+simulation.plot_bid_value()
