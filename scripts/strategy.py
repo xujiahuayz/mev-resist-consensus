@@ -1,34 +1,34 @@
 '''For this file we focus on yeilding the builder's best strategy for time zero.'''
 
+import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import random
+import matplotlib.cm as cm
 
 random.seed(42)
 
 # Constants
-NUM_BUILDERS = 50
+NUM_BUILDERS = 20
 NUM_BLOCKS = 100
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
 class Builder:
-    def __init__(self, id, strategy, capability):
+    def __init__(self, id, strategy, capability: float):
         self.id = id
         self.strategy = strategy
-        self.capability = capability
+        self.capability = random.uniform(20,40)
 
     def block_value(self):
         '''Return the value of the block.'''
-        return np.random.normal(scale=self.capability)
+        return max(0, random.uniform(self.capability-10, self.capability+10))
     
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
         '''Return the bid amount for the builder based on the strategy.'''
         if self.strategy == 'fraction_based':
-            fraction = 0.7
-            return block_value * fraction
+            return block_value * 0.5
         elif self.strategy == 'reactive':
             if block_bid_his:
                 last_bid = max(block_bid_his[-1].values())
@@ -66,13 +66,18 @@ class Simulation:
     def simulate_block(self):
         '''Simulate a block'''
         for _ in range(self.num_blocks):
-            block_value = np.random.normal(10, 3)
-            self.block_values.append(block_value)
+            block_values_per_builder = {}
             auction_end = False
             block_bid_his = []
             counter = 0
             while not auction_end and counter < 24:
-                counter_bids = {builder.id: builder.bidding_strategy(block_value, block_bid_his, self.winning_bid, counter) for builder in self.builders}
+                counter_bids = {}
+                for builder in self.builders:
+                    perceived_block_value = builder.block_value()
+                    block_values_per_builder[builder.id] = perceived_block_value
+                    bid = builder.bidding_strategy(perceived_block_value, block_bid_his, self.winning_bid, counter)
+                    counter_bids[builder.id] = bid
+
                 block_bid_his.append(counter_bids)
                 if counter >= 12:
                     auction_end_probability = (counter - 12) / (24 - 12)
@@ -154,24 +159,20 @@ class Simulation:
 
     def plot_bids_for_block(self, block_number):
         plt.figure(figsize=(12, 6))
-        strategy_colors = {
-            'fraction_based': 'blue',
-            'reactive': 'green',
-            'historical': 'red',
-            'last_minute': 'cyan',
-            'bluff': 'magenta'
-        }
 
         block_bid_his = self.block_bid_his[block_number]
 
-        for builder in self.builders:
+        # Generate unique colors for each builder
+        colors = cm.rainbow(np.linspace(0, 1, len(self.builders)))
+
+        for builder, color in zip(self.builders, colors):
             builder_bids = [None] * 24  # Initialize with None for 24 counters
 
             for counter in range(24):
                 if counter < len(block_bid_his):
                     builder_bids[counter] = block_bid_his[counter].get(builder.id, None)
 
-            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder.strategy})", color=strategy_colors[builder.strategy], alpha=0.7)
+            plt.plot(range(24), builder_bids, label=f"Builder {builder.id}", color=color, alpha=0.7)
 
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
@@ -200,7 +201,7 @@ class Simulation:
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
-simulation.plot_cumulative_win()
+# simulation.plot_cumulative_win()
 simulation.plot_strategy_num()
-simulation.plot_bids_for_block(10)
-simulation.plot_bid_value()
+simulation.plot_bids_for_block(0)
+# simulation.plot_bid_value()
