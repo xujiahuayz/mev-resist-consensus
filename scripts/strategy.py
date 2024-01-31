@@ -9,7 +9,7 @@ import random
 random.seed(42)
 
 # Constants
-NUM_BUILDERS = 50
+NUM_BUILDERS = 20
 NUM_BLOCKS = 200
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
@@ -73,7 +73,9 @@ class Simulation:
             while not auction_end and counter < 24:
                 counter_bids = {builder.id: builder.bidding_strategy(block_value, block_bid_his, self.winning_bid, counter) for builder in self.builders}
                 block_bid_his.append(counter_bids)
-                auction_end = random.choice([True, False])
+                if counter >= 12:
+                    auction_end_probability = (counter - 12) / (24 - 12)
+                    auction_end = random.random() < auction_end_probability
                 counter += 1
 
             # Determine winning bid and strategy
@@ -199,5 +201,5 @@ simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
 # simulation.plot_strategy_num()
-simulation.plot_bids_for_block(10)
+simulation.plot_bids_for_block(1)
 # simulation.plot_bid_value()
