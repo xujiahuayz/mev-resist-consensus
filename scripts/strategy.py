@@ -56,10 +56,14 @@ class Simulation:
         self.block_bid_his = []
         self.block_values = []
 
-        # Equally distribute strategies among builders
-        strategies_per_builder = len(STRATEGIES)
-        builders_strategies = STRATEGIES * (num_builders // strategies_per_builder) + STRATEGIES[:num_builders % strategies_per_builder]
-        random.shuffle(builders_strategies)
+        builders_per_strategy = NUM_BUILDERS // len(STRATEGIES)
+
+        # Initialize a list to store the strategy assigned to each builder
+        builders_strategies = []
+
+        # Assign each strategy to the correct number of builders
+        for strategy in STRATEGIES:
+            builders_strategies.extend([strategy] * builders_per_strategy)
 
         self.builders = [Builder(i, builders_strategies[i], np.random.uniform(1, 10)) for i in range(num_builders)]
 
@@ -73,16 +77,19 @@ class Simulation:
             while not auction_end and counter < 24:
                 counter_bids = {}
                 for builder in self.builders:
-                    perceived_block_value = builder.block_value()
+                    # print(f"Debug: Builder {builder.id} Strategy: {builder.strategy}")
+                    increment_factor = 1 + (0.8 * counter/24)
+                    perceived_block_value = builder.block_value() * increment_factor
                     block_values_per_builder[builder.id] = perceived_block_value
                     bid = builder.bidding_strategy(perceived_block_value, block_bid_his, self.winning_bid, counter)
                     counter_bids[builder.id] = bid
 
                 block_bid_his.append(counter_bids)
-                if counter >= 12:
+                if counter >= 18:
                     auction_end_probability = (counter - 12) / (24 - 12)
                     auction_end = random.random() < auction_end_probability
                 counter += 1
+                
 
             # Determine winning bid and strategy
             highest_bid = max(counter_bids.values())
@@ -166,21 +173,19 @@ class Simulation:
         colors = cm.rainbow(np.linspace(0, 1, len(self.builders)))
 
         for builder, color in zip(self.builders, colors):
-            builder_bids = [None] * 24  # Initialize with None for 24 counters
+            # Adjusted to avoid IndexError by checking if counter is less than len(block_bid_his)
+            builder_bids = [block_bid_his[counter].get(builder.id, None) if counter < len(block_bid_his) else None for counter in range(24)]
 
-            for counter in range(24):
-                if counter < len(block_bid_his):
-                    builder_bids[counter] = block_bid_his[counter].get(builder.id, None)
-
-            plt.plot(range(24), builder_bids, label=f"Builder {builder.id}", color=color, alpha=0.7)
+            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder.strategy})", color=color, alpha=0.7)
 
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
         plt.title(f'Bids for Block {block_number}')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1)) 
+        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.grid(True)
-        plt.tight_layout() 
+        plt.tight_layout()
         plt.show()
+
 
     def plot_bid_value(self):
         plt.figure(figsize=(12, 6))
@@ -203,5 +208,5 @@ simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
 simulation.plot_strategy_num()
-simulation.plot_bids_for_block(0)
+simulation.plot_bids_for_block(5)
 # simulation.plot_bid_value()
