@@ -11,7 +11,7 @@ random.seed(42)
 
 # Constants
 NUM_BUILDERS = 20
-NUM_BLOCKS = 20
+NUM_BLOCKS = 100
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
@@ -55,6 +55,7 @@ class Simulation:
         self.strategy_counts_per_block = []
         self.block_bid_his = []
         self.winning_block_values = []
+        self.builder_strategies_per_block = []
 
         builders_per_strategy = NUM_BUILDERS // len(STRATEGIES)
 
@@ -74,6 +75,10 @@ class Simulation:
             auction_end = False
             block_bid_his = []
             counter = 0
+
+            current_strategies = {builder.id: builder.strategy for builder in self.builders}
+            self.builder_strategies_per_block.append(current_strategies)
+
             while not auction_end and counter < 24:
                 counter_bids = {}
                 for builder in self.builders:
@@ -167,17 +172,19 @@ class Simulation:
 
     def plot_bids_for_block(self, block_number):
         plt.figure(figsize=(12, 6))
-
         block_bid_his = self.block_bid_his[block_number]
+
+        # Retrieve the strategies used in this specific block
+        strategies_this_block = self.builder_strategies_per_block[block_number]
 
         # Generate unique colors for each builder
         colors = cm.rainbow(np.linspace(0, 1, len(self.builders)))
 
         for builder, color in zip(self.builders, colors):
-            # Adjusted to avoid IndexError by checking if counter is less than len(block_bid_his)
             builder_bids = [block_bid_his[counter].get(builder.id, None) if counter < len(block_bid_his) else None for counter in range(24)]
-
-            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder.strategy})", color=color, alpha=0.7)
+            # Use the strategy that was current for this block
+            builder_strategy = strategies_this_block[builder.id]
+            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder_strategy})", color=color, alpha=0.7)
 
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
@@ -244,7 +251,7 @@ class Simulation:
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
-# simulation.plot_strategy_num()
-# simulation.plot_bids_for_block(1)
+simulation.plot_strategy_num()
+simulation.plot_bids_for_block(90)
 # simulation.plot_bid_value()
-simulation.plot_intra_rankings()
+# simulation.plot_intra_rankings()
