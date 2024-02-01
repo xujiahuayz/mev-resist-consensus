@@ -11,7 +11,7 @@ random.seed(42)
 
 # Constants
 NUM_BUILDERS = 20
-NUM_BLOCKS = 100
+NUM_BLOCKS = 20
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
 
@@ -54,7 +54,7 @@ class Simulation:
         self.winning_strategy = []
         self.strategy_counts_per_block = []
         self.block_bid_his = []
-        self.block_values = []
+        self.winning_block_values = []
 
         builders_per_strategy = NUM_BUILDERS // len(STRATEGIES)
 
@@ -90,16 +90,18 @@ class Simulation:
                 counter += 1
                 
 
-            # Determine winning bid and strategy
+            # Determine winning bid, strategy, and block value
             highest_bid = max(counter_bids.values())
             winning_builder_id = max(counter_bids, key=counter_bids.get)
             winning_builder_strategy = [builder.strategy for builder in self.builders if builder.id == winning_builder_id][0]
+            winning_block_value =  block_values_per_builder[winning_builder_id]
 
             self.winning_bid.append(highest_bid)
             self.winning_strategy.append(winning_builder_strategy)
             self.update_strategies(winning_builder_strategy, winning_builder_id)
             self.update_strategy_counts()
             self.block_bid_his.append(block_bid_his)
+            self.winning_block_values.append(winning_block_value)
             # print(block_bid_his)
 
     def update_strategies(self, winning_strategy, winning_builder_id):
@@ -202,10 +204,47 @@ class Simulation:
         plt.grid(True)
         plt.show()
 
+    def intra_rankings(self):
+        intra_block_rankings = []
+
+        for block_bid_his in self.block_bid_his:
+            # Flatten the bid values for each block into a single list
+            all_bids = [bid for counter_bids in block_bid_his for bid in counter_bids.values()]
+            
+            # Sort the bid values to get rankings
+            sorted_bids = sorted(all_bids, reverse=True)
+
+            # Get the winning bid value for the block
+            winning_bid = max(all_bids)
+
+            # Find the ranking of the winning bid within this block
+            rank = sorted_bids.index(winning_bid) + 1
+            intra_block_rankings.append(rank)
+
+        return intra_block_rankings
+
+    def plot_intra_rankings(self):
+        plt.figure(figsize=(12, 6))
+
+        # Calculate intra-block rankings
+        rankings = self.intra_rankings()
+
+        # Plot the rankings
+        plt.plot(range(len(rankings)), rankings, marker='o', linestyle='-')
+
+        plt.xlabel('Block Number')
+        plt.ylabel('Rank of Winning Bid Within Block')
+        plt.title('Intra-Block Ranking of Winning Bids')
+        plt.gca().invert_yaxis()  # Invert y-axis so that rank 1 appears at the top
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
-simulation.plot_strategy_num()
-simulation.plot_bids_for_block(1)
+# simulation.plot_strategy_num()
+# simulation.plot_bids_for_block(1)
 # simulation.plot_bid_value()
+simulation.plot_intra_rankings()
