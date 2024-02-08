@@ -19,11 +19,13 @@ class Builder:
     def __init__(self, id, strategy, capability: float):
         self.id = id
         self.strategy = strategy
-        self.capability = random.uniform(20,40)
+        self.capability = random.uniform(20,30)
+        # self.capability = 20
 
     def block_value(self):
         '''Return the value of the block.'''
-        return max(0, random.uniform(self.capability-10, self.capability+10))
+        return max(0, random.uniform(self.capability-5, self.capability+5))
+        # return self.capability
     
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
         '''Return the bid amount for the builder based on the strategy.'''
@@ -32,11 +34,11 @@ class Builder:
         elif self.strategy == 'reactive':
             if block_bid_his:
                 last_bid = max(block_bid_his[-1].values())
-                reactivity = 0.05
+                reactivity = 0.5
                 new_bid = np.random.normal(last_bid, last_bid * reactivity)
                 return min(new_bid, block_value)
             else:
-                return block_value * 0.5
+                return block_value * 0.1
         elif self.strategy == 'historical':
             last_10_bids = winning_bid[-10:]
             return min(np.mean(last_10_bids), block_value) if last_10_bids else block_value * 0.5
@@ -82,7 +84,7 @@ class Simulation:
             while not auction_end and counter < 24:
                 counter_bids = {}
                 for builder in self.builders:
-                    increment_factor = 1 + (0.5 * counter/24)
+                    increment_factor = 1 + (random.uniform(0,1) * counter/24)
                     perceived_block_value = builder.block_value() * increment_factor
                     block_values_per_builder[builder.id] = perceived_block_value
                     bid = builder.bidding_strategy(perceived_block_value, block_bid_his, self.winning_bid, counter)
@@ -114,14 +116,14 @@ class Simulation:
 
         for builder in self.builders:
             # Check if the winning builder used bluff strategy and won
-            if builder.id == winning_builder_id and builder.strategy == 'bluff' :
-                # Assign a new strategy randomly, excluding 'bluff'
-                non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
-                builder.strategy = random.choice(non_bluff_strategies)
+            # if builder.id == winning_builder_id and builder.strategy == 'bluff' :
+            #     # Assign a new strategy randomly, excluding 'bluff'
+            #     non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
+            #     builder.strategy = random.choice(non_bluff_strategies)
             # elif random.random() < CHANGE_STRATEGY_RATE/5:
             #     # a percentage of builders change to some random strategy
             #     builder.strategy = random.choice(STRATEGIES)
-            elif random.random() < CHANGE_STRATEGY_RATE:
+            if random.random() < CHANGE_STRATEGY_RATE:
                 # Change strategy to the last winning strategy for a percentage of builders
                 if last_winning_strategy and builder.strategy != last_winning_strategy:
                     builder.strategy = last_winning_strategy
@@ -174,6 +176,10 @@ class Simulation:
         plt.figure(figsize=(12, 6))
         block_bid_his = self.block_bid_his[block_number]
 
+        # Determine the winning bid and the ID of the winning builder for this block
+        winning_bid = max(bid for counter_bids in block_bid_his for bid in counter_bids.values())
+        winning_builder_id = [builder_id for counter_bids in block_bid_his for builder_id, bid in counter_bids.items() if bid == winning_bid][0]
+
         # Retrieve the strategies used in this specific block
         strategies_this_block = self.builder_strategies_per_block[block_number]
 
@@ -182,9 +188,16 @@ class Simulation:
 
         for builder, color in zip(self.builders, colors):
             builder_bids = [block_bid_his[counter].get(builder.id, None) if counter < len(block_bid_his) else None for counter in range(24)]
-            # Use the strategy that was current for this block
             builder_strategy = strategies_this_block[builder.id]
-            plt.plot(range(24), builder_bids, label=f"Builder {builder.id} ({builder_strategy})", color=color, alpha=0.7)
+
+            # Make the winning builder's line bolder
+            linewidth = 2.5 if builder.id == winning_builder_id else 1.0
+            linestyle = '-' if builder.id == winning_builder_id else '--'
+            label = f"Builder {builder.id} ({builder_strategy})"
+            if builder.id == winning_builder_id:
+                label += " - Winner"
+
+            plt.plot(range(24), builder_bids, label=label, color=color, alpha=0.7, linewidth=linewidth, linestyle=linestyle)
 
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
@@ -195,14 +208,14 @@ class Simulation:
         plt.show()
 
 
+
     def plot_bid_value(self):
         plt.figure(figsize=(12, 6))
 
-        # Assuming self.winning_bids and self.block_values are populated correctly
         block_numbers = list(range(len(self.winning_bid)))
 
         plt.plot(block_numbers, self.winning_bid, label='Winning Bid', color='green')
-        plt.plot(block_numbers, self.block_values, label='Block Value', color='blue')
+        plt.plot(block_numbers, self.winning_block_values, label='Block Value', color='blue')
 
         plt.xlabel('Block Number')
         plt.ylabel('Value')
@@ -215,16 +228,11 @@ class Simulation:
         intra_block_rankings = []
 
         for block_bid_his in self.block_bid_his:
-            # Flatten the bid values for each block into a single list
             all_bids = [bid for counter_bids in block_bid_his for bid in counter_bids.values()]
-            
-            # Sort the bid values to get rankings
-            sorted_bids = sorted(all_bids, reverse=True)
 
-            # Get the winning bid value for the block
+            sorted_bids = sorted(all_bids, reverse=True)
             winning_bid = max(all_bids)
 
-            # Find the ranking of the winning bid within this block
             rank = sorted_bids.index(winning_bid) + 1
             intra_block_rankings.append(rank)
 
@@ -247,11 +255,28 @@ class Simulation:
         plt.tight_layout()
         plt.show()
 
+    def plot_cumulate_reward_strategy(self):
+        plt.figure(figsize=(12, 6))
+
+        #plot the cumulative reward for each strategy over blocks
+        for strategy in STRATEGIES:
+            cumulate_reward = np.cumsum([self.winning_block_values[i] - self.winning_bid[i] for i in range(len(self.winning_bid)) if self.winning_strategy[i] == strategy])
+            plt.plot(range(len(cumulate_reward)), cumulate_reward, label=strategy)
+
+        plt.xlabel('Block Number')
+        plt.ylabel('Cumulative Reward')
+        plt.title('Cumulative Reward Over Blocks')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+
 # Run the simulation
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
-simulation.plot_strategy_num()
-simulation.plot_bids_for_block(90)
-# simulation.plot_bid_value()
-# simulation.plot_intra_rankings()
+# simulation.plot_strategy_num()
+# simulation.plot_bids_for_block(10)
+simulation.plot_bid_value()
+simulation.plot_intra_rankings()
+# simulation.plot_cumulate_reward_strategy()
