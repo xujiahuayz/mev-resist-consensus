@@ -4,7 +4,6 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import matplotlib.cm as cm
 
 random.seed(42)
@@ -12,7 +11,7 @@ random.seed(42)
 # Constants
 NUM_BUILDERS = 20
 NUM_BLOCKS = 100
-STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
+STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff', 'combined']
 CHANGE_STRATEGY_RATE = 0.2
 
 class Builder:
@@ -47,16 +46,19 @@ class Builder:
             return 0
         elif self.strategy == 'bluff':
             return block_value * (1 if counter < 22 else 0.5)
+        elif self.strategy == 'combined':
+            pass
+
 
 class Simulation:
     def __init__(self, num_builders, num_blocks):
         self.num_blocks = num_blocks
         self.winning_bid = []
         self.winning_strategy = []
-        self.strategy_counts_per_block = []
-        self.block_bid_his = []
+        self.strategy_counts_per_block = [] # number of each strategy in each block
+        self.block_bid_his = [] # bid history of the current block
         self.winning_block_values = []
-        self.builder_strategies_per_block = []
+        self.builder_strategies_per_block = [] # builder if and their stratgey within block
 
         builders_per_strategy = NUM_BUILDERS // len(STRATEGIES)
 
@@ -67,7 +69,7 @@ class Simulation:
         for strategy in STRATEGIES:
             builders_strategies.extend([strategy] * builders_per_strategy)
 
-        self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), random.uniform(0,1)) for i in range(num_builders)]
+        self.builders = [Builder(i, builders_strategies[i], capability=random.uniform(5, 10), reactivity=0.5) for i in range(num_builders)]
 
     def simulate_block(self):
         '''Simulate a block'''
@@ -95,7 +97,6 @@ class Simulation:
                     auction_end = random.random() < auction_end_probability
                 counter += 1
                 
-
             # Determine winning bid, strategy, and block value
             highest_bid = max(counter_bids.values())
             winning_builder_id = max(counter_bids, key=counter_bids.get)
@@ -115,13 +116,10 @@ class Simulation:
 
         for builder in self.builders:
             # Check if the winning builder used bluff strategy and won
-            # if builder.id == winning_builder_id and builder.strategy == 'bluff' :
-            #     # Assign a new strategy randomly, excluding 'bluff'
-            #     non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
-            #     builder.strategy = random.choice(non_bluff_strategies)
-            # elif random.random() < CHANGE_STRATEGY_RATE/5:
-            #     # a percentage of builders change to some random strategy
-            #     builder.strategy = random.choice(STRATEGIES)
+            if builder.id == winning_builder_id and builder.strategy == 'bluff' :
+                # Assign a new strategy randomly, excluding 'bluff'
+                non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
+                builder.strategy = random.choice(non_bluff_strategies)
             if random.random() < CHANGE_STRATEGY_RATE:
                 # Change strategy to the last winning strategy for a percentage of builders
                 if last_winning_strategy and builder.strategy != last_winning_strategy:
@@ -272,8 +270,8 @@ class Simulation:
 simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
 simulation.run()
 # simulation.plot_cumulative_win()
-# simulation.plot_strategy_num()
+simulation.plot_strategy_num()
 # simulation.plot_bids_for_block(10)
-simulation.plot_bid_value()
-simulation.plot_intra_rankings()
+# simulation.plot_bid_value()
+# simulation.plot_intra_rankings()
 # simulation.plot_cumulate_reward_strategy()
