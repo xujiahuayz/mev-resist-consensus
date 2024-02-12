@@ -16,11 +16,11 @@ STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff'
 CHANGE_STRATEGY_RATE = 0.2
 
 class Builder:
-    def __init__(self, id, strategy, capability: float):
+    def __init__(self, id, strategy, capability: float, reactivity: float):
         self.id = id
         self.strategy = strategy
-        self.capability = random.uniform(20,30)
-        # self.capability = 20
+        self.capability = capability
+        self.reactivity = reactivity
 
     def block_value(self):
         '''Return the value of the block.'''
@@ -34,8 +34,7 @@ class Builder:
         elif self.strategy == 'reactive':
             if block_bid_his:
                 last_bid = max(block_bid_his[-1].values())
-                reactivity = 0.5
-                new_bid = np.random.normal(last_bid, last_bid * reactivity)
+                new_bid = np.random.normal(last_bid, last_bid * self.reactivity)
                 return min(new_bid, block_value)
             else:
                 return block_value * 0.1
@@ -68,7 +67,7 @@ class Simulation:
         for strategy in STRATEGIES:
             builders_strategies.extend([strategy] * builders_per_strategy)
 
-        self.builders = [Builder(i, builders_strategies[i], np.random.uniform(1, 10)) for i in range(num_builders)]
+        self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), random.uniform(0,1)) for i in range(num_builders)]
 
     def simulate_block(self):
         '''Simulate a block'''
@@ -206,8 +205,6 @@ class Simulation:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
-
-
 
     def plot_bid_value(self):
         plt.figure(figsize=(12, 6))
