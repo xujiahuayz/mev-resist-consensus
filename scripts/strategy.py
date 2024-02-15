@@ -15,6 +15,7 @@ STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff'
 CHANGE_STRATEGY_RATE = 0.2
 
 class Builder:
+    '''Builder class for the simulation.'''
     def __init__(self, id, strategy, capability: float, reactivity: float):
         self.id = id
         self.strategy = strategy
@@ -49,7 +50,6 @@ class Builder:
         elif self.strategy == 'combined':
             pass
 
-
 class Simulation:
     def __init__(self, num_builders, num_blocks):
         self.num_blocks = num_blocks
@@ -69,7 +69,7 @@ class Simulation:
         for strategy in STRATEGIES:
             builders_strategies.extend([strategy] * builders_per_strategy)
 
-        self.builders = [Builder(i, builders_strategies[i], capability=random.uniform(5, 10), reactivity=0.5) for i in range(num_builders)]
+        self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), 0.5) for i in range(num_builders)]
 
     def simulate_block(self):
         '''Simulate a block'''
