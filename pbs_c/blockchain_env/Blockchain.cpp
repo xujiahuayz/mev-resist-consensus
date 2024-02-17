@@ -8,7 +8,7 @@
 #include "vector"
 #include "fstream"
 
-static int transactionID = 10000;
+static int transactionID = 110000;
 std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, double mev){
     std::shared_ptr<Transaction> transaction= std::make_shared<Transaction> (gas,mev,transactionID++);
     return transaction;
@@ -51,13 +51,13 @@ void Blockchain::saveToCSV(const std::string& filename) {
     std::ofstream file(filename);
 
     // Write the header
-    file << "Block ID,Block Bid,Builder ID,Transaction ID,Transaction GAS,Transaction MEV\n";
+    file << "Block ID,Block Bid,Builder ID,Block Value,Transaction ID,Transaction GAS,Transaction MEV\n";
     int blockId = 0;
     for (const auto& block : blocks) {
         blockId++;
-        file << blockId<<"," << block->bid << "," << block->builderId<<"\n";
+        file << blockId<<"," << block->bid << "," << block->builderId<<","<<block->blockValue <<"\n";
         for (const auto& transaction : block->transactions) {
-            file << "," << "," << ","
+            file << "," << "," << "," << ","
                  << transaction->id << ","
                  << transaction->gas << ","
                  << transaction->mev << "\n";

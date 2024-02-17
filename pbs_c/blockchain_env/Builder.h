@@ -26,8 +26,8 @@ struct KeyHash {
     }
 };
 
-class Builder : public Node {
-private:
+class Builder : virtual public Node {
+protected:
     double blockValue;
     std::unordered_map<std::tuple<int,int, std::vector<double>>, std::pair<double, double>, KeyHash> findOptimalBidCache;
     Random randomEngine;
@@ -42,9 +42,9 @@ public:
     Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim);
     Builder() : Node(-1,0,1) {}
 
-    void buildBlock(int maxBlockSize);
+    virtual void buildBlock(int maxBlockSize);
 
-    void buildBlock();
+    virtual void buildBlock();
     void updateBids(double bid);
     void calculatedBid();
 

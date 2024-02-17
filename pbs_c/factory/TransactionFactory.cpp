@@ -7,7 +7,7 @@ TransactionFactory::TransactionFactory(int numTransactions, double mevPercentage
 }
 
 void TransactionFactory::createTransactions(int idHint) {
-    int id = idHint*10000;
+    int id = idHint*100000;
     std::uniform_real_distribution<double> distribution(0.0, 100.0);
     for (int i = transactions.size(); i < numTransactions; i++) {
         double gasFee = distribution(randomGenerator.rng);

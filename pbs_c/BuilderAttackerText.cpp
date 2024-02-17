@@ -1,3 +1,6 @@
+//
+// Created by Aaryan Gulia on 17/02/2024.
+//
 #include "blockchain_env/Blockchain.h"
 
 int main() {
@@ -12,21 +15,9 @@ int main() {
     int maxBlockSize = 10;
 
     NodeFactory nodeFactory;
-    nodeFactory.createBuilderNode(1, 2,0.1,depth,numSimulations);
-    nodeFactory.createBuilderNode(2, 2,0.1,depth,numSimulations);
-
-
-
-    nodeFactory.createAttackerBuilderNode(10, 2,0.1,depth,numSimulations);
-    nodeFactory.createAttackerBuilderNode(30, 2,0.1,depth,numSimulations);
-
-    nodeFactory.createNode(10, 2,0.1);
-    nodeFactory.createNode(11, 2,0.1);
-    nodeFactory.createNode(12, 2,0.1);
+    nodeFactory.createAttackerBuilderNode(0, 0, 0.1, depth, numSimulations);
 
     TransactionFactory transactionFactory(numTransactions, 50);
-
-
     nodeFactory.assignNeighbours();
     for(auto& transaction : transactionFactory.transactions){
         nodeFactory.addTransactionToNodes(std::make_shared<Transaction>(transaction));

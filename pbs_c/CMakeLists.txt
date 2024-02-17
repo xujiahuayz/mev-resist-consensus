@@ -29,6 +29,8 @@ add_executable(pbs_c MevGame.cpp
         blockchain_env/Node.h
         factory/NodeFactory.h
         factory/NodeFactory.cpp
+        game_env/AttackerBuilder.h
+        game_env/AttackerBuilder.cpp
 )
 
 
