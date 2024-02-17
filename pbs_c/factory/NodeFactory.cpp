@@ -1,7 +1,8 @@
 #include "NodeFactory.h"
 #include <unordered_set>
 
-void NodeFactory::createBuilderNode(int bId, int bConnections,double bCharacteristic, double bDepth, double bNumSim) {
+
+void NodeFactory::createBuilderNode(int bId, int bConnections, double bCharacteristic, double bDepth, double bNumSim) {
     std::shared_ptr<Builder> newBuilder = std::make_shared<Builder>(bId, bCharacteristic, bConnections, bDepth, bNumSim);
     builders.push_back(newBuilder);
     nodes.push_back(newBuilder);
@@ -11,6 +12,13 @@ void NodeFactory::createAttackerNode(size_t aId, int aConnections, double aChara
     std::shared_ptr<Attacker> newAttacker = std::make_shared<Attacker>(aId, aConnections, aCharacteristic,*this);
     attackers.push_back(newAttacker);
     nodes.push_back(newAttacker);
+}
+
+void NodeFactory::createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim) {
+    std::shared_ptr<AttackerBuilder> newAttackerBuilder = std::make_shared<AttackerBuilder>(baId, baConnections, baCharacteristic, baDepth, baNumSim, *this);
+    //attackers.push_back(newAttackerBuilder);
+    builders.push_back(newAttackerBuilder);
+    nodes.push_back(newAttackerBuilder);
 }
 
 void NodeFactory::createNode(int nId, int connections, double characteristic) {

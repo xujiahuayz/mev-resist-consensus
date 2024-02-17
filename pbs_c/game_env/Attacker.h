@@ -1,14 +1,12 @@
 #ifndef PBS_C_ATTACKER_H
 #define PBS_C_ATTACKER_H
 
-#include "blockchain_env/Transaction.h"
+#include "blockchain_env/Builder.h"
 #include <vector>
-#include "blockchain_env/Block.h"
-#include "blockchain_env/Node.h"
 
 class NodeFactory;
-class Attacker : public Node{
-private:
+class Attacker : virtual public Node{
+protected:
     NodeFactory& nodeFactory;
     std::vector<std::shared_ptr<Transaction>> frontTransactions;
     std::vector<std::shared_ptr<Transaction>> backTransactions;
