@@ -136,6 +136,9 @@ class Simulation:
         '''run'''
         self.simulate_block()
 
+
+    
+
     def plot_cumulative_win(self):
         '''Plot the cumulative win for each strategy'''
         plt.figure(figsize=(12, 6))
