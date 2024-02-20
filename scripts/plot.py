@@ -2,136 +2,130 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.cm as cm
 
-def plot_distribution(total_proposer_balance: list[float], total_builder_balance: list[float],
-                      initial_balance: float):
-    block_numbers = np.arange(len(total_proposer_balance))  # Create an array of block numbers
+class Plotting:
+    def __init__(self, simulation):
+        self.simulation = simulation
 
-    # Calculate the total profit (ignoring initial balances) for each block
-    total_profit_proposer = (
-        np.array(total_proposer_balance) - len(total_proposer_balance) * [initial_balance]
-    )
+    def plot_cumulative_win(self, STRATEGIES):
+        '''Plot the cumulative win for each strategy'''
+        plt.figure(figsize=(12, 6))
+        strategies_count = {strategy: [0] * self.simulation.num_blocks for strategy in STRATEGIES}
+        for i, strategy in enumerate(self.simulation.winning_strategy):
+            strategies_count[strategy][i] += 1
+        for strategy, counts in strategies_count.items():
+            plt.plot(range(self.simulation.num_blocks), np.cumsum(counts), label=strategy)
+        plt.xlabel('Block Number')
+        plt.ylabel('Cumulative Wins')
+        plt.title('Strategy Trends Over Blocks')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
-    total_profit_builder = (
-        np.array(total_builder_balance) - len(total_builder_balance) * [initial_balance]
-    )
+    def plot_strategy_num(self, STRATEGIES):
+        """Plot the number of builders for each strategy over blocks."""
+        plt.figure(figsize=(12, 6))
 
-    # Calculate the total profit for each block
-    total_profit = total_profit_proposer + total_profit_builder
+        block_numbers = list(range(len(self.simulation.strategy_counts_per_block)))
+        for strategy in STRATEGIES:
+            counts = [count[strategy] for count in self.simulation.strategy_counts_per_block]
+            # print(simulation.strategy_counts_per_block)
+            plt.plot(block_numbers, counts, label=strategy)
 
-    # Calculate the percentage of proposer and builder profit for each block
-    proposer_percentage = (total_profit_proposer / total_profit) * 100
-    builder_percentage = (total_profit_builder / total_profit) * 100
+        plt.title('Number of Builders per Strategy Over Blocks')
+        plt.xlabel('Block Number')
+        plt.ylabel('Number of Builders')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
-    plt.figure(figsize=(10, 6))
-    plt.stackplot(block_numbers, proposer_percentage, builder_percentage,
-                  labels=['Proposer Profit', 'Builder Profit'], alpha=0.7)
-    plt.plot(block_numbers, np.ones_like(block_numbers) * 100, color='black',
-             linestyle='--', label='Total (100%)')
-    plt.xlabel('Block Number')
-    plt.ylabel('Percentage')
-    plt.legend(loc='upper left')
-    plt.grid(False)
-    plt.title('Percentage Distribution of Proposer and Builder Profits Over Blocks')
-    plt.show()
-    plt.savefig('./profit_distribution.pdf')
+    def plot_bids_for_block(self, block_number):
+        plt.figure(figsize=(12, 6))
+        block_bid_his = self.simulation.block_bid_his[block_number]
 
-def plot_equilibrium():
+        # Determine the winning bid and the ID of the winning builder for this block
+        winning_bid = max(bid for counter_bids in block_bid_his for bid in counter_bids.values())
+        winning_builder_id = [builder_id for counter_bids in block_bid_his for
+                              builder_id, bid in counter_bids.items() if bid == winning_bid][0]
 
-    def probability_of_acceptance(bid, t, k, t_avg):
-        return min(1, np.exp(-k * bid) * (t / t_avg))
+        # Retrieve the strategies used in this specific block
+        strategies_this_block = self.simulation.builder_strategies_per_block[block_number]
 
-    def expected_payout(bid, t, k, t_avg):
-        return probability_of_acceptance(bid, t, k, t_avg) * bid
+        # Generate unique colors for each builder
+        colors = cm.rainbow(np.linspace(0, 1, len(self.simulation.builders)))
 
-    def find_equilibrium(t, k, t_avg, bid_range):
-        best_bid = 0
-        max_payout = 0
+        for builder, color in zip(self.simulation.builders, colors):
+            builder_bids = [block_bid_his[counter].get(builder.id, None)
+                            if counter < len(block_bid_his) else None for counter in range(24)]
+            builder_strategy = strategies_this_block[builder.id]
 
-        for bid in bid_range:
-            payout = expected_payout(bid, t, k, t_avg)
-            if payout > max_payout:
-                max_payout = payout
-                best_bid = bid
+            # Make the winning builder's line bolder
+            linewidth = 2.5 if builder.id == winning_builder_id else 1.0
+            linestyle = '-' if builder.id == winning_builder_id else '--'
+            label = f"Builder {builder.id} ({builder_strategy})"
+            if builder.id == winning_builder_id:
+                label += " - Winner"
 
-        return best_bid, max_payout
+            plt.plot(range(24), builder_bids, label=label, color=color, alpha=0.7,
+                     linewidth=linewidth, linestyle=linestyle)
 
-    # Constants
-    k = 0.1
-    t_avg = 50
-    ts = [30, 50, 70, 90]
+        plt.xlabel('Counter')
+        plt.ylabel('Bid Value')
+        plt.title(f'Bids for Block {block_number}')
+        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
-    bid_range = np.linspace(0, 100, 1000)
+    def plot_bid_value(self):
+        plt.figure(figsize=(12, 6))
 
-    # Find the equilibrium
-    for t in ts:
-        best_bid, max_payout = find_equilibrium(t, k, t_avg, bid_range)
-        print(f"Total Fee: {t} - Best Bid: {best_bid}, Max Expected Payout: {max_payout}")
+        block_numbers = list(range(len(self.simulation.winning_bid)))
 
-    # # Output the results
-    # print("Best Bid:", best_bid)
-    # print("Max Expected Payout:", max_payout)
+        plt.plot(block_numbers, self.simulation.winning_bid, label='Winning Bid', color='green')
+        plt.plot(block_numbers, self.simulation.winning_block_values, label='Block Value',
+                 color='blue')
 
-        plt.plot(bid_range, [expected_payout(bid, t, k, t_avg) for bid in bid_range],
-                  label=f"T={t}")
-
-    plt.xlabel('Bid')
-    plt.ylabel('Expected Payout')
-    plt.title('Expected Payout vs. Bid')
-    plt.show()
-
-def plot_payoff():
-    # Constants
-    k = 0.1
-    t_avg = 100
-    t_values = [50, 100, 150]
-
-    # Bid range
-    b = np.linspace(0, 100, 400)
-
-    plt.figure(figsize=(10, 6))
-
-    # Plot for each T value
-    for t in t_values:
-        p_acceptance = np.minimum(1, np.exp(-k * b) * t / t_avg)
-        plt.plot(b, p_acceptance, label=f'T={t}')
-
-    plt.title('Probability of Acceptance vs Bid')
-    plt.xlabel('Bid (b)')
-    plt.ylabel('Probability of Acceptance')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+        plt.xlabel('Block Number')
+        plt.ylabel('Value')
+        plt.title('Winning Bids and Block Values Over Blocks')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 
-def plot_utility():
+    def plot_intra_rankings(self):
+        plt.figure(figsize=(12, 6))
 
-# Utility function calculation
-    def calculate_utility(bid, transaction_fees, mev_profits, kb):
-        acceptance_probability = np.minimum(1, np.exp(kb * bid))
-        return acceptance_probability * (transaction_fees - bid + mev_profits)
+        # Calculate intra-block rankings
+        rankings = self.simulation.intra_rankings()
 
-    # Constants and ranges
-    kb = -0.1  # Negative as higher bids should decrease the probability
-    bids = np.linspace(0, 10, 100)  # Range of bids from 0 to 10
-    transaction_fees = 5  # Constant transaction fees
-    mev_profits = 2  # Constant MEV profits
+        # Plot the rankings
+        plt.plot(range(len(rankings)), rankings, marker='o', linestyle='-')
 
-    # Calculate utilities for each bid
-    utilities = [calculate_utility(bid, transaction_fees, mev_profits, kb) for bid in bids]
+        plt.xlabel('Block Number')
+        plt.ylabel('Rank of Winning Bid Within Block')
+        plt.title('Intra-Block Ranking of Winning Bids')
+        plt.gca().invert_yaxis()  # Invert y-axis so that rank 1 appears at the top
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(bids, utilities, label='Builder Utility')
-    plt.xlabel('Bid')
-    plt.ylabel('Utility')
-    plt.title('Builder Utility as a Function of Bid')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    def plot_cumulate_reward_strategy(self, STRATEGIES):
+        plt.figure(figsize=(12, 6))
 
-if __name__ == "__main__":
-    # plot_payoff()
-    # plot_equilibrium()
+        #plot the cumulative reward for each strategy over blocks
+        for strategy in STRATEGIES:
+            cumulate_reward = np.cumsum([self.simulation.winning_block_values[i]
+                                         - self.simulation.winning_bid[i]
+                                         for i in range(len(self.simulation.winning_bid))
+                                         if self.simulation.winning_strategy[i] == strategy])
+            plt.plot(range(len(cumulate_reward)), cumulate_reward, label=strategy)
 
-    plot_utility()
+        plt.xlabel('Block Number')
+        plt.ylabel('Cumulative Reward')
+        plt.title('Cumulative Reward Over Blocks')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
