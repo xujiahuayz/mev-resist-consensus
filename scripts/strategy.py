@@ -1,10 +1,8 @@
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-instance-attributes, too-many-arguments
 '''For this file we focus on yeilding the builder's best strategy for time zero.'''
 
 import random
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from plot import Plotting
 
 random.seed(42)
@@ -17,8 +15,8 @@ CHANGE_STRATEGY_RATE = 0.2
 
 class Builder:
     '''Builder class for the simulation.'''
-    def __init__(self, id, strategy, capability: float, reactivity: float):
-        self.id = id
+    def __init__(self, account, strategy, capability: float, reactivity: float):
+        self.account = account
         self.strategy = strategy
         self.capability = capability
         self.reactivity = reactivity
@@ -27,7 +25,7 @@ class Builder:
         '''Return the value of the block.'''
         return max(0, random.uniform(self.capability-5, self.capability+5))
         # return self.capability
-    
+
     def bidding_strategy(self, block_value, block_bid_his, winning_bid, counter):
         '''Return the bid amount for the builder based on the strategy.'''
         if self.strategy == 'fraction_based':
@@ -68,7 +66,8 @@ class Simulation:
         for strategy in STRATEGIES:
             builders_strategies.extend([strategy] * builders_per_strategy)
 
-        self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), 0.5) for i in range(num_builders)]
+        self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), 0.5)
+                         for i in range(num_builders)]
 
     def simulate_block(self):
         '''Simulate a block'''
@@ -87,7 +86,8 @@ class Simulation:
                     increment_factor = 1 + (random.uniform(0,1) * counter/24)
                     perceived_block_value = builder.block_value() * increment_factor
                     block_values_per_builder[builder.id] = perceived_block_value
-                    bid = builder.bidding_strategy(perceived_block_value, block_bid_his, self.winning_bid, counter)
+                    bid = builder.bidding_strategy(perceived_block_value, block_bid_his,
+                                                   self.winning_bid, counter)
                     counter_bids[builder.id] = bid
 
                 block_bid_his.append(counter_bids)
@@ -95,22 +95,23 @@ class Simulation:
                     auction_end_probability = (counter - 12) / (24 - 12)
                     auction_end = random.random() < auction_end_probability
                 counter += 1
-                
+
             # Determine winning bid, strategy, and block value
             highest_bid = max(counter_bids.values())
             winning_builder_id = max(counter_bids, key=counter_bids.get)
-            winning_builder_strategy = [builder.strategy for builder in self.builders if builder.id == winning_builder_id][0]
+            winning_builder_strategy = [builder.strategy for builder in self.builders if
+                                        builder.id == winning_builder_id][0]
             winning_block_value =  block_values_per_builder[winning_builder_id]
 
             self.winning_bid.append(highest_bid)
             self.winning_strategy.append(winning_builder_strategy)
-            self.update_strategies(winning_builder_strategy, winning_builder_id)
+            self.update_strategies(winning_builder_id)
             self.update_strategy_counts()
             self.block_bid_his.append(block_bid_his)
             self.winning_block_values.append(winning_block_value)
             # print(block_bid_his)
 
-    def update_strategies(self, winning_strategy, winning_builder_id):
+    def update_strategies(self, winning_builder_id):
         last_winning_strategy = self.winning_strategy[-1] if self.winning_strategy else None
 
         for builder in self.builders:
@@ -146,7 +147,6 @@ class Simulation:
         return intra_block_rankings
 
     def run(self):
-        '''run'''
         self.simulate_block()
 
 
@@ -156,8 +156,8 @@ simulation.run()
 plotting = Plotting(simulation)
 
 # plotting.plot_cumulative_win(STRATEGIES)
-plotting.plot_strategy_num(STRATEGIES)
-plotting.plot_bids_for_block(10)
-plotting.plot_bid_value()
-plotting.plot_intra_rankings()
-plotting.plot_cumulate_reward_strategy(STRATEGIES)
+# plotting.plot_strategy_num(STRATEGIES)
+# plotting.plot_bids_for_block(10)
+# plotting.plot_bid_value()
+# plotting.plot_intra_rankings()
+# plotting.plot_cumulate_reward_strategy(STRATEGIES)

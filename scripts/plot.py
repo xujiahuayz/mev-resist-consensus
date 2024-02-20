@@ -46,7 +46,8 @@ class Plotting:
 
         # Determine the winning bid and the ID of the winning builder for this block
         winning_bid = max(bid for counter_bids in block_bid_his for bid in counter_bids.values())
-        winning_builder_id = [builder_id for counter_bids in block_bid_his for builder_id, bid in counter_bids.items() if bid == winning_bid][0]
+        winning_builder_id = [builder_id for counter_bids in block_bid_his for
+                              builder_id, bid in counter_bids.items() if bid == winning_bid][0]
 
         # Retrieve the strategies used in this specific block
         strategies_this_block = self.simulation.builder_strategies_per_block[block_number]
@@ -55,7 +56,8 @@ class Plotting:
         colors = cm.rainbow(np.linspace(0, 1, len(self.simulation.builders)))
 
         for builder, color in zip(self.simulation.builders, colors):
-            builder_bids = [block_bid_his[counter].get(builder.id, None) if counter < len(block_bid_his) else None for counter in range(24)]
+            builder_bids = [block_bid_his[counter].get(builder.id, None)
+                            if counter < len(block_bid_his) else None for counter in range(24)]
             builder_strategy = strategies_this_block[builder.id]
 
             # Make the winning builder's line bolder
@@ -65,7 +67,8 @@ class Plotting:
             if builder.id == winning_builder_id:
                 label += " - Winner"
 
-            plt.plot(range(24), builder_bids, label=label, color=color, alpha=0.7, linewidth=linewidth, linestyle=linestyle)
+            plt.plot(range(24), builder_bids, label=label, color=color, alpha=0.7,
+                     linewidth=linewidth, linestyle=linestyle)
 
         plt.xlabel('Counter')
         plt.ylabel('Bid Value')
@@ -81,7 +84,8 @@ class Plotting:
         block_numbers = list(range(len(self.simulation.winning_bid)))
 
         plt.plot(block_numbers, self.simulation.winning_bid, label='Winning Bid', color='green')
-        plt.plot(block_numbers, self.simulation.winning_block_values, label='Block Value', color='blue')
+        plt.plot(block_numbers, self.simulation.winning_block_values, label='Block Value',
+                 color='blue')
 
         plt.xlabel('Block Number')
         plt.ylabel('Value')
@@ -113,7 +117,10 @@ class Plotting:
 
         #plot the cumulative reward for each strategy over blocks
         for strategy in STRATEGIES:
-            cumulate_reward = np.cumsum([self.simulation.winning_block_values[i] - self.simulation.winning_bid[i] for i in range(len(self.simulation.winning_bid)) if self.simulation.winning_strategy[i] == strategy])
+            cumulate_reward = np.cumsum([self.simulation.winning_block_values[i]
+                                         - self.simulation.winning_bid[i]
+                                         for i in range(len(self.simulation.winning_bid))
+                                         if self.simulation.winning_strategy[i] == strategy])
             plt.plot(range(len(cumulate_reward)), cumulate_reward, label=strategy)
 
         plt.xlabel('Block Number')
@@ -122,4 +129,3 @@ class Plotting:
         plt.legend()
         plt.grid(True)
         plt.show()
-
