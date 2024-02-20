@@ -49,19 +49,6 @@ class Builder:
         elif self.strategy == 'bluff':
             return block_value * (1 if counter < 22 else 0.5)
 
-    def intra_rankings(self):
-        intra_block_rankings = []
-
-        for block_bid_his in self.block_bid_his:
-            all_bids = [bid for counter_bids in block_bid_his for bid in counter_bids.values()]
-
-            sorted_bids = sorted(all_bids, reverse=True)
-            winning_bid = max(all_bids)
-
-            rank = sorted_bids.index(winning_bid) + 1
-            intra_block_rankings.append(rank)
-
-        return intra_block_rankings
 class Simulation:
     def __init__(self, num_builders, num_blocks):
         self.num_blocks = num_blocks
@@ -144,10 +131,23 @@ class Simulation:
             current_strategy_count[builder.strategy] += 1
         self.strategy_counts_per_block.append(current_strategy_count)
 
+    def intra_rankings(self):
+        intra_block_rankings = []
+
+        for block_bid_his in self.block_bid_his:
+            all_bids = [bid for counter_bids in block_bid_his for bid in counter_bids.values()]
+
+            sorted_bids = sorted(all_bids, reverse=True)
+            winning_bid = max(all_bids)
+
+            rank = sorted_bids.index(winning_bid) + 1
+            intra_block_rankings.append(rank)
+
+        return intra_block_rankings
+
     def run(self):
         '''run'''
         self.simulate_block()
-
 
 
 # Run the simulation
@@ -157,7 +157,7 @@ plotting = Plotting(simulation)
 
 # plotting.plot_cumulative_win(STRATEGIES)
 plotting.plot_strategy_num(STRATEGIES)
-# simulation.plot_bids_for_block(10)
-# simulation.plot_bid_value()
-# simulation.plot_intra_rankings()
-# simulation.plot_cumulate_reward_strategy()
+plotting.plot_bids_for_block(10)
+plotting.plot_bid_value()
+plotting.plot_intra_rankings()
+plotting.plot_cumulate_reward_strategy(STRATEGIES)
