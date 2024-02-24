@@ -1,4 +1,4 @@
-#include "Attacker.h"
+#include "Proposer.h"
 
 #ifndef PBS_C_ATTACKERBUILDER_H
 #define PBS_C_ATTACKERBUILDER_H

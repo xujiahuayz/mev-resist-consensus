@@ -31,6 +31,8 @@ add_executable(pbs_c MevGame.cpp
         factory/NodeFactory.cpp
         game_env/AttackerBuilder.h
         game_env/AttackerBuilder.cpp
+        game_env/Proposer.h
+        game_env/Proposer.cpp
 )
 
 

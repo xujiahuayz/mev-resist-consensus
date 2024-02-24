@@ -26,12 +26,12 @@ void Blockchain::startChain() {
             attacker->clearAttacks();
         }
         std::cout<<"Block "<<i<<std::endl;
-        Auction auction(nodeFactory);
-        auction.runAuction();
-        std::shared_ptr<Block> newBlock = auction.auctionBlock;
+        auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
+        proposer->runAuction();
+        std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         blocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
-                 [&auction](std::shared_ptr<Builder> &b){b -> updateBids(auction.auctionBlock -> bid);});
+                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
@@ -46,6 +46,9 @@ void Blockchain::saveBlockData(){
         file<<i<<","<<blocks[i] -> builderId<<","<<blocks[i]->bid<<","<<blocks[i]->blockValue<<","<<blocks[i]->blockValue-blocks[i]->bid<<std::endl;
     }
     file.close();
+}
+void Blockchain::saveToCSV(const std::string &filename,const std::shared_ptr<Proposer>& proposer) {
+
 }
 void Blockchain::saveToCSV(const std::string& filename) {
     std::ofstream file(filename);

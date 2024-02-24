@@ -21,6 +21,12 @@ void NodeFactory::createAttackerBuilderNode(int baId, int baConnections, double 
     nodes.push_back(newAttackerBuilder);
 }
 
+void NodeFactory::createProposerNode(int pId, int pConnections, double pCharacteristic) {
+    std::shared_ptr<Proposer> newProposer = std::make_shared<Proposer>(pId, pConnections, pCharacteristic, *this);
+    proposers.push_back(newProposer);
+    nodes.push_back(newProposer);
+}
+
 void NodeFactory::createNode(int nId, int connections, double characteristic) {
     std::shared_ptr<Node> newNode = std::make_shared<Node>(nId,connections,characteristic);
     nodes.push_back(newNode);

@@ -12,6 +12,7 @@ class Block{
 public:
     std::vector<std::shared_ptr<Transaction>> transactions;
     int builderId;
+    int proposerId;
     double bid;
     double blockValue;
     double gas;
