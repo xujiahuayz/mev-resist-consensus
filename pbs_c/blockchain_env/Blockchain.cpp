@@ -47,10 +47,31 @@ void Blockchain::saveBlockData(){
     }
     file.close();
 }
-void Blockchain::saveToCSV(const std::string &filename,const std::shared_ptr<Proposer>& proposer) {
 
+void Blockchain::saveBlockData(const std::string& filename) {
+    std::ofstream file(filename);
+    file << "Block Number,Proposer ID,Builder ID,Winning Bid Value,Winning Block Value,Reward";
+    for(auto bid : blocks[0]->allBids){
+        file << ",Builder ID " << bid.first << " Bid";
+    }
+    for(auto blockValue : blocks[0]->allBlockValues){
+        file << ",Builder ID " << blockValue.first << " Block Value";
+    }
+    int blockNum = 0;
+    for(const auto& block: blocks){
+        blockNum++;
+        file << "\n" << blockNum<<","<<block->proposerId <<"," <<block->builderId<<"," <<block->bid << "," << block->blockValue << "," << block->blockValue - block->bid;
+        for(auto bid : block->allBids){
+            file << "," << bid.second;
+        }
+        for(auto blockValue : block->allBlockValues){
+            file << "," << blockValue.second;
+        }
+
+    }
 }
-void Blockchain::saveToCSV(const std::string& filename) {
+
+void Blockchain::saveTrasactionData(const std::string& filename) {
     std::ofstream file(filename);
 
     // Write the header

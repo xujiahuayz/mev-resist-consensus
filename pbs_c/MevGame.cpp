@@ -33,6 +33,7 @@ int main() {
     }
     Blockchain blockchain(chainLength,nodeFactory);
     blockchain.startChain();
-    blockchain.saveToCSV("transactions.csv");
+    blockchain.saveTrasactionData("transactions.csv");
+    blockchain.saveBlockData("blocks.csv");
     return 0;
 }

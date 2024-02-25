@@ -23,7 +23,8 @@ public:
     void printBlockStats();
     void saveBlockData();
     void saveToCSV(const std::string& filename);
-    void saveToCSV(const std::string& filename, Auction& auction);
+    void saveBlockData(const std::string& filename);
+    void saveTrasactionData(const std::string& filename);
 };
 
 

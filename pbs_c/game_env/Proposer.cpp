@@ -4,12 +4,15 @@
 
 #include "Proposer.h"
 #include <thread>
+#include "factory/NodeFactory.h"
 
 Proposer::Proposer(size_t aId, int aConnections, double aCharacteristic, NodeFactory& nodeFactory)
         : Node(aId,aConnections,aCharacteristic),nodeFactory(nodeFactory) {}
 
 void Proposer::propose(std::shared_ptr<Block>& block){
     block -> proposerId = id;
+    block ->allBids = currBids;
+    block ->allBlockValues = currBlockValues;
     proposedBlock = block;
 }
 
@@ -41,9 +44,16 @@ void Proposer::runAuction(){
                      [maxBid](std::shared_ptr<Builder> &builder) {
                          return builder->currBid == maxBid;
                      });
+        std::for_each(nodeFactory.builders.begin(), nodeFactory.builders.end(),
+                      [this](std::shared_ptr<Builder> &b){
+            currBids.emplace(std::pair<int,float>(b->id,b->currBid));
+            currBlockValues.emplace(std::pair<int,float>(b->id,b->currBlock->blockValue));
+                      });
 
         std::shared_ptr<Builder> winningBuilder = maxBidBuilders[randomGenerator.genRandInt(0, maxBidBuilders.size() - 1)];
         propose(winningBuilder -> currBlock);
+        currBids.clear();
+        currBlockValues.clear();
         if (winningBuilder->currBlock == nullptr){
             std::cout<<"Builder "<<winningBuilder->id<<" has mempool size "<<winningBuilder->mempool.size()<<std::endl;
             std::cerr << "Error: Winning builder does not have a current block."<<std::endl;
