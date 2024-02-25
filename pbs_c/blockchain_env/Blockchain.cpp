@@ -26,12 +26,12 @@ void Blockchain::startChain() {
             attacker->clearAttacks();
         }
         std::cout<<"Block "<<i<<std::endl;
-        Auction auction(nodeFactory);
-        auction.runAuction();
-        std::shared_ptr<Block> newBlock = auction.auctionBlock;
+        auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
+        proposer->runAuction();
+        std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         blocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
-                 [&auction](std::shared_ptr<Builder> &b){b -> updateBids(auction.auctionBlock -> bid);});
+                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
@@ -47,7 +47,31 @@ void Blockchain::saveBlockData(){
     }
     file.close();
 }
-void Blockchain::saveToCSV(const std::string& filename) {
+
+void Blockchain::saveBlockData(const std::string& filename) {
+    std::ofstream file(filename);
+    file << "Block Number,Proposer ID,Builder ID,Winning Bid Value,Winning Block Value,Reward";
+    for(auto bid : blocks[0]->allBids){
+        file << ",Builder ID " << bid.first << " Bid";
+    }
+    for(auto blockValue : blocks[0]->allBlockValues){
+        file << ",Builder ID " << blockValue.first << " Block Value";
+    }
+    int blockNum = 0;
+    for(const auto& block: blocks){
+        blockNum++;
+        file << "\n" << blockNum<<","<<block->proposerId <<"," <<block->builderId<<"," <<block->bid << "," << block->blockValue << "," << block->blockValue - block->bid;
+        for(auto bid : block->allBids){
+            file << "," << bid.second;
+        }
+        for(auto blockValue : block->allBlockValues){
+            file << "," << blockValue.second;
+        }
+
+    }
+}
+
+void Blockchain::saveTrasactionData(const std::string& filename) {
     std::ofstream file(filename);
 
     // Write the header

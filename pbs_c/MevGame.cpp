@@ -15,12 +15,12 @@ int main() {
     nodeFactory.createBuilderNode(1, 2,0.1,depth,numSimulations);
     nodeFactory.createBuilderNode(2, 2,0.1,depth,numSimulations);
 
-
-
     nodeFactory.createAttackerBuilderNode(10, 2,0.1,depth,numSimulations);
     nodeFactory.createAttackerBuilderNode(30, 2,0.1,depth,numSimulations);
 
-    nodeFactory.createNode(10, 2,0.1);
+    nodeFactory.createProposerNode(3, 2,0.1);
+    nodeFactory.createProposerNode(4, 2,0.1);
+
     nodeFactory.createNode(11, 2,0.1);
     nodeFactory.createNode(12, 2,0.1);
 
@@ -33,6 +33,7 @@ int main() {
     }
     Blockchain blockchain(chainLength,nodeFactory);
     blockchain.startChain();
-    blockchain.saveToCSV("transactions.csv");
+    blockchain.saveTrasactionData("transactions.csv");
+    blockchain.saveBlockData("blocks.csv");
     return 0;
 }

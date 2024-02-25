@@ -7,11 +7,15 @@
 #include "Transaction.h"
 #include "memory"
 #include "vector"
+#include "map"
 
 class Block{
 public:
     std::vector<std::shared_ptr<Transaction>> transactions;
+    std::map<int,float> allBids;
+    std::map<int,float> allBlockValues;
     int builderId;
+    int proposerId;
     double bid;
     double blockValue;
     double gas;
