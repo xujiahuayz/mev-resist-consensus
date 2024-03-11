@@ -129,3 +129,13 @@ class Plotting:
         plt.legend()
         plt.grid(True)
         plt.show()
+
+    def plot_auction_intensity(self):
+        plt.figure(figsize=(12, 6))
+        plt.plot(range(len(self.simulation.total_bids_per_block)), self.simulation.total_bids_per_block, marker='o')
+        plt.title('Auction Intensity Over Time')
+        plt.xlabel('Block Number')
+        plt.ylabel('Total Number of Bids')
+        plt.grid(True)
+        plt.show()
+
