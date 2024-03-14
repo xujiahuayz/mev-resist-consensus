@@ -130,12 +130,24 @@ class Plotting:
         plt.grid(True)
         plt.show()
 
-    def plot_auction_intensity(self):
-        plt.figure(figsize=(12, 6))
-        plt.plot(range(len(self.simulation.total_bids_per_block)), self.simulation.total_bids_per_block, marker='o')
-        plt.title('Auction Intensity Over Time')
-        plt.xlabel('Block Number')
-        plt.ylabel('Total Number of Bids')
-        plt.grid(True)
+    def plot_profit_distribution(self):
+        proposer_rewards = [proposer.cumulative_reward for proposer in self.simulation.proposers]
+        builder_profits = [builder.cumulative_reward for builder in self.simulation.builders]
+
+        fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+        axs[0].bar(range(len(self.simulation.proposers)), proposer_rewards, color='orange')
+        axs[0].set_title('Proposers\' Cumulative Rewards')
+        axs[0].set_xlabel('Proposer ID')
+        axs[0].set_ylabel('Cumulative Reward')
+
+        axs[1].hist(builder_profits, bins=10, color='skyblue', edgecolor='black')
+        axs[1].set_title('Builders\' Profit Distribution')
+        axs[1].set_xlabel('Profit')
+        axs[1].set_ylabel('Number of Builders')
+
+        plt.tight_layout()
         plt.show()
+
+        
 

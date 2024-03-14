@@ -9,6 +9,7 @@ random.seed(42)
 
 # Constants
 NUM_BUILDERS = 20
+NUM_PROPOSERS = 5
 NUM_BLOCKS = 100
 STRATEGIES = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
 CHANGE_STRATEGY_RATE = 0.2
@@ -20,6 +21,11 @@ class Builder:
         self.strategy = strategy
         self.capability = capability
         self.reactivity = reactivity
+        self.cumulative_reward = 0
+
+    def add_reward(self, reward):
+        '''Add the reward to the cumulative reward.'''
+        self.cumulative_reward += reward
 
     def block_value(self):
         '''Return the value of the block.'''
@@ -46,9 +52,17 @@ class Builder:
             return 0
         elif self.strategy == 'bluff':
             return block_value * (1 if counter < 22 else 0.5)
+        
+class Proposer:
+    def __init__(self, account):
+        self.account = account
+        self.cumulative_reward = 0
+
+    def add_reward(self, reward):
+        self.cumulative_reward += reward
 
 class Simulation:
-    def __init__(self, num_builders, num_blocks):
+    def __init__(self, num_builders, num_blocks, num_proposers):
         self.num_blocks = num_blocks
         self.winning_bid = []
         self.winning_strategy = []
@@ -68,6 +82,8 @@ class Simulation:
 
         self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), 0.5)
                          for i in range(num_builders)]
+        
+        self.proposers = [Proposer(i) for i in range(num_proposers)]
 
     def simulate_block(self):
         '''Simulate a block'''
@@ -76,8 +92,9 @@ class Simulation:
             auction_end = False
             block_bid_his = []
             counter = 0
+            current_proposer = random.choice(self.proposers)
 
-            current_strategies = {builder.id: builder.strategy for builder in self.builders}
+            current_strategies = {builder.account: builder.strategy for builder in self.builders}
             self.builder_strategies_per_block.append(current_strategies)
 
             while not auction_end and counter < 24:
@@ -85,10 +102,10 @@ class Simulation:
                 for builder in self.builders:
                     increment_factor = 1 + (random.uniform(0,1) * counter/24)
                     perceived_block_value = builder.block_value() * increment_factor
-                    block_values_per_builder[builder.id] = perceived_block_value
+                    block_values_per_builder[builder.account] = perceived_block_value
                     bid = builder.bidding_strategy(perceived_block_value, block_bid_his,
                                                    self.winning_bid, counter)
-                    counter_bids[builder.id] = bid
+                    counter_bids[builder.account] = bid
 
                 block_bid_his.append(counter_bids)
                 if counter >= 18:
@@ -100,7 +117,7 @@ class Simulation:
             highest_bid = max(counter_bids.values())
             winning_builder_id = max(counter_bids, key=counter_bids.get)
             winning_builder_strategy = [builder.strategy for builder in self.builders if
-                                        builder.id == winning_builder_id][0]
+                                        builder.account == winning_builder_id][0]
             winning_block_value =  block_values_per_builder[winning_builder_id]
 
             self.winning_bid.append(highest_bid)
@@ -109,14 +126,18 @@ class Simulation:
             self.update_strategy_counts()
             self.block_bid_his.append(block_bid_his)
             self.winning_block_values.append(winning_block_value)
-            # print(block_bid_his)
+
+            winning_builder = next(builder for builder in self.builders if builder.account == winning_builder_id)
+            current_proposer.add_reward(highest_bid)
+            reward = winning_block_value - highest_bid
+            winning_builder.add_reward(reward)
 
     def update_strategies(self, winning_builder_id):
         last_winning_strategy = self.winning_strategy[-1] if self.winning_strategy else None
 
         for builder in self.builders:
             # Check if the winning builder used bluff strategy and won
-            if builder.id == winning_builder_id and builder.strategy == 'bluff' :
+            if builder.account == winning_builder_id and builder.strategy == 'bluff' :
                 # Assign a new strategy randomly, excluding 'bluff'
                 non_bluff_strategies = [s for s in STRATEGIES if s != 'bluff']
                 builder.strategy = random.choice(non_bluff_strategies)
@@ -151,7 +172,7 @@ class Simulation:
 
 
 # Run the simulation
-simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS)
+simulation = Simulation(NUM_BUILDERS, NUM_BLOCKS, NUM_PROPOSERS)
 simulation.run()
 plotting = Plotting(simulation)
 
@@ -161,3 +182,4 @@ plotting = Plotting(simulation)
 # plotting.plot_bid_value()
 # plotting.plot_intra_rankings()
 # plotting.plot_cumulate_reward_strategy(STRATEGIES)
+plotting.plot_profit_distribution()
