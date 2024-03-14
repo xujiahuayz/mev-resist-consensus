@@ -139,6 +139,17 @@ class Plotting:
         plt.xlabel('Proposer ID')
         plt.ylabel('Cumulative Reward')
         plt.xticks(range(len(self.simulation.proposers)))
+        plt.show()
+
+    def plot_builders_cumulative_rewards(self):
+        builder_rewards = [builder.cumulative_reward for builder in self.simulation.builder]
+
+        plt.figure(figsize=(8, 6))
+        plt.bar(range(len(self.simulation.proposers)), builder_rewards, color='orange')
+        plt.title('Builder\' Cumulative Rewards')
+        plt.xlabel('Builder ID')
+        plt.ylabel('Cumulative Reward')
+        plt.xticks(range(len(self.simulation.builder)))
         plt.show()   
 
     def plot_builders_profit_distribution(self):
@@ -154,13 +165,11 @@ class Plotting:
     def plot_cumulative_reward_distribution(self):
         builders_cumulative_rewards = []
         proposers_cumulative_rewards = []
-        time_steps = list(range(len(self.simulation.block_bid_his)))  # Assuming one time step per block
+        time_steps = list(range(len(self.simulation.block_bid_his)))  
 
-        # Accumulate rewards over time for builders and proposers
         current_builders_reward = 0
         current_proposers_reward = 0
         for i in time_steps:
-            # Assuming simulation has methods to calculate total rewards at each step i
             current_builders_reward += sum(builder.cumulative_reward for builder in self.simulation.builders)
             current_proposers_reward += sum(proposer.cumulative_reward for proposer in self.simulation.proposers)
             builders_cumulative_rewards.append(current_builders_reward)
@@ -171,7 +180,7 @@ class Plotting:
         plt.plot(time_steps, builders_cumulative_rewards, label='Builders\' Total Cumulative Reward', color='blue')
         plt.plot(time_steps, proposers_cumulative_rewards, label='Proposers\' Total Cumulative Reward', color='orange')
         plt.title('Total Cumulative Reward Over Time')
-        plt.xlabel('Time Step')
+        plt.xlabel('Block Number')
         plt.ylabel('Cumulative Reward')
         plt.legend()
         plt.show()
