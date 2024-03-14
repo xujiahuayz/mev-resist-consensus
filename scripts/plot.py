@@ -130,24 +130,48 @@ class Plotting:
         plt.grid(True)
         plt.show()
 
-    def plot_profit_distribution(self):
+    def plot_proposers_cumulative_rewards(self):
         proposer_rewards = [proposer.cumulative_reward for proposer in self.simulation.proposers]
+
+        plt.figure(figsize=(8, 6))
+        plt.bar(range(len(self.simulation.proposers)), proposer_rewards, color='orange')
+        plt.title('Proposers\' Cumulative Rewards')
+        plt.xlabel('Proposer ID')
+        plt.ylabel('Cumulative Reward')
+        plt.xticks(range(len(self.simulation.proposers)))
+        plt.show()   
+
+    def plot_builders_profit_distribution(self):
         builder_profits = [builder.cumulative_reward for builder in self.simulation.builders]
 
-        fig, axs = plt.subplots(1, 2, figsize=(14, 6))
-
-        axs[0].bar(range(len(self.simulation.proposers)), proposer_rewards, color='orange')
-        axs[0].set_title('Proposers\' Cumulative Rewards')
-        axs[0].set_xlabel('Proposer ID')
-        axs[0].set_ylabel('Cumulative Reward')
-
-        axs[1].hist(builder_profits, bins=10, color='skyblue', edgecolor='black')
-        axs[1].set_title('Builders\' Profit Distribution')
-        axs[1].set_xlabel('Profit')
-        axs[1].set_ylabel('Number of Builders')
-
-        plt.tight_layout()
+        plt.figure(figsize=(8, 6))
+        plt.hist(builder_profits, bins=10, color='skyblue', edgecolor='black')
+        plt.title('Builders\' Profit Distribution')
+        plt.xlabel('Profit')
+        plt.ylabel('Number of Builders')
         plt.show()
 
-        
+    def plot_cumulative_reward_distribution(self):
+        builders_cumulative_rewards = []
+        proposers_cumulative_rewards = []
+        time_steps = list(range(len(self.simulation.block_bid_his)))  # Assuming one time step per block
 
+        # Accumulate rewards over time for builders and proposers
+        current_builders_reward = 0
+        current_proposers_reward = 0
+        for i in time_steps:
+            # Assuming simulation has methods to calculate total rewards at each step i
+            current_builders_reward += sum(builder.cumulative_reward for builder in self.simulation.builders)
+            current_proposers_reward += sum(proposer.cumulative_reward for proposer in self.simulation.proposers)
+            builders_cumulative_rewards.append(current_builders_reward)
+            proposers_cumulative_rewards.append(current_proposers_reward)
+
+        # Plotting
+        plt.figure(figsize=(10, 6))
+        plt.plot(time_steps, builders_cumulative_rewards, label='Builders\' Total Cumulative Reward', color='blue')
+        plt.plot(time_steps, proposers_cumulative_rewards, label='Proposers\' Total Cumulative Reward', color='orange')
+        plt.title('Total Cumulative Reward Over Time')
+        plt.xlabel('Time Step')
+        plt.ylabel('Cumulative Reward')
+        plt.legend()
+        plt.show()
