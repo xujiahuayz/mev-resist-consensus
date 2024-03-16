@@ -142,7 +142,7 @@ class Plotting:
         plt.show()
 
     def plot_builders_cumulative_rewards(self):
-        builder_rewards = [builder.cumulative_reward for builder in self.simulation.builder]
+        builder_rewards = [builder.cumulative_reward for builder in self.simulation.builders]
 
         plt.figure(figsize=(8, 6))
         plt.bar(range(len(self.simulation.proposers)), builder_rewards, color='orange')
