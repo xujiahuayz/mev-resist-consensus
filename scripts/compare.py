@@ -5,63 +5,33 @@ import numpy as np
 
 random.seed(42)
 
-NUM_PARTICIPANTS = 20
-NUM_TRANSACTIONS = 500
-TRANSACTION_CAPACITY = 50
+NUM_USERS = 100
+NUM_BUILDERS = 20
+NUM_VALIDATORS = 20
+NUM_PROPOSERS = 5 
+BLOCK_CAPACITY = 50
+NUM_TRANSACTIONS = 100
 
-class Participant:
-    def __init__(self, account, is_mev):
-        self.account = account
-        self.is_mev= is_mev
-
-    def select_transactions(self, transactions):
-        if self.is_mev:
-            selected_transactions = sorted(transactions, key=lambda x: (x.is_mev, x.fee), reverse=True)
-        else:
-            selected_transactions = sorted(transactions, key=lambda x: x.fee, reverse=True)
-        return selected_transactions
 class Transaction:
-    def __init__(self, acoount, fee, is_mev, creator_acoount):
-        self.acoount = acoount
+    def __init__(self, fee, is_mev, creator_id=None):
         self.fee = fee
         self.is_mev = is_mev
-        self.creator_acoount = creator_acoount
+        self.creator_id = creator_id
 
-def generate_transactions(num_transactions, participants):
-    transactions = []
-    for _ in range(num_transactions):
-        fee = random.uniform(0.01, 0.1)
-        is_mev = False  # Regular transactions are not MEV
-        transactions.append(Transaction(account, fee, is_mev, creator_acoount))
-
-    # Generate a high-fee MEV transaction for each MEV-oriented participant
-    for participant in participants:
-        if participant.is_mev:
-            transactions.append(Transaction(account, fee, is_mev, creator_acoount))
-    
-    return transactions
+class Participant:
+    def __init__(self, id, is_mev_oriented):
+        self.id = id
+        self.is_mev_oriented = is_mev_oriented
 
     
 class Builder(Participant):
-    def bid_for_block(self, transactions):
-        pass
-
-class Proposer:
-    def select_winner(self, bids):
-        return max(bids, key=bids.get)
-
-def simulate_pbs(transactions, builders, proposer):
-    bids = {builder: builder.bid_for_block(transactions) for builder in builders}
-    winner = proposer.select_winner(bids)
-    # Winner builds the block with their preferred transactions
-    block_transactions = winner.select_transactions(transactions)
-    return block_transactions, bids[winner]
+    pass
 
 class Validator(Participant):
     pass
 
+class run_PBS:
+    pass
 
-def simulate_pos(transactions, validators):
-    validator = random.choice(validators)
-    block_transactions = validator.select_transactions(transactions)
-    return block_transactions
+class run_PoS:
+    pass
