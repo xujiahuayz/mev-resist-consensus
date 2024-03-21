@@ -78,7 +78,7 @@ class Validator(Participant):
 
 def run_pbs(builders, proposers, NUM_BLOCKS):
     cumulative_mev_transactions = []
-    builder_profits = {builder.id: 0 for builder in builders}  # Initialize builder profits
+    builder_profits = {builder.id: 0 for builder in builders} 
     total_mev_transactions = 0
     
     for _ in range(NUM_BLOCKS):
@@ -86,22 +86,24 @@ def run_pbs(builders, proposers, NUM_BLOCKS):
         for builder in builders:
             bid_amount, selected_transactions = builder.bid(builder.transactions)
             total_fees_in_block = sum(tx.fee for tx in selected_transactions)
-            profit_from_block = total_fees_in_block - bid_amount  
-            builder_profits[builder.id] += profit_from_block  
-            bids.append((bid_amount, selected_transactions))
+            profit_from_block = total_fees_in_block - bid_amount
+            builder_profits[builder.id] += profit_from_block
+            mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.is_mev)
+            bids.append((bid_amount, selected_transactions, mev_transactions_in_block))  
         
         highest_bid = max(bids, key=lambda x: x[0])
         winning_block = highest_bid[1]
-        mev_transactions_in_block = sum(1 for tx in winning_block if tx.is_mev)
+        mev_transactions_in_block = highest_bid[2] 
 
-        total_mev_transactions += highest_bid[2]
+        total_mev_transactions += mev_transactions_in_block
         cumulative_mev_transactions.append(total_mev_transactions)
 
     return cumulative_mev_transactions, builder_profits
 
+
 def run_pos(validators, num_blocks):
     cumulative_mev_transactions = []
-    validator_profits = {validator.id: 0 for validator in validators}  # Initialize validator profits
+    validator_profits = {validator.id: 0 for validator in validators} 
     total_mev_transactions = 0
     
     for _ in range(num_blocks):
@@ -128,15 +130,14 @@ def plot_cumulative_mev(cumulative_mev_pbs, cumulative_mev_pos):
 
 def plot_profit_distribution(builder_profits, validator_profits, num_blocks):
     plt.figure(figsize=(10, 6))
-    selected_builders = list(builder_profits.keys())[:5]  # Select first 5 builders
-    selected_validators = list(validator_profits.keys())[:5]  # Select first 5 validators
-    
-    # Assuming profits are cumulative, plot them directly
-    for builder_id in selected_builders:
-        plt.plot(range(num_blocks), builder_profits[builder_id], label=f'Builder {builder_id}', alpha=0.7)
-    for validator_id in selected_validators:
-        plt.plot(range(num_blocks), validator_profits[validator_id], label=f'Validator {validator_id}', alpha=0.7)
-    
+
+    # For each builder and validator, plot their total profit as constant across all blocks
+    for builder_id, total_profit in builder_profits.items():
+        plt.plot(range(num_blocks), [total_profit] * num_blocks, label=f'Builder {builder_id}', alpha=0.7)
+
+    for validator_id, total_profit in validator_profits.items():
+        plt.plot(range(num_blocks), [total_profit] * num_blocks, label=f'Validator {validator_id}', alpha=0.7)
+
     plt.title('Profit Distribution Over Blocks')
     plt.xlabel('Block Number')
     plt.ylabel('Cumulative Profit')
@@ -149,11 +150,8 @@ validators = [Validator(i, random.choice([True, False])) for i in range(NUM_VALI
 proposers = [Proposer(i) for i in range(NUM_PROPOSERS)]
 
 
-mev_included_pbs = run_pbs(builders, proposers, NUM_BLOCKS)
-mev_included_pos = run_pos(validators, NUM_BLOCKS)
+cumulative_mev_included_pbs, builder_profits = run_pbs(builders, proposers, NUM_BLOCKS)
+cumulative_mev_included_pos, validator_profits = run_pos(validators, NUM_BLOCKS)
 
-print(f"MEV transactions included in final blocks (PBS): {mev_included_pbs}")
-print(f"MEV transactions included in final blocks (PoS): {mev_included_pos}")
-
-plot_cumulative_mev(mev_included_pbs, mev_included_pos)
+plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
 plot_profit_distribution(builder_profits, validator_profits, NUM_BLOCKS)
