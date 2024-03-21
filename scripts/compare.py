@@ -36,12 +36,14 @@ class Participant:
         self.mev_transaction = None
         self.transactions = []
         self.total_profit = 0
+        self.mev_transactions_created = 0
         if self.is_mev:
             self.mev_transaction = self.create_transaction(True)
 
     def create_transaction(self, is_mev):
         if is_mev:
             fee = random.triangular(MEV_FEE_MIN, MEV_FEE_MAX, MEV_FEE_MAX * 0.75)
+            self.mev_transactions_created += 1
         else:
             fee = random.uniform(NON_MEV_FEE_MIN, NON_MEV_FEE_MAX)
         tx = Transaction(fee, is_mev, self.id)
@@ -94,23 +96,21 @@ class Validator(Participant):
 
 def run_pbs(builders, proposers, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
-    builder_profits = {builder.id: [] for builder in builders}  # Tracks profit over blocks
+    builder_profits = {builder.id: [] for builder in builders}
     
     for block_num in range(num_blocks):
         block_bid_his = []  # Tracks bid history for the current block
 
-        for counter in range(24):  # Simulate 24 counters per block
+        for counter in range(24): 
             counter_bids = {}
             for builder in builders:
                 bid = builder.bid(block_bid_his)
                 counter_bids[builder.id] = bid
             block_bid_his.append(counter_bids)
         
-        
         highest_bid = max(block_bid_his[-1].values())
         winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
         
-        # Calculate profits and MEV transactions for the winning builder
         selected_transactions = builders[winning_builder_id].select_transactions()
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = block_value - highest_bid
@@ -158,19 +158,49 @@ def plot_cumulative_mev(cumulative_mev_pbs, cumulative_mev_pos):
     plt.legend()
     plt.show()
 
-def plot_profit_distribution(builder_profits, validator_profits, num_blocks):
-    plt.figure(figsize=(10, 6))
-
-    # For each builder and validator, plot their total profit as constant across all blocks
-    for builder_id, total_profit in builder_profits.items():
-        plt.plot(range(num_blocks), [total_profit] * num_blocks, label=f'Builder {builder_id}', alpha=0.7)
-
-    for validator_id, total_profit in validator_profits.items():
-        plt.plot(range(num_blocks), [total_profit] * num_blocks, label=f'Validator {validator_id}', alpha=0.7)
-
-    plt.title('Profit Distribution Over Blocks')
-    plt.xlabel('Block Number')
+def plot_ranked_profit_distribution(builder_profits, validator_profits):
+    # Sort the builders and validators by their cumulative profits
+    sorted_builder_profits = sorted(builder_profits.items(), key=lambda x: x[1], reverse=True)
+    sorted_validator_profits = sorted(validator_profits.items(), key=lambda x: x[1], reverse=True)
+    
+    # Unpack the sorted items for plotting
+    builder_ids, builder_profits = zip(*sorted_builder_profits)
+    validator_ids, validator_profits = zip(*sorted_validator_profits)
+    
+    # Create an index for each pair of bars
+    index = np.arange(len(builder_profits))
+    bar_width = 0.35
+    
+    plt.figure(figsize=(12, 8))
+    
+    # Plot bars for builders and validators
+    builder_bars = plt.bar(index, builder_profits, bar_width, label='Builders', color='b', alpha=0.6)
+    validator_bars = plt.bar(index + bar_width, validator_profits, bar_width, label='Validators', color='g', alpha=0.6)
+    
+    plt.xlabel('Rank')
     plt.ylabel('Cumulative Profit')
+    plt.title('Ranked Cumulative Profit of Builders and Validators')
+    plt.xticks(index + bar_width / 2, [f'B{b_id}/V{v_id}' for b_id, v_id in zip(builder_ids, validator_ids)])
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos):
+    plt.figure(figsize=(10, 6))
+    
+    # Assume NUM_BLOCKS is the total number of blocks simulated
+    x_axis = list(range(1, NUM_BLOCKS + 1))
+    y_mev_created = [total_mev_created] * NUM_BLOCKS  # Constant line for total MEV created
+    
+    plt.plot(x_axis, y_mev_created, label='Total MEV Created', linestyle='--', color='blue')
+    plt.plot(x_axis, cumulative_mev_included_pbs, label='MEV Included in PBS', color='red')
+    plt.plot(x_axis, cumulative_mev_included_pos, label='MEV Included in PoS', color='green')
+    
+    plt.title('MEV Transactions: Created vs Included')
+    plt.xlabel('Block Number')
+    plt.ylabel('Number of MEV Transactions')
     plt.legend()
     plt.show()
 
@@ -179,8 +209,10 @@ builders = [Builder(i, random.choice([True, False]), 0.5) for i in range(NUM_BUI
 validators = [Validator(i, random.choice([True, False])) for i in range(NUM_VALIDATORS)]
 proposers = [Proposer(i) for i in range(NUM_PROPOSERS)]
 
+total_mev_created = sum(user.mev_transactions_created for user in users)
 cumulative_mev_included_pbs, builder_profits = run_pbs(builders, proposers, NUM_BLOCKS)
 cumulative_mev_included_pos, validator_profits = run_pos(validators, NUM_BLOCKS)
 
 plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
-# plot_profit_distribution(builder_profits, validator_profits, NUM_BLOCKS)
+plot_ranked_profit_distribution(builder_profits, validator_profits)
+plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos)
