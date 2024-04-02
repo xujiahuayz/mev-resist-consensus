@@ -11,7 +11,7 @@ transaction_gas_values = []
 transaction_mev_values = []
 
 # Open the CSV file and read it line by line
-with open('pbs_c/cmake-build-debug/transactions.csv', 'r') as file:
+with open('pbs_c/cmake-build-debug/pbsTransactions.csv', 'r') as file:
     for line in file:
         # Split the line into columns
         columns = line.strip().split(',')

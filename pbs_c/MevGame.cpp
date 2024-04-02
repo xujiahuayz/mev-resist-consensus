@@ -19,7 +19,7 @@ int main() {
     nodeFactory.createAttackerBuilderNode(30, 2,0.1,depth,numSimulations);
 
     nodeFactory.createProposerNode(3, 2,0.1);
-    nodeFactory.createProposerNode(4, 2,0.1);
+    //nodeFactory.createProposerNode(4, 2,0.1);
 
     nodeFactory.createNode(11, 2,0.1);
     nodeFactory.createNode(12, 2,0.1);
@@ -32,8 +32,10 @@ int main() {
         nodeFactory.addTransactionToNodes(std::make_shared<Transaction>(transaction));
     }
     Blockchain blockchain(chainLength,nodeFactory);
-    blockchain.startChain();
-    blockchain.saveTrasactionData("transactions.csv");
-    blockchain.saveBlockData("blocks.csv");
+    blockchain.startChainPosPbs();
+    blockchain.saveTrasactionData("pbsTransactions.csv", blockchain.pbsBlocks);
+    blockchain.saveTrasactionData("posTransactions.csv", blockchain.posBlocks);
+    blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
+    blockchain.saveBlockData("posBlocks.csv", blockchain.posBlocks);
     return 0;
 }

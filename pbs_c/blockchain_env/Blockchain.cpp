@@ -14,6 +14,60 @@ std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, d
     return transaction;
 }
 
+void Blockchain::startChainPosPbs(){
+    for(int i = 0; i < chainSize; i++){
+        for(int j = 0; j < 8; j++){
+            std::uniform_real_distribution<double> distribution(0.0, 100.0);
+            double gasFee = distribution(randomGenerator.rng);
+            double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
+            nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
+        }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
+        std::cout<<"Block "<<i<<std::endl;
+        auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
+        proposer->runAuction();
+        std::shared_ptr<Block> newBlock = proposer->proposedBlock;
+        pbsBlocks.emplace_back(newBlock);
+        auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
+        builder->buildBlock(10);
+        newBlock = builder->currBlock;
+        newBlock -> proposerId = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)]->id;
+        posBlocks.emplace_back(newBlock);
+        for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
+                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
+        for (const auto& transaction : newBlock->transactions) {
+            nodeFactory.clearMempools(transaction);
+        }
+    }
+}
+
+void Blockchain::startChainPos(){
+    for(int i = 0; i < chainSize; i++){
+        for(int j = 0; j < 8; j++){
+            std::uniform_real_distribution<double> distribution(0.0, 100.0);
+            double gasFee = distribution(randomGenerator.rng);
+            double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
+            nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
+        }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
+        std::cout<<"Block "<<i<<std::endl;
+        auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
+        builder->buildBlock(10);
+        std::shared_ptr<Block> newBlock = builder->currBlock;
+        newBlock -> proposerId = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)]->id;
+        blocks.emplace_back(newBlock);
+        for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
+                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
+        for (const auto& transaction : newBlock->transactions) {
+            nodeFactory.clearMempools(transaction);
+        }
+    }
+}
+
 void Blockchain::startChain() {
     for(int i = 0; i < chainSize; i++){
         for(int j = 0; j < 8; j++){
@@ -48,7 +102,7 @@ void Blockchain::saveBlockData(){
     file.close();
 }
 
-void Blockchain::saveBlockData(const std::string& filename) {
+void Blockchain::saveBlockData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks) {
     std::ofstream file(filename);
     file << "Block Number,Proposer ID,Builder ID,Winning Bid Value,Winning Block Value,Reward";
     for(auto bid : blocks[0]->allBids){
@@ -71,7 +125,7 @@ void Blockchain::saveBlockData(const std::string& filename) {
     }
 }
 
-void Blockchain::saveTrasactionData(const std::string& filename) {
+void Blockchain::saveTrasactionData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks) {
     std::ofstream file(filename);
 
     // Write the header
