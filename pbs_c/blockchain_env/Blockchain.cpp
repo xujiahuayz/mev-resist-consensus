@@ -145,8 +145,23 @@ void Blockchain::saveTrasactionData(const std::string& filename, const std::vect
 
 void Blockchain::saveComparisonData(const std::string& filename) {
     std::ofstream file(filename);
-    file << "Block Number,PBS Builder ID,POS Builder ID,Proposer ID,PBS Bid Value,PBS Block Value,POS Block Value\n";
+    file << "Block Number,PBS Builder ID,POS Builder ID,Proposer ID,PBS Bid Value,PBS Block Value,POS Block Value,PBS Transaction ID,PBS Transaction GAS,PBS Transaction MEV,POS Transaction ID,POS Transaction GAS,POS Transaction MEV\n";
     for (int i = 0; i < pbsBlocks.size(); i++) {
-        file << i+1 << "," << pbsBlocks[i]->builderId << "," << posBlocks[i]->builderId << "," << pbsBlocks[i]->proposerId << "," << pbsBlocks[i]->bid << "," << pbsBlocks[i]->blockValue << "," << posBlocks[i]->blockValue << "\n";
+        file << i+1 << "," << pbsBlocks[i]->builderId << ","<< posBlocks[i]->builderId << "," << pbsBlocks[i]->proposerId << "," << pbsBlocks[i]->bid << "," << pbsBlocks[i]->blockValue << "," << posBlocks[i]->blockValue << "\n";
+        for(int j = 0; j < pbsBlocks[i]->transactions.size(); j++){
+            file << "," << "," << "," << ","<<","<<","<<","
+                 << pbsBlocks[i]->transactions[j]->id << ","
+                 << pbsBlocks[i]->transactions[j]->gas << ","
+                 << pbsBlocks[i]->transactions[j]->mev << ",";
+
+            if(j < posBlocks[i]->transactions.size()){
+                file << posBlocks[i]->transactions[j]->id << ","
+                     << posBlocks[i]->transactions[j]->gas << ","
+                     << posBlocks[i]->transactions[j]->mev << "\n";
+            }
+            else{
+                file << ",,\n";
+            }
+        }
     }
 }

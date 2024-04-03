@@ -14,12 +14,20 @@ int main() {
     NodeFactory nodeFactory;
     nodeFactory.createBuilderNode(1, 2,0.1,depth,numSimulations);
     nodeFactory.createBuilderNode(2, 2,0.1,depth,numSimulations);
+    nodeFactory.createBuilderNode(3, 2,0.1,depth,numSimulations);
+    nodeFactory.createBuilderNode(4, 2,0.1,depth,numSimulations);
+    nodeFactory.createBuilderNode(5, 2,0.8,depth,numSimulations);
 
     nodeFactory.createAttackerBuilderNode(10, 2,0.1,depth,numSimulations);
     nodeFactory.createAttackerBuilderNode(30, 2,0.1,depth,numSimulations);
+    nodeFactory.createAttackerBuilderNode(50, 2,0.1,depth,numSimulations);
+    nodeFactory.createAttackerBuilderNode(70, 2,0.1,depth,numSimulations);
+    nodeFactory.createAttackerBuilderNode(90, 2,0.8,depth,numSimulations);
 
-    nodeFactory.createProposerNode(3, 2,0.1);
-    //nodeFactory.createProposerNode(4, 2,0.1);
+    nodeFactory.createProposerNode(6, 2,0.1);
+    nodeFactory.createProposerNode(7, 2,0.1);
+    nodeFactory.createProposerNode(8, 2,0.1);
+    nodeFactory.createProposerNode(9, 2,0.1);
 
     nodeFactory.createNode(11, 2,0.1);
     nodeFactory.createNode(12, 2,0.1);
