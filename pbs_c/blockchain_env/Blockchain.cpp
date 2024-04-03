@@ -31,7 +31,6 @@ void Blockchain::startChainPosPbs(){
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         pbsBlocks.emplace_back(newBlock);
         auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
-        builder->buildBlock(10);
         newBlock = builder->currBlock;
         newBlock -> proposerId = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)]->id;
         posBlocks.emplace_back(newBlock);
@@ -141,6 +140,13 @@ void Blockchain::saveTrasactionData(const std::string& filename, const std::vect
                  << transaction->mev << "\n";
         }
     }
-
     file.close();
+}
+
+void Blockchain::saveComparisonData(const std::string& filename) {
+    std::ofstream file(filename);
+    file << "Block Number,PBS Builder ID,POS Builder ID,Proposer ID,PBS Bid Value,PBS Block Value,POS Block Value\n";
+    for (int i = 0; i < pbsBlocks.size(); i++) {
+        file << i+1 << "," << pbsBlocks[i]->builderId << "," << posBlocks[i]->builderId << "," << pbsBlocks[i]->proposerId << "," << pbsBlocks[i]->bid << "," << pbsBlocks[i]->blockValue << "," << posBlocks[i]->blockValue << "\n";
+    }
 }

@@ -29,6 +29,7 @@ public:
     void saveToCSV(const std::string& filename);
     void saveBlockData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
     void saveTrasactionData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
+    void saveComparisonData(const std::string& filename);
 };
 
 

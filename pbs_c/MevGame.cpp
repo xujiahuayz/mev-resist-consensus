@@ -37,5 +37,6 @@ int main() {
     blockchain.saveTrasactionData("posTransactions.csv", blockchain.posBlocks);
     blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
     blockchain.saveBlockData("posBlocks.csv", blockchain.posBlocks);
+    blockchain.saveComparisonData("comparison.csv");
     return 0;
 }

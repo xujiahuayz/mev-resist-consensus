@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(pbs_c)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 # Find external dependencies
 FIND_PACKAGE( Boost 1.40 COMPONENTS program_options REQUIRED )
