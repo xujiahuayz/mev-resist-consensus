@@ -15,6 +15,7 @@ std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, d
 }
 
 void Blockchain::startChainPosPbs(){
+    std::cout<<"Chain Progress: ";
     for(int i = 0; i < chainSize; i++){
         for(int j = 0; j < 8; j++){
             std::uniform_real_distribution<double> distribution(0.0, 100.0);
@@ -25,7 +26,9 @@ void Blockchain::startChainPosPbs(){
         for(auto& attacker : nodeFactory.attackers){
             attacker->clearAttacks();
         }
-        std::cout<<"Block "<<i<<std::endl;
+        if(i%(chainSize/100) == 0){
+            std::cout<<"="<<std::flush;
+        }
         auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
         proposer->runAuction();
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
@@ -40,6 +43,7 @@ void Blockchain::startChainPosPbs(){
             nodeFactory.clearMempools(transaction);
         }
     }
+    std::cout<<std::endl;
 }
 
 void Blockchain::startChainPos(){

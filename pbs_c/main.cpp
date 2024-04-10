@@ -2,7 +2,7 @@
 #include "fstream"
 
 
-void saveData(const std::string& filename, std::vector<int> blockValues, std::vector<int> blockBids) {
+void saveData(const std::string& filename, std::vector<double> blockValues, std::vector<double> blockBids) {
     std::ofstream file(filename);
     for (int i = 0; i < blockValues.size(); i++) {
         file << i+2 <<"," << blockValues[i] << "," << blockBids[i] << std::endl;
@@ -16,15 +16,15 @@ int main() {
     int builderCharacteristic = 80;
     int chainLength = 500;
     int numTransactions = 100;
-    int numMaxBuilders = 5;
+    int numMaxBuilders = 20;
 
-    std::vector<int> blockValues;
-    std::vector<int> blockBids;
+    std::vector<double> blockValues;
+    std::vector<double> blockBids;
 
     for (int i = 2; i <= numMaxBuilders; i++) {
         double blockValue = 0;
         double blockBid = 0;
-        for(int simnum = 0; simnum < 1; simnum++){
+        for(int simnum = 0; simnum < 3; simnum++){
             NodeFactory nodeFactory;
             int connections = i > 5 ? 5 : i - 1;
             for (int j = 1; j <= i; j++) {
@@ -49,8 +49,8 @@ int main() {
                 blockBid += block->bid;
             }
         }
-        blockValues.push_back(blockValue / 1);
-        blockBids.push_back(blockBid / 1);
+        blockValues.push_back(blockValue / 3);
+        blockBids.push_back(blockBid / 3);
     }
     saveData("num_builder_sim.csv", blockValues, blockBids);
     return 0;
