@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(pbs_c)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 # Find external dependencies
 FIND_PACKAGE( Boost 1.40 COMPONENTS program_options REQUIRED )
@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOURCE_DIRS **.cpp)
 file(GLOB_RECURSE REMOVE_CMAKE "cmake-build-debug/*")
 list(REMOVE_ITEM SOURCE_DIRS ${REMOVE_CMAKE})
 
-add_executable(pbs_c MevGame.cpp
+add_executable(pbs_c main.cpp
         blockchain_env/User.cpp
         blockchain_env/Builder.cpp
         game_env/Auction.h

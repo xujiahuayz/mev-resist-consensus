@@ -14,17 +14,22 @@ class Blockchain {
 public:
     NodeFactory nodeFactory;
     std::vector<std::shared_ptr<Block>> blocks;
+    std::vector<std::shared_ptr<Block>> posBlocks;
+    std::vector<std::shared_ptr<Block>> pbsBlocks;
 
     Blockchain(size_t bChainSize, NodeFactory nodeFactory):chainSize(bChainSize),nodeFactory(nodeFactory){};
     Blockchain(size_t bChainSize):Blockchain(bChainSize,NodeFactory()){};
     Blockchain();
 
     void startChain();
+    void startChainPos();
+    void startChainPosPbs();
     void printBlockStats();
     void saveBlockData();
     void saveToCSV(const std::string& filename);
-    void saveBlockData(const std::string& filename);
-    void saveTrasactionData(const std::string& filename);
+    void saveBlockData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
+    void saveTrasactionData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
+    void saveComparisonData(const std::string& filename);
 };
 
 
