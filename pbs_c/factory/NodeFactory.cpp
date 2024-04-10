@@ -76,7 +76,7 @@ void NodeFactory::propagateTransactions() {
             for (auto& transaction : neighbor->mempool) {
                 if (nodeMempool.find(transaction) == nodeMempool.end()) {
                     int randomIndex = randomGenerator.genRandInt(0, 100);
-                    if (randomIndex <= 100*node->characteristic){
+                    if (randomIndex <= 100*neighbor->characteristic){
                         node->mempool.insert(transaction);
 
                     }
