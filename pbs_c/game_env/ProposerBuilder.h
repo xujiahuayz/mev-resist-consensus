@@ -8,13 +8,19 @@
 class ProposerBuilder: public Proposer, public Builder{
 public:
     ProposerBuilder(int pId, int pConnections, double pCharacteristic, double pDepth, double pNumSim,NodeFactory& nodeFactory):
-    Proposer(pId,pConnections,pCharacteristic, nodeFactory), Builder(pId,pConnections,pCharacteristic,pDepth,pNumSim),
+    Proposer(pId,pConnections,pCharacteristic, nodeFactory), Builder(pId,pCharacteristic,pConnections,pDepth,pNumSim),
     Node(pId,pConnections,pCharacteristic){};
 
     void runAuction() override;
+};
 
+class ProposerAttackerBuilder: public Proposer, public AttackerBuilder{
+public:
+    ProposerAttackerBuilder(int pId, int pConnections, double pCharacteristic, double pDepth, double pNumSim,NodeFactory& nodeFactory):
+    Proposer(pId,pConnections,pCharacteristic, nodeFactory), AttackerBuilder(pId,pConnections,pCharacteristic,pDepth,pNumSim),
+    Node(pId,pConnections,pCharacteristic), Builder(pId,pCharacteristic,pConnections,pDepth,pNumSim){};
 
-
+    void runAuction() override;
 };
 
 

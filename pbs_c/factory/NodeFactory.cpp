@@ -15,8 +15,7 @@ void NodeFactory::createAttackerNode(size_t aId, int aConnections, double aChara
 }
 
 void NodeFactory::createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim) {
-    std::shared_ptr<AttackerBuilder> newAttackerBuilder = std::make_shared<AttackerBuilder>(baId, baConnections, baCharacteristic, baDepth, baNumSim, *this);
-    //attackers.push_back(newAttackerBuilder);
+    std::shared_ptr<AttackerBuilder> newAttackerBuilder = std::make_shared<AttackerBuilder>(baId, baConnections, baCharacteristic, baDepth, baNumSim);
     builders.push_back(newAttackerBuilder);
     nodes.push_back(newAttackerBuilder);
 }

@@ -6,7 +6,7 @@
 #include <thread>
 #include "factory/NodeFactory.h"
 
-void ProposerBuilder::runAuction(){
+void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
     auto endT = randomGenerator.genRandInt(0, 24);
     for(int i = -1; i < endT; i++){
         nodeFactory.propagateTransactions();
@@ -35,22 +35,30 @@ void ProposerBuilder::runAuction(){
                          return builder->currBid == maxBid;
                      });
         std::for_each(nodeFactory.builders.begin(), nodeFactory.builders.end(),
-                      [this](std::shared_ptr<Builder> &b){
-                          currBids.emplace(std::pair<int,float>(b->id,b->currBid));
-                          currBlockValues.emplace(std::pair<int,float>(b->id,b->currBlock->blockValue));
+                      [&proposer](std::shared_ptr<Builder> &b){
+                          proposer.currBids.emplace(std::pair<int,float>(b->id,b->currBid));
+                          proposer.currBlockValues.emplace(std::pair<int,float>(b->id,b->currBlock->blockValue));
                       });
 
         std::shared_ptr<Builder> winningBuilder = maxBidBuilders[randomGenerator.genRandInt(0, maxBidBuilders.size() - 1)];
-        if(winningBuilder->currBlock->bid < currBlock->blockValue){
-            winningBuilder = std::make_shared<Builder>(*this);
+        if(winningBuilder->currBlock->bid < builder.currBlock->blockValue){
+            winningBuilder = std::make_shared<Builder>(builder);
         }
-        propose(winningBuilder -> currBlock);
-        currBids.clear();
-        currBlockValues.clear();
+        proposer.propose(winningBuilder -> currBlock);
+        proposer.currBids.clear();
+        proposer.currBlockValues.clear();
         if (winningBuilder->currBlock == nullptr){
             std::cout<<"Builder "<<winningBuilder->id<<" has mempool size "<<winningBuilder->mempool.size()<<std::endl;
             std::cerr << "Error: Winning builder does not have a current block."<<std::endl;
             return;
         }
     }
+}
+
+void ProposerBuilder::runAuction() {
+    ::runAuction(nodeFactory, *this, *this);
+}
+
+void ProposerAttackerBuilder::runAuction() {
+    ::runAuction(nodeFactory, *this, *this);
 }
