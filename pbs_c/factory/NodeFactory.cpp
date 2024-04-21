@@ -15,8 +15,7 @@ void NodeFactory::createAttackerNode(size_t aId, int aConnections, double aChara
 }
 
 void NodeFactory::createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim) {
-    std::shared_ptr<AttackerBuilder> newAttackerBuilder = std::make_shared<AttackerBuilder>(baId, baConnections, baCharacteristic, baDepth, baNumSim, *this);
-    //attackers.push_back(newAttackerBuilder);
+    std::shared_ptr<AttackerBuilder> newAttackerBuilder = std::make_shared<AttackerBuilder>(baId, baConnections, baCharacteristic, baDepth, baNumSim);
     builders.push_back(newAttackerBuilder);
     nodes.push_back(newAttackerBuilder);
 }
@@ -25,6 +24,22 @@ void NodeFactory::createProposerNode(int pId, int pConnections, double pCharacte
     std::shared_ptr<Proposer> newProposer = std::make_shared<Proposer>(pId, pConnections, pCharacteristic, *this);
     proposers.push_back(newProposer);
     nodes.push_back(newProposer);
+}
+
+void NodeFactory::createProposerBuilderNode(int pbId, int pbConnections, double pbCharacteristic, double pbDepth,
+                                            double pbNumSim) {
+    std::shared_ptr<ProposerBuilder> newProposerBuilder = std::make_shared<ProposerBuilder>(pbId, pbConnections, pbCharacteristic, pbDepth, pbNumSim, *this);
+    proposers.push_back(newProposerBuilder);
+    builders.push_back(newProposerBuilder);
+    nodes.push_back(newProposerBuilder);
+}
+
+void NodeFactory::createProposerAttackerBuilderNode(int paId, int paConnections, double paCharacteristic, double paDepth,
+                                                    double paNumSim) {
+    std::shared_ptr<ProposerAttackerBuilder> newProposerAttackerBuilder = std::make_shared<ProposerAttackerBuilder>(paId, paConnections, paCharacteristic, paDepth, paNumSim, *this);
+    proposers.push_back(newProposerAttackerBuilder);
+    builders.push_back(newProposerAttackerBuilder);
+    nodes.push_back(newProposerAttackerBuilder);
 }
 
 void NodeFactory::createNode(int nId, int connections, double characteristic) {

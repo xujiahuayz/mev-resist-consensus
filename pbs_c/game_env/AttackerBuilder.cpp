@@ -5,7 +5,7 @@
 #include "AttackerBuilder.h"
 
 AttackerBuilder::AttackerBuilder(size_t abId, int abConnections, double abCharacteristic, double abDepth,
-                                 double abNumSim, NodeFactory &nodeFactory):Attacker(abId, abConnections, abCharacteristic, nodeFactory), Builder(abId, abCharacteristic,abConnections, abDepth, abNumSim),Node(abId, abConnections, abCharacteristic) {
+                                 double abNumSim): Builder(abId, abCharacteristic,abConnections, abDepth, abNumSim),Node(abId, abConnections, abCharacteristic) {
 }
 
 void AttackerBuilder::buildBlock(int maxBlockSize){
