@@ -7,7 +7,7 @@
 #include "Attacker.h"
 
 class NodeFactory;
-class Proposer: public Node{
+class Proposer: virtual public Node{
 public:
     std::shared_ptr<Block> proposedBlock;
     std::map<int,float> currBids;
@@ -16,7 +16,7 @@ public:
     NodeFactory& nodeFactory;
     Proposer(size_t pId, int pConnections, double pCharacteristic, NodeFactory& nodeFactory);
     void propose(std::shared_ptr<Block>& block);
-    void runAuction();
+    virtual void runAuction();
 
 };
 

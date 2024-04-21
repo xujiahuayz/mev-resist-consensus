@@ -4,7 +4,7 @@
 
 #ifndef PBS_C_NODEFACTORY_H
 #define PBS_C_NODEFACTORY_H
-#include "game_env/AttackerBuilder.h"
+#include "game_env/ProposerBuilder.h"
 #include <vector>
 #include <memory>
 #include <set>
@@ -20,6 +20,7 @@ public:
     void createAttackerNode(size_t aId, int aConnections, double aCharacteristic);
     void createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim);
     void createProposerNode(int pId, int pConnections, double pCharacteristic);
+    void createProposerBuilderNode(int pbId, int pbConnections, double pbCharacteristic, double pbDepth, double pbNumSim);
     void createNode(int nId, int connections, double characteristic);
     void addTransactionToNodes(std::shared_ptr<Transaction> transaction);
     void assignNeighbours();

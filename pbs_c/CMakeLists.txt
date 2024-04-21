@@ -12,7 +12,7 @@ file(GLOB_RECURSE SOURCE_DIRS **.cpp)
 file(GLOB_RECURSE REMOVE_CMAKE "cmake-build-debug/*")
 list(REMOVE_ITEM SOURCE_DIRS ${REMOVE_CMAKE})
 
-add_executable(pbs_c main.cpp
+add_executable(pbs_c MevGame.cpp
         blockchain_env/User.cpp
         blockchain_env/Builder.cpp
         game_env/Auction.h
@@ -33,6 +33,8 @@ add_executable(pbs_c main.cpp
         game_env/AttackerBuilder.cpp
         game_env/Proposer.h
         game_env/Proposer.cpp
+        game_env/ProposerBuilder.h
+        game_env/ProposerBuilder.cpp
 )
 
 

@@ -27,6 +27,14 @@ void NodeFactory::createProposerNode(int pId, int pConnections, double pCharacte
     nodes.push_back(newProposer);
 }
 
+void NodeFactory::createProposerBuilderNode(int pbId, int pbConnections, double pbCharacteristic, double pbDepth,
+                                            double pbNumSim) {
+    std::shared_ptr<ProposerBuilder> newProposerBuilder = std::make_shared<ProposerBuilder>(pbId, pbConnections, pbCharacteristic, pbDepth, pbNumSim, *this);
+    proposers.push_back(newProposerBuilder);
+    builders.push_back(newProposerBuilder);
+    nodes.push_back(newProposerBuilder);
+}
+
 void NodeFactory::createNode(int nId, int connections, double characteristic) {
     std::shared_ptr<Node> newNode = std::make_shared<Node>(nId,connections,characteristic);
     nodes.push_back(newNode);
