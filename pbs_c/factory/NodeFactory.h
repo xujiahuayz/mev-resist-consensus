@@ -21,6 +21,7 @@ public:
     void createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim);
     void createProposerNode(int pId, int pConnections, double pCharacteristic);
     void createProposerBuilderNode(int pbId, int pbConnections, double pbCharacteristic, double pbDepth, double pbNumSim);
+    void createProposerAttackerBuilderNode(int paId, int paConnections, double paCharacteristic, double paDepth, double paNumSim);
     void createNode(int nId, int connections, double characteristic);
     void addTransactionToNodes(std::shared_ptr<Transaction> transaction);
     void assignNeighbours();

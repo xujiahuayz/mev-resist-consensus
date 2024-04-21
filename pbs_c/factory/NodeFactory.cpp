@@ -34,6 +34,14 @@ void NodeFactory::createProposerBuilderNode(int pbId, int pbConnections, double 
     nodes.push_back(newProposerBuilder);
 }
 
+void NodeFactory::createProposerAttackerBuilderNode(int paId, int paConnections, double paCharacteristic, double paDepth,
+                                                    double paNumSim) {
+    std::shared_ptr<ProposerAttackerBuilder> newProposerAttackerBuilder = std::make_shared<ProposerAttackerBuilder>(paId, paConnections, paCharacteristic, paDepth, paNumSim, *this);
+    proposers.push_back(newProposerAttackerBuilder);
+    builders.push_back(newProposerAttackerBuilder);
+    nodes.push_back(newProposerAttackerBuilder);
+}
+
 void NodeFactory::createNode(int nId, int connections, double characteristic) {
     std::shared_ptr<Node> newNode = std::make_shared<Node>(nId,connections,characteristic);
     nodes.push_back(newNode);

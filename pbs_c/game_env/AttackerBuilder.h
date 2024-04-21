@@ -6,6 +6,7 @@
 
 class AttackerBuilder : virtual public Builder{
 public:
+    int attackCounter = 0;
     AttackerBuilder(size_t abId, int abConnections, double abCharacteristic, double abDepth, double abNumSim);
     void buildBlock(int maxBlockSize) override;
 

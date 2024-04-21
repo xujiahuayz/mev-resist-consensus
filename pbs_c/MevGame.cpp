@@ -12,38 +12,18 @@ int main() {
     int maxBlockSize = 10;
 
     NodeFactory nodeFactory;
-    nodeFactory.createBuilderNode(1,5,1,depth,numSimulations);
-    nodeFactory.createBuilderNode(2,5,1,depth,numSimulations);
-    nodeFactory.createBuilderNode(3,5,1,depth,numSimulations);
-    nodeFactory.createBuilderNode(4,5,1,depth,numSimulations);
-    nodeFactory.createBuilderNode(5,5,1,depth,numSimulations);
 
-    nodeFactory.createAttackerBuilderNode(10,5,1,depth,numSimulations);
-    nodeFactory.createAttackerBuilderNode(30,5,1,depth,numSimulations);
-    nodeFactory.createAttackerBuilderNode(50,5,1,depth,numSimulations);
-    nodeFactory.createAttackerBuilderNode(70,5,1,depth,numSimulations);
-    nodeFactory.createAttackerBuilderNode(90,5,1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(1,5,1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(2,5,1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(3,5,1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(4,5,1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(5,5,1,depth,numSimulations);
 
-//    nodeFactory.createAttackerBuilderNode(110,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(130,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(150,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(170,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(190,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(210,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(230,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(250,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(270,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(290,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(310,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(330,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(350,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(370,5,1,depth,numSimulations);
-//    nodeFactory.createAttackerBuilderNode(390,5,1,depth,numSimulations);
-
-    nodeFactory.createProposerNode(6,5,1);
-    nodeFactory.createProposerNode(7,5,1);
-    nodeFactory.createProposerNode(8,5,1);
-    nodeFactory.createProposerNode(9,5,1);
+    nodeFactory.createProposerAttackerBuilderNode(10,5,1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(30,5,1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(50,5,1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(70,5,1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(90,5,1,depth,numSimulations);
 
     nodeFactory.createNode(11,5,1);
     nodeFactory.createNode(12,5,1);
