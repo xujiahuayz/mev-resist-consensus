@@ -43,6 +43,8 @@ void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
         std::shared_ptr<Builder> winningBuilder = maxBidBuilders[randomGenerator.genRandInt(0, maxBidBuilders.size() - 1)];
         if(winningBuilder->currBlock->bid < builder.currBlock->blockValue){
             winningBuilder = std::make_shared<Builder>(builder);
+            winningBuilder ->currBid = builder.currBlock->blockValue;
+            winningBuilder ->currBlock->bid = builder.currBlock->blockValue;
         }
         proposer.propose(winningBuilder -> currBlock);
         proposer.currBids.clear();

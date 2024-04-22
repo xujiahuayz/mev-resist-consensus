@@ -17,6 +17,9 @@ void Builder::buildBlock(){
 }
 void Builder::updateBids(double bid){
     bids.push_back(bid);
+    if(bids.size()>100){
+        bids.erase(bids.begin());
+    }
 }
 
 void Builder::calculatedBid() {
