@@ -10,11 +10,12 @@ void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
     auto endT = randomGenerator.genRandInt(0, 24);
     for(int i = -1; i < endT; i++){
         nodeFactory.propagateTransactions();
-        for(auto attacker: nodeFactory.attackers){
+        for(const auto& attacker: nodeFactory.attackers){
             attacker->attack();
         }
         std::vector<std::thread> threads;
-        for (std::shared_ptr<Builder> builder : nodeFactory.builders) {
+        threads.reserve(nodeFactory.builders.size());
+        for (const auto& builder : nodeFactory.builders) {
             threads.emplace_back([builder]() {
                 builder->buildBlock(10);
             });
@@ -25,24 +26,26 @@ void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
                 thread.join();
             }
         }
-        double maxBid = std::max_element(nodeFactory.builders.begin(), nodeFactory.builders.end(),
-                                         [](std::shared_ptr<Builder> &a, std::shared_ptr<Builder> &b) {
-                                             return a -> currBid < b -> currBid; // Compare currBid values
-                                         })->get()->currBid;
-        std::vector<std::shared_ptr<Builder>> maxBidBuilders;
-        std::copy_if(nodeFactory.builders.begin(), nodeFactory.builders.end(), std::back_inserter(maxBidBuilders),
-                     [maxBid](std::shared_ptr<Builder> &builder) {
-                         return builder->currBid == maxBid;
-                     });
+        double maxBid = 0.0;
+        std::vector<int> maxBidBuilders;
+        for (int i = 0; i < nodeFactory.builders.size(); i++) {
+            if (nodeFactory.builders[i]->currBid > maxBid) {
+                maxBid = nodeFactory.builders[i]->currBid;
+                maxBidBuilders.clear();
+                maxBidBuilders.push_back(i);
+            } else if (nodeFactory.builders[i]->currBid == maxBid) {
+                maxBidBuilders.push_back(i);
+            }
+        }
         std::for_each(nodeFactory.builders.begin(), nodeFactory.builders.end(),
                       [&proposer](std::shared_ptr<Builder> &b){
                           proposer.currBids.emplace(std::pair<int,float>(b->id,b->currBid));
                           proposer.currBlockValues.emplace(std::pair<int,float>(b->id,b->currBlock->blockValue));
                       });
 
-        std::shared_ptr<Builder> winningBuilder = maxBidBuilders[randomGenerator.genRandInt(0, maxBidBuilders.size() - 1)];
+        Builder* winningBuilder = nodeFactory.builders[maxBidBuilders[randomGenerator.genRandInt(0, maxBidBuilders.size() - 1)]].get();
         if(winningBuilder->currBlock->bid < builder.currBlock->blockValue){
-            winningBuilder = std::make_shared<Builder>(builder);
+            winningBuilder = &builder;
             winningBuilder ->currBid = builder.currBlock->blockValue;
             winningBuilder ->currBlock->bid = builder.currBlock->blockValue;
         }

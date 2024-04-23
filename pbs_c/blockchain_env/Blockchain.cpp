@@ -117,7 +117,14 @@ void Blockchain::saveBlockData(const std::string& filename, const std::vector<st
     int blockNum = 0;
     for(const auto& block: blocks){
         blockNum++;
-        file << "\n" << blockNum<<","<<block->proposerId <<"," <<block->builderId<<"," <<block->bid << "," << block->blockValue << "," << block->blockValue - block->bid;
+        float reward;
+        if(block->proposerId == block->builderId){
+            reward = block->blockValue;
+        }
+        else{
+            reward = block->blockValue - block->bid;
+        }
+        file << "\n" << blockNum<<","<<block->proposerId <<"," <<block->builderId<<"," <<block->bid << "," << block->blockValue << "," << reward;
         for(auto bid : block->allBids){
             file << "," << bid.second;
         }
