@@ -10,11 +10,17 @@ void saveData(const std::string& filename, std::vector<double> blockValues, std:
     file.close();
 }
 
+void saveBlockchainData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks) {
+    std::ofstream file(filename);
+
+
+}
+
 int main() {
     int depth = 0;
     int numSimulations = 100;
     int builderCharacteristic = 80;
-    int chainLength = 500;
+    int chainLength = 2000;
     int numTransactions = 100;
     int numMaxBuilders = 20;
 
@@ -28,12 +34,10 @@ int main() {
             NodeFactory nodeFactory;
             int connections = i > 5 ? 5 : i - 1;
             for (int j = 1; j <= i; j++) {
-                nodeFactory.createAttackerBuilderNode(j, connections, 1, depth, numSimulations);
+                nodeFactory.createProposerAttackerBuilderNode(j, connections, 1, depth, numSimulations);
             }
-            nodeFactory.createProposerNode(6, 5, 1);
-            nodeFactory.createProposerNode(7, 5, 1);
-            nodeFactory.createProposerNode(8, 5, 1);
-            nodeFactory.createProposerNode(9, 5, 1);
+
+
             nodeFactory.createNode(11, 5, 1);
             nodeFactory.createNode(12, 5, 1);
 

@@ -3,12 +3,15 @@
 //
 #include "Builder.h"
 #include "Blockchain.h"
+#include "RandomNumberData.h"
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 Builder::Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim):Node(bId, bConnections, bCharacteristic){
     depth = bDepth;
     numSimulations = bNumSim;
+    randomNumbersIndex = randomEngine.genRandInt(0, 100000000-1);
 }
 
 void Builder::buildBlock(){
@@ -17,6 +20,9 @@ void Builder::buildBlock(){
 }
 void Builder::updateBids(double bid){
     bids.push_back(bid);
+    if(bids.size()>100){
+        bids.erase(bids.begin());
+    }
 }
 
 void Builder::calculatedBid() {
@@ -42,7 +48,17 @@ double Builder::expectedUtility(double yourBid,std::vector<double>& testBids){
 
     double totalUtility = 0;
     for(int i = 0; i < numSimulations; i++){
-        double oppBid = testBids[randomEngine.genRandInt(0, testBids.size()-2)];
+        if (randomNumbersIndex >= randomNumbers.size()) {
+            // If we have, wrap around to the start of the vector
+            randomNumbersIndex = 0;
+        }
+        RandomNumberData* randomNumberData = RandomNumberData::getInstance();
+        std::vector<float>& randomNumbers = randomNumberData->getRandomNumbers();
+        int index = randomNumbers[randomNumbersIndex++];
+        while(index >= testBids.size()){
+            index = randomNumbers[randomNumbersIndex++];
+        }
+        double oppBid = testBids[index];
         totalUtility += yourBid > oppBid? calculateUtility(yourBid) : 0;
     }
     double result = totalUtility/numSimulations;
@@ -124,6 +140,8 @@ void Builder::buildBlock(int maxBlockSize) {
     block.bid = currBid;
     block.builderId = id;
     currBlock = std::make_shared<Block>(block);
+    lastMempool = mempool;
+
     if(currBlock == nullptr){
         std::cerr<<"Error: Builder "<<id<<" does not have a current block!!!"<<std::endl;
     }

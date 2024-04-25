@@ -31,13 +31,18 @@ protected:
     double blockValue;
     std::unordered_map<std::tuple<int,int, std::vector<double>>, std::pair<double, double>, KeyHash> findOptimalBidCache;
     Random randomEngine;
+    std::vector<float> randomNumbers;
+    int randomNumbersIndex;
 
 public:
+
+
     std::vector<double> bids;
     std::shared_ptr<Block> currBlock;
     double currBid;
     int depth;
     int numSimulations;
+    std::set<std::shared_ptr<Transaction>> lastMempool;
 
     Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim);
     Builder() : Node(-1,0,1) {}
