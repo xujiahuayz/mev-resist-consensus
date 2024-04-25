@@ -6,7 +6,7 @@ int main() {
     int depth = 0;
     int numSimulations = 100;
     int builderCharacteristic = 80;
-    int chainLength = 500;
+    int chainLength = 50000;
     int numTransactions = 100;
     double mevTransPercentage = 1;
     int maxBlockSize = 10;
@@ -21,6 +21,18 @@ int main() {
 //        ch+=0.02;
 //        i+=20;
 //    }
+//    nodeFactory.createProposerBuilderNode(1,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerBuilderNode(2,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerBuilderNode(3,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerBuilderNode(4,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerBuilderNode(5,5,.1,depth,numSimulations);
+//
+//    nodeFactory.createProposerAttackerBuilderNode(10,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerAttackerBuilderNode(30,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerAttackerBuilderNode(50,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
+//    nodeFactory.createProposerAttackerBuilderNode(90,5,.1,depth,numSimulations);
+
     nodeFactory.createProposerBuilderNode(1,5,.1,depth,numSimulations);
     nodeFactory.createProposerBuilderNode(2,5,.1,depth,numSimulations);
     nodeFactory.createProposerBuilderNode(3,5,.1,depth,numSimulations);

@@ -95,10 +95,10 @@ void Blockchain::startChain() {
     }
 }
 
-void Blockchain::saveBlockData(){
+void Blockchain::saveBlockData(std::string filename, std::vector<std::shared_ptr<Block>> blocks, std::string type) {
     std::ofstream file;
     file.open("blockchain_data.csv");
-    file<<"Block Number,Builder ID,Bid Value,Block Value,Reward"<<std::endl;
+    file<<"Block Number,Builder ID,Proposer ID,Bid Value,Block Value,Proposer Reward, Builder Reward"<<std::endl;
     for(int i = 0; i < blocks.size(); i++){
         file<<i<<","<<blocks[i] -> builderId<<","<<blocks[i]->bid<<","<<blocks[i]->blockValue<<","<<blocks[i]->blockValue-blocks[i]->bid<<std::endl;
     }

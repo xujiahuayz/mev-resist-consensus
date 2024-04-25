@@ -5,10 +5,24 @@
 #include "Blockchain.h"
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 Builder::Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim):Node(bId, bConnections, bCharacteristic){
     depth = bDepth;
     numSimulations = bNumSim;
+    std::cout<<"Builder "<<id<<" is loading random numbers ..."<<std::endl;
+    std::ifstream file("../random_numbers.txt");
+    if (!file) {
+        std::cerr << "Unable to open file" << std::endl;
+        return;
+    }
+
+    std::string num_str;
+    while (std::getline(file, num_str)) {
+        float number = std::stof(num_str);
+        randomNumbers.push_back(number);
+    }
+    randomNumbersIndex = randomEngine.genRandInt(0, 100000000-1);
 }
 
 void Builder::buildBlock(){
@@ -45,7 +59,15 @@ double Builder::expectedUtility(double yourBid,std::vector<double>& testBids){
 
     double totalUtility = 0;
     for(int i = 0; i < numSimulations; i++){
-        double oppBid = testBids[randomEngine.genRandInt(0, testBids.size()-2)];
+        if (randomNumbersIndex >= randomNumbers.size()) {
+            // If we have, wrap around to the start of the vector
+            randomNumbersIndex = 0;
+        }
+        int index = randomNumbers[randomNumbersIndex++];
+        while(index >= testBids.size()){
+            index = randomNumbers[randomNumbersIndex++];
+        }
+        double oppBid = testBids[index];
         totalUtility += yourBid > oppBid? calculateUtility(yourBid) : 0;
     }
     double result = totalUtility/numSimulations;
@@ -127,6 +149,8 @@ void Builder::buildBlock(int maxBlockSize) {
     block.bid = currBid;
     block.builderId = id;
     currBlock = std::make_shared<Block>(block);
+    lastMempool = mempool;
+
     if(currBlock == nullptr){
         std::cerr<<"Error: Builder "<<id<<" does not have a current block!!!"<<std::endl;
     }

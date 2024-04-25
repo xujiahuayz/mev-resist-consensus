@@ -25,7 +25,7 @@ public:
     void startChainPos();
     void startChainPosPbs();
     void printBlockStats();
-    void saveBlockData();
+    void saveBlockData(std::string filename, std::vector<std::shared_ptr<Block>> blocks, std::string type);
     void saveToCSV(const std::string& filename);
     void saveBlockData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
     void saveTrasactionData(const std::string& filename, const std::vector<std::shared_ptr<Block>>& blocks);
