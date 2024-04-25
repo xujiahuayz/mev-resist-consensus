@@ -35,6 +35,8 @@ add_executable(pbs_c MevGame.cpp
         game_env/Proposer.cpp
         game_env/ProposerBuilder.h
         game_env/ProposerBuilder.cpp
+        include/RandomNumberData.h
+        include/RandomNumberData.cpp
 )
 
 

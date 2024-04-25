@@ -3,6 +3,7 @@
 //
 
 #include "Blockchain.h"
+#include "RandomNumberData.h"
 #include "iostream"
 #include <numeric>
 #include "vector"
@@ -11,7 +12,9 @@
 static int transactionID = 110000;
 std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, double mev){
     std::shared_ptr<Transaction> transaction= std::make_shared<Transaction> (gas,mev,transactionID++);
+    RandomNumberData::getInstance();
     return transaction;
+    //init random number data
 }
 
 void Blockchain::startChainPosPbs(){
@@ -35,7 +38,6 @@ void Blockchain::startChainPosPbs(){
         pbsBlocks.emplace_back(newBlock);
         auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
         newBlock = builder->currBlock;
-        newBlock -> proposerId = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)]->id;
         posBlocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
                  [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});

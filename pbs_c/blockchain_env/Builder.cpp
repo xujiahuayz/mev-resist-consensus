@@ -3,6 +3,7 @@
 //
 #include "Builder.h"
 #include "Blockchain.h"
+#include "RandomNumberData.h"
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -10,18 +11,6 @@
 Builder::Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim):Node(bId, bConnections, bCharacteristic){
     depth = bDepth;
     numSimulations = bNumSim;
-    std::cout<<"Builder "<<id<<" is loading random numbers ..."<<std::endl;
-    std::ifstream file("../random_numbers.txt");
-    if (!file) {
-        std::cerr << "Unable to open file" << std::endl;
-        return;
-    }
-
-    std::string num_str;
-    while (std::getline(file, num_str)) {
-        float number = std::stof(num_str);
-        randomNumbers.push_back(number);
-    }
     randomNumbersIndex = randomEngine.genRandInt(0, 100000000-1);
 }
 
@@ -63,6 +52,8 @@ double Builder::expectedUtility(double yourBid,std::vector<double>& testBids){
             // If we have, wrap around to the start of the vector
             randomNumbersIndex = 0;
         }
+        RandomNumberData* randomNumberData = RandomNumberData::getInstance();
+        std::vector<float>& randomNumbers = randomNumberData->getRandomNumbers();
         int index = randomNumbers[randomNumbersIndex++];
         while(index >= testBids.size()){
             index = randomNumbers[randomNumbersIndex++];
