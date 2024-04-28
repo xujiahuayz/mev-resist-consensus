@@ -36,6 +36,7 @@ void Blockchain::startChainPbs(){
         pbsBlocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
                  [&newBlock](std::shared_ptr<Builder> &b){if(b->id != newBlock -> builderId) b -> updateBids(newBlock -> bid);});
+                 //[&newBlock](std::shared_ptr<Builder> &b){if(true) b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
@@ -60,7 +61,7 @@ void Blockchain::startChainPos(){
             nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
         }
         auto endT = randomGenerator.genRandInt(0, 24);
-        nodeFactory.propagateTransactions();
+        nodeFactory.propagateTransactionsParallel();
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
                  [](std::shared_ptr<Builder> &b){b -> buildBlock(10);});
         auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
