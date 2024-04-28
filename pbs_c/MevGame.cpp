@@ -32,7 +32,7 @@ int main() {
     nodeFactory.createProposerAttackerBuilderNode(30,5,.1,depth,numSimulations);
     nodeFactory.createProposerAttackerBuilderNode(50,5,.1,depth,numSimulations);
     nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(90,5,.9,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(90,5,.1,depth,numSimulations);
 
     for(int i = 1000; i < 1500; i++){
         nodeFactory.createNode(i,5,.1);

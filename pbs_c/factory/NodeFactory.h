@@ -29,10 +29,11 @@ public:
     void createProposerBuilderNode(int pbId, int pbConnections, double pbCharacteristic, double pbDepth, double pbNumSim);
     void createProposerAttackerBuilderNode(int paId, int paConnections, double paCharacteristic, double paDepth, double paNumSim);
     void createNode(int nId, int connections, double characteristic);
-    void addTransactionToNodes(std::shared_ptr<Transaction> transaction);
+    void addTransactionToNodes(const std::shared_ptr<Transaction>& transaction);
     void assignNeighbours();
     void propagateTransactions();
-    void clearMempools(std::shared_ptr<Transaction> transaction);
+    void propagateTransactionsParallel();
+    void clearMempools(const std::shared_ptr<Transaction>& transaction);
 };
 
 #endif //PBS_C_NODEFACTORY_H
