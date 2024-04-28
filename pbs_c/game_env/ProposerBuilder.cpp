@@ -8,24 +8,31 @@
 
 void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
     auto endT = randomGenerator.genRandInt(0, 24);
-    nodeFactory.propagateTransactions();
+    nodeFactory.propagateTransactionsParallel();
     for(int i = -1; i < endT; i++){
         for(const auto& attacker: nodeFactory.attackers){
             attacker->attack();
         }
         if(i == endT-1)
         {
-            std::vector<std::thread> threads;
-            for (int i = 0; i < nodeFactory.builders.size(); i += 10) {
-                threads.emplace_back([&nodeFactory, i]() {
-                    for (int j = i; j < i + 10 && j < nodeFactory.builders.size(); ++j) {
-                        //if (nodeFactory.builders[j]->lastMempool != nodeFactory.builders[j]->mempool)
-                        {
-                            nodeFactory.builders[j]->buildBlock(10);
-                            nodeFactory.builders[j]->currBlock -> bid = nodeFactory.builders[j]->calculatedBid();
-                        }
+
+            int numThreads = std::thread::hardware_concurrency();
+            std::vector<std::thread> threads(numThreads);
+            int buildersPerThread = nodeFactory.builders.size() / numThreads;
+
+            for (int i = 0; i < numThreads; ++i) {
+                threads[i] = std::thread([&nodeFactory, i, buildersPerThread]() {
+                    for (int j = i * buildersPerThread; j < (i + 1) * buildersPerThread && j < nodeFactory.builders.size(); ++j) {
+                        nodeFactory.builders[j]->buildBlock(10);
+                        nodeFactory.builders[j]->currBlock -> bid = nodeFactory.builders[j]->calculatedBid();
                     }
                 });
+            }
+
+            // Handle remaining builders if builders.size() is not a multiple of numThreads
+            for (int i = numThreads * buildersPerThread; i < nodeFactory.builders.size(); ++i) {
+                nodeFactory.builders[i]->buildBlock(10);
+                nodeFactory.builders[i]->currBlock -> bid = nodeFactory.builders[i]->calculatedBid();
             }
 
             for (std::thread &thread: threads) {

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
+#include "thread"
 
 void NodeFactory::createBuilderNode(int bId, int bConnections, double bCharacteristic, double bDepth, double bNumSim) {
     std::shared_ptr<Builder> newBuilder = std::make_shared<Builder>(bId, bCharacteristic, bConnections, bDepth, bNumSim);
@@ -49,7 +50,7 @@ void NodeFactory::createNode(int nId, int connections, double characteristic) {
     nodes.push_back(newNode);
 }
 
-void NodeFactory::addTransactionToNodes(std::shared_ptr<Transaction> transaction) {
+void NodeFactory::addTransactionToNodes(const std::shared_ptr<Transaction>& transaction) {
     bool isInMempool = allTransactionsSet.find(transaction) != allTransactionsSet.end();
     if (!isInMempool) {
         int randomIndex = randomGenerator.genRandInt(0, nodes.size() - 1);
@@ -100,7 +101,52 @@ void NodeFactory::propagateTransactions() {
     }
 }
 
-void NodeFactory::clearMempools(std::shared_ptr<Transaction> transaction) {
+void NodeFactory::propagateTransactionsParallel() {
+    int numThreads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads(numThreads);
+    int nodesPerThread = nodes.size() / numThreads;
+
+    for (int i = 0; i < numThreads; ++i) {
+        threads[i] = std::thread([this, i, nodesPerThread]() {
+            for (int j = i * nodesPerThread; j < (i + 1) * nodesPerThread && j < nodes.size(); ++j) {
+                auto& node = nodes[j];
+                for (auto& neighbor : node->adjNodes) {
+                    for (auto& transaction : neighbor->mempool) {
+                        if (node->mempool.find(transaction) == node->mempool.end()) {
+                            int randomIndex = randomGenerator.genRandInt(0, 100);
+                            if (randomIndex <= 100*node->characteristic){
+                                node->mempool.insert(transaction);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Handle remaining nodes if nodes.size() is not a multiple of numThreads
+    for (int i = numThreads * nodesPerThread; i < nodes.size(); ++i) {
+        auto& node = nodes[i];
+        for (auto& neighbor : node->adjNodes) {
+            for (auto& transaction : neighbor->mempool) {
+                if (node->mempool.find(transaction) == node->mempool.end()) {
+                    int randomIndex = randomGenerator.genRandInt(0, 100);
+                    if (randomIndex <= 100*node->characteristic){
+                        node->mempool.insert(transaction);
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+}
+
+void NodeFactory::clearMempools(const std::shared_ptr<Transaction>& transaction) {
     for (auto& node : nodes) {
         node->mempool.erase(transaction);
     }

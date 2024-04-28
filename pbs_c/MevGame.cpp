@@ -22,19 +22,19 @@ int main() {
 //        i+=20;
 //    }
 
-    nodeFactory.createProposerBuilderNode(1,5,.1,depth,numSimulations);
-    nodeFactory.createProposerBuilderNode(2,5,.1,depth,numSimulations);
-    nodeFactory.createProposerBuilderNode(3,5,.1,depth,numSimulations);
-    nodeFactory.createProposerBuilderNode(4,5,.1,depth,numSimulations);
-    nodeFactory.createProposerBuilderNode(5,5,.1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(1,100,.1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(2,100,.1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(3,100,.1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(4,100,.1,depth,numSimulations);
+    nodeFactory.createProposerBuilderNode(5,100,.1,depth,numSimulations);
 
-    nodeFactory.createProposerAttackerBuilderNode(10,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(30,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(50,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(90,5,.9,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(10,100,.1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(30,100,.1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(50,100,.1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(70,100,.1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(90,100,.1,depth,numSimulations);
 
-    for(int i = 1000; i < 1500; i++){
+    for(int i = 1000; i < 1400; i++){
         nodeFactory.createNode(i,5,.1);
     }
 
