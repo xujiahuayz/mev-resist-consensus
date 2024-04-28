@@ -71,10 +71,10 @@ void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
     }
 }
 
-void ProposerBuilder::runAuction() {
+void ProposerBuilder::runAuction(NodeFactory& nodeFactory) {
     ::runAuction(nodeFactory, *this, *this);
 }
 
-void ProposerAttackerBuilder::runAuction() {
+void ProposerAttackerBuilder::runAuction(NodeFactory& nodeFactory) {
     ::runAuction(nodeFactory, *this, *this);
 }

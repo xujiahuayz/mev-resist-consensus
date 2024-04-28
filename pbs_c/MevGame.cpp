@@ -6,7 +6,7 @@ int main() {
     int depth = 0;
     int numSimulations = 100;
     int builderCharacteristic = 80;
-    int chainLength = 50000;
+    int chainLength = 5000;
     int numTransactions = 100;
     double mevTransPercentage = 1;
     int maxBlockSize = 10;
@@ -32,9 +32,9 @@ int main() {
     nodeFactory.createProposerAttackerBuilderNode(30,5,.1,depth,numSimulations);
     nodeFactory.createProposerAttackerBuilderNode(50,5,.1,depth,numSimulations);
     nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
-    nodeFactory.createProposerAttackerBuilderNode(90,5,.1,depth,numSimulations);
+    nodeFactory.createProposerAttackerBuilderNode(90,5,.9,depth,numSimulations);
 
-    for(int i = 1000; i < 1005; i++){
+    for(int i = 1000; i < 1500; i++){
         nodeFactory.createNode(i,5,.1);
     }
 
@@ -42,10 +42,10 @@ int main() {
     nodeFactory.assignNeighbours();
 
     Blockchain blockchain(chainLength,nodeFactory);
-    blockchain.startChainPos();
-//    blockchain.saveTrasactionData("pbsTransactions.csv", blockchain.pbsBlocks);
+    blockchain.startChainPbs();
+    blockchain.saveTrasactionData("pbsTransactions.csv", blockchain.pbsBlocks);
 //    blockchain.saveTrasactionData("posTransactions.csv", blockchain.posBlocks);
-//    blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
+    blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
 //    blockchain.saveBlockData("posBlocks.csv", blockchain.posBlocks);
 //    blockchain.saveComparisonData("comparison.csv");
     return 0;

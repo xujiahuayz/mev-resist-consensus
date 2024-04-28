@@ -11,7 +11,7 @@ public:
     Proposer(pId,pConnections,pCharacteristic, nodeFactory), Builder(pId,pCharacteristic,pConnections,pDepth,pNumSim),
     Node(pId,pConnections,pCharacteristic){};
 
-    void runAuction() override;
+    void runAuction(NodeFactory& nodeFactory) override;
 };
 
 class ProposerAttackerBuilder: public Proposer, public AttackerBuilder{
@@ -20,7 +20,7 @@ public:
     Proposer(pId,pConnections,pCharacteristic, nodeFactory), AttackerBuilder(pId,pConnections,pCharacteristic,pDepth,pNumSim),
     Node(pId,pConnections,pCharacteristic), Builder(pId,pCharacteristic,pConnections,pDepth,pNumSim){};
 
-    void runAuction() override;
+    void runAuction(NodeFactory& nodeFactory) override;
 };
 
 

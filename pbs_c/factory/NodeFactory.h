@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <unordered_set>
 
 class NodeFactory {
 public:
@@ -16,6 +17,11 @@ public:
     std::vector<std::shared_ptr<Attacker>> attackers;
     std::vector<std::shared_ptr<Proposer>> proposers;
 
+    std::vector<std::shared_ptr<Transaction>> allTransactionsVec;
+    std::unordered_set<std::shared_ptr<Transaction>> allTransactionsSet;
+    NodeFactory(){
+        std::cout<<"NodeFactory created"<<std::endl;
+    }
     void createBuilderNode(int bId, int bConnections,double bCharacteristic, double bDepth, double bNumSim);
     void createAttackerNode(size_t aId, int aConnections, double aCharacteristic);
     void createAttackerBuilderNode(int baId, int baConnections, double baCharacteristic, double baDepth, double baNumSim);

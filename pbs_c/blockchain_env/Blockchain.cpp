@@ -31,11 +31,11 @@ void Blockchain::startChainPbs(){
         }
 
         auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
-        proposer->runAuction();
+        proposer->runAuction(nodeFactory);
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         pbsBlocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
-                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
+                 [&newBlock](std::shared_ptr<Builder> &b){if(b->id != newBlock -> builderId) b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
@@ -92,7 +92,7 @@ void Blockchain::startChain() {
         }
         std::cout<<"Block "<<i<<std::endl;
         auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
-        proposer->runAuction();
+        proposer->runAuction(nodeFactory);
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         blocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
