@@ -16,7 +16,7 @@ void Proposer::propose(std::shared_ptr<Block>& block){
     proposedBlock = block;
 }
 
-void Proposer::runAuction(){
+void Proposer::runAuction(NodeFactory& nodeFactory){
     auto endT = randomGenerator.genRandInt(0, 24);
     for(int i = -1; i < endT; i++){
         nodeFactory.propagateTransactions();

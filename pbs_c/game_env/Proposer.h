@@ -16,8 +16,7 @@ public:
     NodeFactory& nodeFactory;
     Proposer(size_t pId, int pConnections, double pCharacteristic, NodeFactory& nodeFactory);
     void propose(std::shared_ptr<Block>& block);
-    virtual void runAuction();
-
+    virtual void runAuction(NodeFactory& nodeFactory);
 };
 
 

@@ -54,8 +54,6 @@ void NodeFactory::addTransactionToNodes(std::shared_ptr<Transaction> transaction
     if (!isInMempool) {
         int randomIndex = randomGenerator.genRandInt(0, nodes.size() - 1);
         nodes[randomIndex]->mempool.insert(transaction);
-        allTransactionsSet.insert(transaction);
-        allTransactionsVec.push_back(transaction);
     }
 }
 
@@ -105,7 +103,5 @@ void NodeFactory::propagateTransactions() {
 void NodeFactory::clearMempools(std::shared_ptr<Transaction> transaction) {
     for (auto& node : nodes) {
         node->mempool.erase(transaction);
-        allTransactionsSet.erase(transaction);
-
     }
 }
