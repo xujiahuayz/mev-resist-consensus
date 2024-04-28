@@ -12,65 +12,71 @@
 static int transactionID = 110000;
 std::shared_ptr<Transaction> createTransaction(int& transactionID, double gas, double mev){
     std::shared_ptr<Transaction> transaction= std::make_shared<Transaction> (gas,mev,transactionID++);
-    RandomNumberData::getInstance();
     return transaction;
-    //init random number data
 }
 
-void Blockchain::startChainPosPbs(){
+void Blockchain::startChainPbs(){
+    RandomNumberData::getInstance();
+    int numTransactions =100;
     std::cout<<"Chain Progress: ";
     for(int i = 0; i < chainSize; i++){
-        for(int j = 0; j < 8; j++){
+        for(int j = 0; j < numTransactions; j++){
             std::uniform_real_distribution<double> distribution(0.0, 100.0);
             double gasFee = distribution(randomGenerator.rng);
             double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
             nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
         }
-        for(auto& attacker : nodeFactory.attackers){
-            attacker->clearAttacks();
-        }
         if(i%(chainSize/100) == 0){
             std::cout<<"="<<std::flush;
         }
+
         auto proposer = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)];
         proposer->runAuction();
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         pbsBlocks.emplace_back(newBlock);
-        auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
-        newBlock = builder->currBlock;
-        posBlocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
                  [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
+        numTransactions = std::count_if(newBlock->transactions.begin(), newBlock->transactions.end(), [](const auto& transaction) {
+            return transaction->mev != 0.0 || transaction->gas != 0.0;
+        });
     }
     std::cout<<std::endl;
 }
 
 void Blockchain::startChainPos(){
+    RandomNumberData::getInstance();
+    int numTransactions =100;
     for(int i = 0; i < chainSize; i++){
-        for(int j = 0; j < 8; j++){
+        for(int j = 0; j < numTransactions; j++){
             std::uniform_real_distribution<double> distribution(0.0, 100.0);
             double gasFee = distribution(randomGenerator.rng);
             double mev = distribution(randomGenerator.rng) < 50 ? distribution(randomGenerator.rng) : 0.0;
             nodeFactory.addTransactionToNodes(createTransaction(transactionID, gasFee, mev));
         }
-        for(auto& attacker : nodeFactory.attackers){
-            attacker->clearAttacks();
-        }
-        std::cout<<"Block "<<i<<std::endl;
-        auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
-        builder->buildBlock(10);
-        std::shared_ptr<Block> newBlock = builder->currBlock;
-        newBlock -> proposerId = nodeFactory.proposers[randomGenerator.genRandInt(0, nodeFactory.proposers.size() - 1)]->id;
-        blocks.emplace_back(newBlock);
+        auto endT = randomGenerator.genRandInt(0, 24);
+        nodeFactory.propagateTransactions();
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
-                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
+                 [](std::shared_ptr<Builder> &b){b -> buildBlock(10);});
+        auto builder = nodeFactory.builders[randomGenerator.genRandInt(0, nodeFactory.builders.size() - 1)];
+        std::shared_ptr<Block> newBlock = builder->currBlock;
+        posBlocks.emplace_back(newBlock);
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }
+        for(auto& attacker : nodeFactory.attackers){
+            attacker->clearAttacks();
+        }
+        numTransactions = std::count_if(newBlock->transactions.begin(), newBlock->transactions.end(), [](const auto& transaction) {
+            return transaction->mev != 0.0 || transaction->gas != 0.0;
+        });
     }
+    std::cout<<std::endl;
 }
 
 void Blockchain::startChain() {

@@ -8,21 +8,24 @@
 
 void runAuction(NodeFactory& nodeFactory, Proposer& proposer, Builder& builder){
     auto endT = randomGenerator.genRandInt(0, 24);
+    nodeFactory.propagateTransactions();
     for(int i = -1; i < endT; i++){
-        nodeFactory.propagateTransactions();
         for(const auto& attacker: nodeFactory.attackers){
             attacker->attack();
         }
         if(i == endT-1)
         {
             std::vector<std::thread> threads;
-            threads.reserve(nodeFactory.builders.size());
-            for (const auto &builder: nodeFactory.builders) {
-                if (builder->lastMempool != builder->mempool) {
-                    threads.emplace_back([builder]() {
-                        builder->buildBlock(10);
-                    });
-                }
+            for (int i = 0; i < nodeFactory.builders.size(); i += 10) {
+                threads.emplace_back([&nodeFactory, i]() {
+                    for (int j = i; j < i + 10 && j < nodeFactory.builders.size(); ++j) {
+                        //if (nodeFactory.builders[j]->lastMempool != nodeFactory.builders[j]->mempool)
+                        {
+                            nodeFactory.builders[j]->buildBlock(10);
+                            nodeFactory.builders[j]->currBlock -> bid = nodeFactory.builders[j]->calculatedBid();
+                        }
+                    }
+                });
             }
 
             for (std::thread &thread: threads) {

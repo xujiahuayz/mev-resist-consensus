@@ -23,7 +23,7 @@ public:
 
     void startChain();
     void startChainPos();
-    void startChainPosPbs();
+    void startChainPbs();
     void printBlockStats();
     void saveBlockData(std::string filename, std::vector<std::shared_ptr<Block>> blocks, std::string type);
     void saveToCSV(const std::string& filename);

@@ -51,7 +51,7 @@ public:
 
     virtual void buildBlock();
     void updateBids(double bid);
-    void calculatedBid();
+    double calculatedBid();
 
     double calculateUtility(double yourBid);
     double expectedUtility(double yourBid, std::vector<double> & bids);

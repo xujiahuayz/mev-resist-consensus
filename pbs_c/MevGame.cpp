@@ -21,17 +21,6 @@ int main() {
 //        ch+=0.02;
 //        i+=20;
 //    }
-//    nodeFactory.createProposerBuilderNode(1,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerBuilderNode(2,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerBuilderNode(3,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerBuilderNode(4,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerBuilderNode(5,5,.1,depth,numSimulations);
-//
-//    nodeFactory.createProposerAttackerBuilderNode(10,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerAttackerBuilderNode(30,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerAttackerBuilderNode(50,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
-//    nodeFactory.createProposerAttackerBuilderNode(90,5,.1,depth,numSimulations);
 
     nodeFactory.createProposerBuilderNode(1,5,.1,depth,numSimulations);
     nodeFactory.createProposerBuilderNode(2,5,.1,depth,numSimulations);
@@ -45,22 +34,19 @@ int main() {
     nodeFactory.createProposerAttackerBuilderNode(70,5,.1,depth,numSimulations);
     nodeFactory.createProposerAttackerBuilderNode(90,5,.1,depth,numSimulations);
 
-    nodeFactory.createNode(1000,5,.1);
-    nodeFactory.createNode(1001,5,.1);
-
-    TransactionFactory transactionFactory(numTransactions, 50);
+    for(int i = 1000; i < 1005; i++){
+        nodeFactory.createNode(i,5,.1);
+    }
 
 
     nodeFactory.assignNeighbours();
-    for(auto& transaction : transactionFactory.transactions){
-        nodeFactory.addTransactionToNodes(std::make_shared<Transaction>(transaction));
-    }
+
     Blockchain blockchain(chainLength,nodeFactory);
-    blockchain.startChainPosPbs();
-    blockchain.saveTrasactionData("pbsTransactions.csv", blockchain.pbsBlocks);
-    blockchain.saveTrasactionData("posTransactions.csv", blockchain.posBlocks);
-    blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
-    blockchain.saveBlockData("posBlocks.csv", blockchain.posBlocks);
-    blockchain.saveComparisonData("comparison.csv");
+    blockchain.startChainPos();
+//    blockchain.saveTrasactionData("pbsTransactions.csv", blockchain.pbsBlocks);
+//    blockchain.saveTrasactionData("posTransactions.csv", blockchain.posBlocks);
+//    blockchain.saveBlockData("pbsBlocks.csv", blockchain.pbsBlocks);
+//    blockchain.saveBlockData("posBlocks.csv", blockchain.posBlocks);
+//    blockchain.saveComparisonData("comparison.csv");
     return 0;
 }

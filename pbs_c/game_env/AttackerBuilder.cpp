@@ -94,10 +94,9 @@ void AttackerBuilder::buildBlock(int maxBlockSize){
     }
 
     blockValue = block.blockValue;
-    calculatedBid();
-    block.bid = currBid;
     block.builderId = id;
     currBlock = std::make_shared<Block>(block);
+    lastMempool = mempool;
     if(currBlock == nullptr){
         std::cerr<<"Error: Builder "<<id<<" does not have a current block!!!"<<std::endl;
     }

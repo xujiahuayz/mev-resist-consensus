@@ -16,6 +16,7 @@ RandomNumberData::RandomNumberData() {
     std::cout<< "Reading random numbers from file" << std::endl;
 
     std::string num_str;
+    randomNumbers.reserve(100000000);
     while (std::getline(file, num_str)) {
         float number = std::stof(num_str);
         randomNumbers.push_back(number);
