@@ -5,6 +5,7 @@
 #include <memory>
 #include "Transaction.h"
 #include "set"
+#include "unordered_set"
 
 class Builder; // Forward declaration
 
@@ -14,7 +15,7 @@ public:
     int connections;
     double characteristic;
     std::vector<std::shared_ptr<Node>> adjNodes;
-    std::set<std::shared_ptr<Transaction>> mempool;
+    std::unordered_set<std::shared_ptr<Transaction>> mempool;
 
     Node(int id, int connections, double characteristic) :id(id), connections(connections), characteristic(characteristic) {}
 

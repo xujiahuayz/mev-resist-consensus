@@ -35,7 +35,7 @@ void Blockchain::startChainPbs(){
         std::shared_ptr<Block> newBlock = proposer->proposedBlock;
         pbsBlocks.emplace_back(newBlock);
         for_each(nodeFactory.builders.begin(),nodeFactory.builders.end(),
-                 [&newBlock](std::shared_ptr<Builder> &b){b -> updateBids(newBlock -> bid);});
+                 [&newBlock](std::shared_ptr<Builder> &b){if(b->id != newBlock -> builderId) b -> updateBids(newBlock -> bid);});
         for (const auto& transaction : newBlock->transactions) {
             nodeFactory.clearMempools(transaction);
         }

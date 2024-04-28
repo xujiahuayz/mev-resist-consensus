@@ -1,6 +1,8 @@
 #include "NodeFactory.h"
 #include <unordered_set>
-
+#include <algorithm>
+#include <random>
+#include <vector>
 
 void NodeFactory::createBuilderNode(int bId, int bConnections, double bCharacteristic, double bDepth, double bNumSim) {
     std::shared_ptr<Builder> newBuilder = std::make_shared<Builder>(bId, bCharacteristic, bConnections, bDepth, bNumSim);
@@ -48,20 +50,21 @@ void NodeFactory::createNode(int nId, int connections, double characteristic) {
 }
 
 void NodeFactory::addTransactionToNodes(std::shared_ptr<Transaction> transaction) {
-    bool isInMempool = false;
-    for (auto& node : nodes) {
-        isInMempool = node->mempool.find(transaction) != node->mempool.end();
-        if (isInMempool) {
-            break;
-        }
-    }
+    bool isInMempool = allTransactionsSet.find(transaction) != allTransactionsSet.end();
     if (!isInMempool) {
         int randomIndex = randomGenerator.genRandInt(0, nodes.size() - 1);
         nodes[randomIndex]->mempool.insert(transaction);
+        allTransactionsSet.insert(transaction);
+        allTransactionsVec.push_back(transaction);
     }
 }
 
 void NodeFactory::assignNeighbours() {
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(nodes.begin(), nodes.end(), g);
+
     for (auto& node1 : nodes) {
         std::vector<std::shared_ptr<Node>> otherNodes(nodes);
         otherNodes.erase(std::remove_if(otherNodes.begin(),
@@ -86,14 +89,12 @@ void NodeFactory::assignNeighbours() {
 
 void NodeFactory::propagateTransactions() {
     for (auto& node : nodes) {
-        std::unordered_set<std::shared_ptr<Transaction>> nodeMempool(node->mempool.begin(), node->mempool.end());
         for (auto& neighbor : node->adjNodes) {
             for (auto& transaction : neighbor->mempool) {
-                if (nodeMempool.find(transaction) == nodeMempool.end()) {
+                if (node->mempool.find(transaction) == node->mempool.end()) {
                     int randomIndex = randomGenerator.genRandInt(0, 100);
-                    if (randomIndex <= 100*neighbor->characteristic){
+                    if (randomIndex <= 100*node->characteristic){
                         node->mempool.insert(transaction);
-
                     }
                 }
             }
@@ -104,5 +105,7 @@ void NodeFactory::propagateTransactions() {
 void NodeFactory::clearMempools(std::shared_ptr<Transaction> transaction) {
     for (auto& node : nodes) {
         node->mempool.erase(transaction);
+        allTransactionsSet.erase(transaction);
+
     }
 }

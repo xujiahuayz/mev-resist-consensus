@@ -42,7 +42,7 @@ public:
     double currBid;
     int depth;
     int numSimulations;
-    std::set<std::shared_ptr<Transaction>> lastMempool;
+    std::unordered_set<std::shared_ptr<Transaction>> lastMempool;
 
     Builder(int bId, double bCharacteristic, int bConnections, double bDepth, double bNumSim);
     Builder() : Node(-1,0,1) {}
