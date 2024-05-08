@@ -1,9 +1,63 @@
-<mxfile host="app.diagrams.net" modified="2024-05-08T14:50:55.018Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" version="24.2.2" etag="0zruEPwNvChEHAwIsMVo" type="github">
+<mxfile host="app.diagrams.net" modified="2024-05-08T14:53:07.010Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" etag="FS-IyVix02j5ZNuO69Yf" version="24.2.2" type="github">
   <diagram name="Page-1" id="cVEh2m8hDbdxJ7k7HoBp">
-    <mxGraphModel>
+    <mxGraphModel dx="634" dy="409" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-1" value="Mempool" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="230" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-2" value="Validator (Node)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-4" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="lMJt3j4Ly0oV6mbFXU3Y-22">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="160" y="240" as="sourcePoint" />
+            <mxPoint x="280" y="239.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-5" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="210" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-6" value="Transactions created by users are broadcasted to peer nodes&#39; mempool" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="154" y="248" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-7" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.1;entryY=0.158;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="300" y="260" as="sourcePoint" />
+            <mxPoint x="428" y="260.52" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-8" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="230" width="20" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-9" value="Select transactions to builder block" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="304" y="211" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-15" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.864;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="302.43999999999994" as="sourcePoint" />
+            <mxPoint x="580" y="301" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-16" value="Chain" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-17" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="270" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-18" value="Check validity of transactions and publish the block" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="450" y="251" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-21" value="User (Node)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-22" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="210" width="20" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lMJt3j4Ly0oV6mbFXU3Y-23" value="Randomly selected&lt;br&gt;by RANDAO" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="375" y="80" width="130" height="40" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
