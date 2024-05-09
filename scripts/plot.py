@@ -184,3 +184,5 @@ class Plotting:
         plt.ylabel('Cumulative Reward')
         plt.legend()
         plt.show()
+
+print("plot.py loaded")
