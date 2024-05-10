@@ -26,32 +26,30 @@ def plot_box_mev():
     plt.show()
 
 def plot_reward_time():
-    def get_reward_type(row):
-        if row['Builder ID'] in mev_builders:
-            return 'MEV'
-        elif row['Builder ID'] in non_mev_builders:
-            return 'Non-MEV'
-        return 'Other'
-    
-    pbs_blocks['Reward Type'] = pbs_blocks.apply(get_reward_type, axis=1)
+    pbs_blocks['Reward Type'] = pbs_blocks['Builder ID'].apply(lambda x: 'MEV' if x in mev_builders else ('Non-MEV' if x in non_mev_builders else 'Other'))
 
-    # Calculate rewards, separate proposer's reward using 'Winning Bid Value'
-    pbs_blocks['Calculated Reward'] = pbs_blocks.apply(lambda x: x['Winning Bid Value'] if x['Builder ID'] == x['Proposer ID'] else x['Reward'], axis=1)
+    # Separating proposer's reward calculation
+    pbs_blocks['Proposer Reward'] = pbs_blocks.apply(lambda row: row['Winning Bid Value'] if row['Builder ID'] == row['Proposer ID'] else 0, axis=1)
 
-    # Group and sum rewards by block number and reward type
-    reward_totals = pbs_blocks.groupby(['Block Number', 'Reward Type'])['Calculated Reward'].sum().unstack(fill_value=0)
+    # Calculating rewards for builders separately from proposers
+    pbs_blocks['Builder Reward'] = pbs_blocks.apply(lambda row: row['Reward'] if row['Builder ID'] != row['Proposer ID'] else 0, axis=1)
 
-    reward_totals.reset_index(inplace=True)
+    # Group and calculate cumulative rewards for proposers
+    proposer_rewards = pbs_blocks.groupby('Block Number')['Proposer Reward'].sum().cumsum()
 
-    # Plot the cumulative rewards over block number for each category
+    # Group and calculate cumulative rewards by builder type
+    builder_rewards = pbs_blocks.groupby(['Block Number', 'Reward Type'])['Builder Reward'].sum().groupby('Reward Type').cumsum().reset_index()
+
+    # Merging proposer rewards back for plotting
+    builder_rewards = builder_rewards.append({'Block Number': proposer_rewards.index, 'Reward Type': 'Proposer', 'Builder Reward': proposer_rewards.values}, ignore_index=True)
+
+    # Plotting
     plt.figure(figsize=(14, 8))
-    for column in reward_totals.columns[1:]:  # Skip the first column which is 'Block Number'
-        plt.plot(reward_totals['Block Number'], reward_totals[column], label=column, marker='o', linestyle='-')
-
+    sns.lineplot(data=builder_rewards, x='Block Number', y='Builder Reward', hue='Reward Type', marker='o', linestyle='-')
     plt.title('Cumulative Rewards Over Block Number for MEV Builders, Non-MEV Builders, and Proposers')
     plt.xlabel('Block Number')
     plt.ylabel('Cumulative Reward')
-    plt.legend()
+    plt.legend(title='Builder Type')
     plt.grid(True)
     plt.show()
 
