@@ -85,7 +85,7 @@ def plot_bid_block():
     plt.title('Distribution of Winning Bid Percentage of Block Value')
     plt.xlabel('Winning Bid Percentage (%)')
     plt.ylabel('Number of Blocks')
-    plt.grid(True)  # Enhance visibility with grid lines
+    plt.grid(True)
     plt.show()
 
 
