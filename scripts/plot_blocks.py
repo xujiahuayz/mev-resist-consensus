@@ -75,7 +75,19 @@ def plot_inclusion_rate():
 
 def plot_bid_block():
     # plot the winning bid value vs the block value
-    
+    plt.figure(figsize=(14, 8))
+
+    # Calculate percentage of winning bid over block value
+    pbs_blocks['Winning Bid Percentage'] = (pbs_blocks['Winning Bid Value'] / pbs_blocks['Winning Block Value']) * 100
+
+    # Plotting the Winning Bid Percentage
+    sns.lineplot(data=pbs_blocks, x='Block Number', y='Winning Bid Percentage', label='Winning Bid Percentage')
+
+    plt.title('Percentage of Winning Bid Over Block Value Over Blocks')
+    plt.xlabel('Block Number')
+    plt.ylabel('Winning Bid Percentage (%)')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':
