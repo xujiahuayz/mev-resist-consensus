@@ -79,13 +79,14 @@ def plot_bid_block():
 
     plt.figure(figsize=(14, 8))
 
-    ax = sns.histplot(data=pbs_blocks, x='Winning Bid Percentage', hue='Builder Type', bins=30, kde=False, 
-                      palette='pastel', color='b', element='bars', stat='count', common_norm=False)
+    # Plotting the histogram of the Winning Bid Percentage
+    sns.histplot(pbs_blocks['Winning Bid Percentage'], bins=30, kde=False)
 
-    plt.title('Distribution of Winning Bid Percentage of Block Value by Builder Type')
+    plt.title('Distribution of Winning Bid Percentage of Block Value')
     plt.xlabel('Winning Bid Percentage (%)')
     plt.ylabel('Number of Blocks')
-    plt.grid(True)
+    plt.grid(True)  # Enhance visibility with grid lines
+    plt.show()
 
 
 if __name__ == '__main__':
