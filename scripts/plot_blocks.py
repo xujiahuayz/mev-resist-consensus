@@ -9,6 +9,9 @@ sns.set_theme(style="ticks", palette="pastel")
 pos_blocks = pd.read_csv('/Users/tammy/Downloads/posBlocks.csv')
 pbs_blocks = pd.read_csv('/Users/tammy/Downloads/pbsBlocks.csv')
 
+pos_tx = pd.read_csv
+pbs_tx = pd.read_csv
+
 
 non_mev_builders = [1, 2, 3, 4, 5]
 mev_builders = [10, 30, 50, 70, 90]
@@ -46,6 +49,9 @@ def plot_reward_time():
     plt.legend(title='Builder Type')
     plt.grid(True)
     plt.show()
+
+def plot_win_rate():
+    pass
 
 if __name__ == '__main__':
     # plot_box_mev()
