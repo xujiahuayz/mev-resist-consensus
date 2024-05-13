@@ -17,6 +17,10 @@ non_mev_builders = [1, 2, 3, 4, 5]
 mev_builders = [10, 30, 50, 70, 90]
 
 pbs_blocks['Builder Type'] = pbs_blocks['Builder ID'].apply(lambda x: 'MEV' if x in mev_builders else 'Non-MEV')
+pbs_blocks['Reward Type'] = pbs_blocks.apply(lambda row: 'Proposer' if row['Builder ID'] == row['Proposer ID'] else ('MEV' if row['Builder ID'] in mev_builders else 'Non-MEV'), axis=1)
+pbs_blocks['Reward Type'] = pbs_blocks['Reward Type'].astype('category')
+pbs_blocks['Calculated Reward'] = pbs_blocks.apply(lambda row: row['Winning Bid Value'] if row['Reward Type'] == 'Proposer' else row['Reward'], axis=1)
+    
 
 
 def plot_box_mev():
@@ -29,11 +33,7 @@ def plot_box_mev():
     plt.show()
 
 def plot_reward_time():
-    pbs_blocks['Reward Type'] = pbs_blocks.apply(lambda row: 'Proposer' if row['Builder ID'] == row['Proposer ID'] else ('MEV' if row['Builder ID'] in mev_builders else 'Non-MEV'), axis=1)
-    pbs_blocks['Reward Type'] = pbs_blocks['Reward Type'].astype('category')
-    pbs_blocks['Calculated Reward'] = pbs_blocks.apply(lambda row: row['Winning Bid Value'] if row['Reward Type'] == 'Proposer' else row['Reward'], axis=1)
-
-    # Group and calculate cumulative rewards by block number and reward type
+  # Group and calculate cumulative rewards by block number and reward type
     reward_totals = pbs_blocks.groupby(['Block Number', 'Reward Type'])['Calculated Reward'].sum().unstack().fillna(0).cumsum()
 
     # Reset index to convert back to a DataFrame
@@ -50,9 +50,36 @@ def plot_reward_time():
     plt.grid(True)
     plt.show()
 
-def plot_win_rate():
+def plot_reward_time_stacked():
+    # Plot the normalized data as a 100% stacked area plot
+    reward_totals = pbs_blocks.groupby(['Block Number', 'Reward Type'])['Calculated Reward'].sum().unstack(fill_value=0).cumsum()
+    reward_totals_percent = reward_totals.div(reward_totals.sum(axis=1), axis=0)
+
+    plt.figure(figsize=(14, 8))
+    reward_totals_percent.plot(kind='area', stacked=True)
+    plt.title('100% Cumulative Rewards Over Block Number by Builder Type')
+    plt.xlabel('Block Number')
+    plt.ylabel('Percentage of Total Cumulative Reward')
+    plt.legend(title='Builder Type')
+    plt.ylim(0, 1)
+    plt.grid(True)
+    plt.show()
+
+def plot_inclusion_time():
+    # the time it takes for a mev transaction to be included in a block (also do it for non mev)
     pass
+
+def plot_inclusion_rate():
+    # plot what percentage of mev attackable transaction are included and attacked
+    pass
+
+def plot_bid_block():
+    # plot the winning bid value vs the block value
+    
+
 
 if __name__ == '__main__':
     # plot_box_mev()
-    plot_reward_time()
+    # plot_reward_time()
+    # plot_reward_time_stacked()
+    plot_bid_block()
