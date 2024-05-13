@@ -5,16 +5,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 sns.set_theme(style="ticks", palette="pastel")
+# sns.set_theme(style="whitegrid")
 
 pos_blocks = pd.read_csv('/Users/tammy/Downloads/posBlocks.csv')
 pbs_blocks = pd.read_csv('/Users/tammy/Downloads/pbsBlocks.csv')
-
 
 non_mev_builders = [1, 2, 3, 4, 5]
 mev_builders = [10, 30, 50, 70, 90]
 
 pbs_blocks['Builder Type'] = pbs_blocks['Builder ID'].apply(lambda x: 'MEV' if x in mev_builders else 'Non-MEV')
-
 
 def plot_box_mev():
     # Plotting the box plot for rewards of Non-MEV vs MEV builders
@@ -47,6 +46,21 @@ def plot_reward_time():
     plt.grid(True)
     plt.show()
 
+def plot_bid_reward():
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=pbs_blocks, x='Winning Bid Value', y='Reward', hue='Builder Type', style='Builder Type',
+                palette=['#FF6347', '#4682B4'], s=60, alpha=0.5, edgecolor='none')
+    plt.title('Scatter Plot of Bid vs Reward by Builder Type')
+    plt.xlabel('Winning Bid Value')
+    plt.ylabel('Reward')
+    plt.legend(title='Builder Type')
+    plt.grid(True)
+    plt.show()
+
+def plot_win_rate():
+
+
 if __name__ == '__main__':
     # plot_box_mev()
-    plot_reward_time()
+    # plot_reward_time()
+    plot_bid_reward()
