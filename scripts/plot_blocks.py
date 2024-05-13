@@ -81,4 +81,27 @@ def plot_bid_reward():
     plt.grid(True)
     plt.show()
 
+def plot_bid_block():
+    # plot the winning bid value vs the block value
+    pbs_blocks['Winning Bid Percentage'] = (pbs_blocks['Winning Bid Value'] / pbs_blocks['Winning Block Value']) * 100
+
+    plt.figure(figsize=(14, 8))
+
+    # Plotting the histogram of the Winning Bid Percentage
+    sns.histplot(pbs_blocks['Winning Bid Percentage'], bins=30, kde=False)
+
+    plt.title('Distribution of Winning Bid Percentage of Block Value')
+    plt.xlabel('Winning Bid Percentage (%)')
+    plt.ylabel('Number of Blocks')
+    plt.grid(True)
+    plt.show()
+
+
 if __name__ == '__main__':
+    plot_box_mev()
+    plot_reward_time()
+    plot_reward_time_stacked()
+    plot_bid_reward()
+    plot_bid_block()
+    # plot_inclusion_time()
+    # plot_inclusion_rate()
