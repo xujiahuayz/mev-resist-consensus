@@ -13,9 +13,8 @@ def process_file(file):
         filename = os.path.basename(file)
         params = filename.split('=')[1:]
         mev_builders = int(params[0].split('characteristic')[0])
-        characteristic = float(params[1].replace('.csv', ''))  # Correct extraction of characteristic
+        characteristic = float(params[1].replace('.csv', ''))
         
-        # Read the CSV file
         df = pd.read_csv(file)
         
         # Add the parameters to the DataFrame
@@ -59,11 +58,11 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.set_title(title)
-    fig.colorbar(surf)
     if filename:
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0.1)
     else:
         plt.show()
+    plt.close(fig)
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
 def plot_total_block_value(grouped_data, save_dir):
