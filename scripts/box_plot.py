@@ -1,50 +1,32 @@
 import pandas as pd
 import os
-import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Function to read and process a single file
 def process_file(file):
     try:
-        # Extract parameters from the filename
+        df = pd.read_csv(file)
+        
+        # Add the parameters to the DataFrame
         filename = os.path.basename(file)
         params = filename.split('=')[1:]
         mev_builders = int(params[0].split('characteristic')[0])
         characteristic = float(params[1].replace('.csv', ''))
         
-        df = pd.read_csv(file)
-        
-        # Add the parameters to the DataFrame
         df['mev_builders'] = mev_builders
         df['characteristic'] = characteristic
         df['total_block_value'] = df['gas_captured'] + df['mev_captured']
+        df['reward'] = df['gas_captured'] + df['mev_captured'] - df['block_bid']
         
         return df
     except Exception as e:
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()
 
-# Function to process files in batches
-def process_files_in_batches(files, dataframes):
-    with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(process_file, file): file for file in files}
-        for future in as_completed(futures):
-            file = futures[future]
-            try:
-                result = future.result()
-                if not result.empty:
-                    dataframes.append(result)
-            except Exception as e:
-                print(f"Error with file {file}: {e}")
-
 # Function to create and save the violin plot for reward distribution
-def plot_reward_distribution(data, save_dir):
-    # Calculate the reward for each block
-    data['reward'] = data['gas_captured'] + data['mev_captured'] - data['block_bid']
-    
+def plot_reward_distribution(data, file_name, save_dir):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
@@ -55,13 +37,13 @@ def plot_reward_distribution(data, save_dir):
     })
     
     # Plot violin plots with Seaborn's pastel palette
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 8))
     sns.set(style="whitegrid")
     sns.violinplot(x='Builder Type', y='Log Reward', data=reward_data, palette='pastel')
-    plt.title('Distribution of Log-Transformed Rewards between MEV and Non-MEV Builders')
+    plt.title(f'Distribution of Log-Transformed Rewards: {file_name}')
     plt.xlabel('Builder Type')
     plt.ylabel('Log Reward')
-    plt.savefig(os.path.join(save_dir, 'reward_distribution_violinplot.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
+    plt.savefig(os.path.join(save_dir, f'reward_distribution_violinplot_{file_name}.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.close()
 
 if __name__ == '__main__':
@@ -73,26 +55,24 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
-    # Use glob to get all CSV file paths in the specified directory
-    all_files = glob.glob(os.path.join(csv_path, "*.csv"))
+    # Specify the representative CSV files
+    representative_files = [
+        "mev_builders=1characteristic=0.2.csv",
+        "mev_builders=1characteristic=0.6.csv",
+        "mev_builders=1characteristic=1.csv",
+        "mev_builders=25characteristic=0.2.csv",
+        "mev_builders=25characteristic=0.6.csv",
+        "mev_builders=25characteristic=1.csv",
+        "mev_builders=49characteristic=0.2.csv",
+        "mev_builders=49characteristic=0.6.csv",
+        "mev_builders=49characteristic=1.csv"
+    ]
     
-    # Initialize an empty list to collect DataFrames
-    dataframes = []
-    
-    # Split the files into batches to manage memory usage better
-    batch_size = 50  # Adjust batch size based on memory constraints
-    for i in range(0, len(all_files), batch_size):
-        batch_files = all_files[i:i + batch_size]
-        process_files_in_batches(batch_files, dataframes)
-    
-    # Concatenate all DataFrames into one
-    if dataframes:
-        all_data = pd.concat(dataframes, ignore_index=True)
-    
-        # Group by 'mev_builders' and 'characteristic' and calculate mean values
-        grouped_data = all_data.groupby(['mev_builders', 'characteristic']).mean().reset_index()
-           
-        # Generate and save the violin plot for reward distribution
-        plot_reward_distribution(all_data, save_dir)
-    else:
-        print("No data to plot.")
+    # Process and plot each file separately
+    for file_name in representative_files:
+        file_path = os.path.join(csv_path, file_name)
+        df = process_file(file_path)
+        if not df.empty:
+            plot_reward_distribution(df, file_name, save_dir)
+        else:
+            print(f"No data to plot for {file_name}.")
