@@ -52,7 +52,7 @@ def plot_reward_distribution(ax, data, mev_validators, characteristic):
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
     csv_path = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
-    save_dir = "./figures_pos"  # Save plots in a directory named "figures_pos" within the repository
+    save_dir = "./figures"  
     
     # Create directory for saving plots if it doesn't exist
     if not os.path.exists(save_dir):
