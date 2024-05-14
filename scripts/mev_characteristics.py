@@ -50,8 +50,8 @@ def create_meshgrid(data, value):
     z = pivot_table.values.T  # Transpose to match the shape
     return x, y, z
 
-# Function to create a 3D plot
-def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title):
+# Function to create a 3D plot and save it with a filename
+def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(x, y, z, cmap='viridis')
@@ -60,27 +60,30 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title):
     ax.set_zlabel(zlabel)
     ax.set_title(title)
     fig.colorbar(surf)
-    plt.show()
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
 def plot_total_block_value(grouped_data):
     x, y, z = create_meshgrid(grouped_data, 'total_block_value')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 'Total Block Value vs. MEV Builders and Characteristic')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 'Total Block Value vs. MEV Builders and Characteristic', 'total_block_value.png')
 
 # Plot 2: Winning Block Bid vs. MEV Builders and Characteristic
 def plot_block_bid(grouped_data):
     x, y, z = create_meshgrid(grouped_data, 'block_bid')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 'Winning Block Bid vs. MEV Builders and Characteristic')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 'Winning Block Bid vs. MEV Builders and Characteristic', 'block_bid.png')
 
 # Plot 3: Gas Captured vs. MEV Builders and Characteristic
 def plot_gas_captured(grouped_data):
     x, y, z = create_meshgrid(grouped_data, 'gas_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 'Gas Captured vs. MEV Builders and Characteristic')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 'Gas Captured vs. MEV Builders and Characteristic', 'gas_captured.png')
 
 # Plot 4: MEV Captured vs. MEV Builders and Characteristic
 def plot_mev_captured(grouped_data):
     x, y, z = create_meshgrid(grouped_data, 'mev_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 'MEV Captured vs. MEV Builders and Characteristic')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 'MEV Captured vs. MEV Builders and Characteristic', 'mev_captured.png')
 
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
@@ -105,7 +108,6 @@ if __name__ == '__main__':
         # Group by 'mev_builders' and 'characteristic' and calculate mean values
         grouped_data = all_data.groupby(['mev_builders', 'characteristic']).mean().reset_index()
         
-        # Generate plots
         plot_total_block_value(grouped_data)
         plot_block_bid(grouped_data)
         plot_gas_captured(grouped_data)
