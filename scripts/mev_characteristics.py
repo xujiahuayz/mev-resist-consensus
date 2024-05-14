@@ -51,16 +51,17 @@ def create_meshgrid(data, value):
 
 # Function to create a 3D plot and save it with a filename
 def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
-    fig = plt.figure(figsize=(10, 8))
+    fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(x, y, z, cmap='viridis')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    ax.set_title(title)
-    fig.tight_layout()
+    surf = ax.plot_surface(x, y, z, cmap='viridis', alpha=0.8)  # Added transparency
+    ax.set_xlabel(xlabel, labelpad=20)
+    ax.set_ylabel(ylabel, labelpad=20)
+    ax.set_zlabel(zlabel, labelpad=20)
+    ax.set_title(title, pad=20)
+    fig.tight_layout(rect=[0, 0, 1, 1])
+    plt.subplots_adjust(left=0.2, right=0.8, top=0.85, bottom=0.2)  # Adjusting the subplot parameters
     if filename:
-        plt.savefig(filename, bbox_inches='tight', pad_inches=0.1, dpi=300)
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0.5, dpi=300)
     plt.close(fig)
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
