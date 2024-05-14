@@ -20,13 +20,13 @@ def process_file(file):
         df['total_block_value'] = df['gas_captured'] + df['mev_captured']
         df['reward'] = df['gas_captured'] + df['mev_captured'] - df['block_bid']
         
-        return df
+        return df, mev_builders, characteristic
     except Exception as e:
         print(f"Error processing file {file}: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), None, None
 
 # Function to create a violin plot for reward distribution
-def plot_reward_distribution(ax, data, file_name):
+def plot_reward_distribution(ax, data, mev_builders, characteristic):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
@@ -44,7 +44,7 @@ def plot_reward_distribution(ax, data, file_name):
     for i, median in enumerate(medians):
         ax.plot([median, median], [i - 0.05, i + 0.05], color='white', linewidth=2.5)
     
-    ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}', fontsize=20)
+    ax.set_title(f'MEV builders number = {mev_builders}, Latency characteristics = {characteristic}', fontsize=20)
     ax.set_ylabel('Builder Type', fontsize=18)
     ax.set_xlabel('Log Reward', fontsize=18)
     ax.tick_params(axis='both', which='major', labelsize=16)
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     # Process and plot each file separately
     for i, file_name in enumerate(representative_files):
         file_path = os.path.join(csv_path, file_name)
-        df = process_file(file_path)
+        df, mev_builders, characteristic = process_file(file_path)
         if not df.empty:
-            plot_reward_distribution(axes[i], df, file_name)
+            plot_reward_distribution(axes[i], df, mev_builders, characteristic)
         else:
             print(f"No data to plot for {file_name}.")
     
