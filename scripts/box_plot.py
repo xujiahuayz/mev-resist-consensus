@@ -25,12 +25,25 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()
 
+# Function to ensure correct builder type assignment
+def correct_builder_types(df):
+    # Check for MEV and Non-MEV builder types
+    if set(df['builder_type'].unique()) == {0, 1}:
+        # No correction needed
+        return df
+    else:
+        # Correct the assignment if necessary
+        df['builder_type'] = np.where(df['builder_type'] == 1, 1, 0)
+        return df
+
 # Function to create a violin plot for reward distribution
 def plot_reward_distribution(ax, data, file_name):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
-    # Create a DataFrame for plotting
+    # Correct builder types
+    data = correct_builder_types(data)
+    
     reward_data = pd.DataFrame({
         'Log Reward': data['log_reward'],
         'Builder Type': np.where(data['builder_type'] == 1, 'Non-MEV', 'MEV')
@@ -38,7 +51,7 @@ def plot_reward_distribution(ax, data, file_name):
     
     # Plot violin plots with Seaborn's pastel palette
     sns.set(style="whitegrid")
-    sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel')
+    sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
     ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}')
     ax.set_xlabel('Builder Type')
     ax.set_ylabel('Log Reward')
@@ -68,6 +81,8 @@ if __name__ == '__main__':
     # Create a 3x3 subplot
     fig, axes = plt.subplots(3, 3, figsize=(19, 19))
     axes = axes.flatten()
+    
+    sns.set(style="whitegrid")  # Set the style once
     
     # Process and plot each file separately
     for i, file_name in enumerate(representative_files):
