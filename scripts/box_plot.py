@@ -30,15 +30,20 @@ def plot_reward_distribution(ax, data, file_name):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
-    
     reward_data = pd.DataFrame({
         'Log Reward': data['log_reward'],
-        'Builder Type': np.where(data['builder_type'] == 1, 'MEV', 'Non-MEV')
+        'Builder Type': np.where(data['builder_type'] == 1, 'Non-MEV', 'MEV')
     })
     
     # Plot violin plots with Seaborn's pastel palette
     sns.set(style="whitegrid")
     sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
+    
+    # Calculate medians and add them as thicker lines
+    medians = reward_data.groupby('Builder Type')['Log Reward'].median().reindex(['Non-MEV', 'MEV'])
+    for i, median in enumerate(medians):
+        ax.plot([i - 0.02, i + 0.02], [median, median], color='white', linewidth=2.5)
+    
     ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}', fontsize=20)
     ax.set_xlabel('Builder Type', fontsize=18)
     ax.set_ylabel('Log Reward', fontsize=18)
