@@ -35,18 +35,18 @@ def plot_reward_distribution(ax, data, file_name):
         'Builder Type': np.where(data['builder_type'] == 1, 'MEV', 'Non-MEV')
     })
     
-    # Plot violin plots with Seaborn's pastel palette
+    # Plot horizontal violin plots with Seaborn's pastel palette
     sns.set(style="whitegrid")
-    sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
+    sns.violinplot(ax=ax, y='Builder Type', x='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
     
     # Calculate medians and add them as thicker lines
     medians = reward_data.groupby('Builder Type')['Log Reward'].median().reindex(['Non-MEV', 'MEV'])
     for i, median in enumerate(medians):
-        ax.plot([i - 0.02, i + 0.02], [median, median], color='white', linewidth=2.5)
+        ax.plot([median, median], [i - 0.05, i + 0.05], color='white', linewidth=2.5)
     
     ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}', fontsize=20)
-    ax.set_xlabel('Builder Type', fontsize=18)
-    ax.set_ylabel('Log Reward', fontsize=18)
+    ax.set_ylabel('Builder Type', fontsize=18)
+    ax.set_xlabel('Log Reward', fontsize=18)
     ax.tick_params(axis='both', which='major', labelsize=16)
 
 if __name__ == '__main__':
@@ -88,5 +88,6 @@ if __name__ == '__main__':
     
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'reward_distribution_3x3.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
+    plt.savefig(os.path.join(save_dir, 'reward_distribution_3x3_horizontal.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.show()
+    plt.close()
