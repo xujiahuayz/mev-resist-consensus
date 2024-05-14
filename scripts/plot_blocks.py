@@ -3,6 +3,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 sns.set_theme(style="ticks", palette="pastel")
 # sns.set_theme(style="whitegrid")
@@ -96,12 +97,36 @@ def plot_bid_block():
     plt.grid(True)
     plt.show()
 
+def plot_3d_rewards():
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+
+
+    X, Y = np.meshgrid(np.unique(x), np.unique(y))
+    Z = np.array([z[(x == xval) & (y == yval)].mean() for xval, yval in zip(np.ravel(X), np.ravel(Y))]).reshape(X.shape)
+
+    # Plot the surface
+    surf = ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='none')
+
+    # Add labels and title
+    ax.set_xlabel('Number of Miners')
+    ax.set_ylabel('Block Propagation Delay')
+    ax.set_zlabel('Calculated Reward')
+    ax.set_title('3D Surface Plot of Rewards vs Miners and Block Propagation Delay')
+
+    # Add a color bar which maps values to colors
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+
+    plt.show()
+
 
 if __name__ == '__main__':
-    plot_box_mev()
-    plot_reward_time()
-    plot_reward_time_stacked()
-    plot_bid_reward()
-    plot_bid_block()
+    # plot_box_mev()
+    # plot_reward_time()
+    # plot_reward_time_stacked()
+    # plot_bid_reward()
+    # plot_bid_block()
     # plot_inclusion_time()
     # plot_inclusion_rate()
+    plot_3d_rewards()
