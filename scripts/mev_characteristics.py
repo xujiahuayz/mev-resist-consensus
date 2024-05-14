@@ -25,8 +25,8 @@ def process_file(file):
         return df
     except Exception as e:
         print(f"Error processing file {file}: {e}")
-        return pd.DataFrame()  # Return an empty DataFrame in case of error
-
+        return pd.DataFrame() 
+    
 # Function to process files in batches
 def process_files_in_batches(files, dataframes):
     with ProcessPoolExecutor() as executor:
@@ -58,10 +58,9 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.set_title(title)
+    fig.tight_layout()
     if filename:
-        plt.savefig(filename, bbox_inches='tight', pad_inches=0.1)
-    else:
-        plt.show()
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.close(fig)
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
