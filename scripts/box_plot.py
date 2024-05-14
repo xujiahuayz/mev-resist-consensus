@@ -25,8 +25,8 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()
 
-# Function to create and save the violin plot for reward distribution
-def plot_reward_distribution(data, file_name, save_dir):
+# Function to create a violin plot for reward distribution
+def plot_reward_distribution(ax, data, file_name):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
@@ -37,14 +37,11 @@ def plot_reward_distribution(data, file_name, save_dir):
     })
     
     # Plot violin plots with Seaborn's pastel palette
-    plt.figure(figsize=(12, 8))
     sns.set(style="whitegrid")
-    sns.violinplot(x='Builder Type', y='Log Reward', data=reward_data, palette='pastel')
-    plt.title(f'Distribution of Log-Transformed Rewards: {file_name}')
-    plt.xlabel('Builder Type')
-    plt.ylabel('Log Reward')
-    plt.savefig(os.path.join(save_dir, f'reward_distribution_violinplot_{file_name}.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
-    plt.close()
+    sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel')
+    ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}')
+    ax.set_xlabel('Builder Type')
+    ax.set_ylabel('Log Reward')
 
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
@@ -68,11 +65,20 @@ if __name__ == '__main__':
         "mev_builders=49characteristic=1.csv"
     ]
     
+    # Create a 3x3 subplot
+    fig, axes = plt.subplots(3, 3, figsize=(19, 19))
+    axes = axes.flatten()
+    
     # Process and plot each file separately
-    for file_name in representative_files:
+    for i, file_name in enumerate(representative_files):
         file_path = os.path.join(csv_path, file_name)
         df = process_file(file_path)
         if not df.empty:
-            plot_reward_distribution(df, file_name, save_dir)
+            plot_reward_distribution(axes[i], df, file_name)
         else:
             print(f"No data to plot for {file_name}.")
+    
+    # Adjust layout and save the figure
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'reward_distribution_3x3.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
+    plt.show()
