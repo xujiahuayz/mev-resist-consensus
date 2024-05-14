@@ -32,7 +32,7 @@ def plot_reward_distribution(ax, data, file_name):
     
     reward_data = pd.DataFrame({
         'Log Reward': data['log_reward'],
-        'Builder Type': np.where(data['builder_type'] == 1, 'Non-MEV', 'MEV')
+        'Builder Type': np.where(data['builder_type'] == 1, 'MEV', 'Non-MEV')
     })
     
     # Plot violin plots with Seaborn's pastel palette
