@@ -66,28 +66,41 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
         plt.show()
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
-def plot_total_block_value(grouped_data):
+def plot_total_block_value(grouped_data, save_dir):
     x, y, z = create_meshgrid(grouped_data, 'total_block_value')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 'Total Block Value vs. MEV Builders and Characteristic', 'total_block_value.png')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 
+                   'Total Block Value vs. MEV Builders and Characteristic', 
+                   os.path.join(save_dir, 'total_block_value.png'))
 
 # Plot 2: Winning Block Bid vs. MEV Builders and Characteristic
-def plot_block_bid(grouped_data):
+def plot_block_bid(grouped_data, save_dir):
     x, y, z = create_meshgrid(grouped_data, 'block_bid')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 'Winning Block Bid vs. MEV Builders and Characteristic', 'block_bid.png')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 
+                   'Winning Block Bid vs. MEV Builders and Characteristic', 
+                   os.path.join(save_dir, 'block_bid.png'))
 
 # Plot 3: Gas Captured vs. MEV Builders and Characteristic
-def plot_gas_captured(grouped_data):
+def plot_gas_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid(grouped_data, 'gas_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 'Gas Captured vs. MEV Builders and Characteristic', 'gas_captured.png')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 
+                   'Gas Captured vs. MEV Builders and Characteristic', 
+                   os.path.join(save_dir, 'gas_captured.png'))
 
 # Plot 4: MEV Captured vs. MEV Builders and Characteristic
-def plot_mev_captured(grouped_data):
+def plot_mev_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid(grouped_data, 'mev_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 'MEV Captured vs. MEV Builders and Characteristic', 'mev_captured.png')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 
+                   'MEV Captured vs. MEV Builders and Characteristic', 
+                   os.path.join(save_dir, 'mev_captured.png'))
 
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
     csv_path = "/Users/tammy/Downloads/vary_mev_and_characteristic"
+    save_dir = "./figures"  # Save plots in a directory named "figures" within the repository
+    
+    # Create directory for saving plots if it doesn't exist
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     
     # Use glob to get all CSV file paths in the specified directory
     all_files = glob.glob(os.path.join(csv_path, "*.csv"))
@@ -108,9 +121,10 @@ if __name__ == '__main__':
         # Group by 'mev_builders' and 'characteristic' and calculate mean values
         grouped_data = all_data.groupby(['mev_builders', 'characteristic']).mean().reset_index()
         
-        plot_total_block_value(grouped_data)
-        plot_block_bid(grouped_data)
-        plot_gas_captured(grouped_data)
-        plot_mev_captured(grouped_data)
+        # Generate plots and save them in the specified directory
+        plot_total_block_value(grouped_data, save_dir)
+        plot_block_bid(grouped_data, save_dir)
+        plot_gas_captured(grouped_data, save_dir)
+        plot_mev_captured(grouped_data, save_dir)
     else:
         print("No data to plot.")
