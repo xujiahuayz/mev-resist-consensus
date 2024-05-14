@@ -21,6 +21,7 @@ def process_file(file):
         # Add the parameters to the DataFrame
         df['mev_builders'] = mev_builders
         df['characteristic'] = characteristic
+        df['total_block_value'] = df['gas_captured'] + df['mev_captured']
         
         return df
     except Exception as e:
@@ -39,6 +40,47 @@ def process_files_in_batches(files, dataframes):
                     dataframes.append(result)
             except Exception as e:
                 print(f"Error with file {file}: {e}")
+
+# Create meshgrids for plotting
+def create_meshgrid(data, value):
+    pivot_table = data.pivot('mev_builders', 'characteristic', value)
+    x = pivot_table.index.values
+    y = pivot_table.columns.values
+    x, y = np.meshgrid(x, y)
+    z = pivot_table.values.T  # Transpose to match the shape
+    return x, y, z
+
+# Function to create a 3D plot
+def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title):
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(x, y, z, cmap='viridis')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.set_title(title)
+    fig.colorbar(surf)
+    plt.show()
+
+# Plot 1: Total Block Value vs. MEV Builders and Characteristic
+def plot_total_block_value(grouped_data):
+    x, y, z = create_meshgrid(grouped_data, 'total_block_value')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 'Total Block Value vs. MEV Builders and Characteristic')
+
+# Plot 2: Winning Block Bid vs. MEV Builders and Characteristic
+def plot_block_bid(grouped_data):
+    x, y, z = create_meshgrid(grouped_data, 'block_bid')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 'Winning Block Bid vs. MEV Builders and Characteristic')
+
+# Plot 3: Gas Captured vs. MEV Builders and Characteristic
+def plot_gas_captured(grouped_data):
+    x, y, z = create_meshgrid(grouped_data, 'gas_captured')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 'Gas Captured vs. MEV Builders and Characteristic')
+
+# Plot 4: MEV Captured vs. MEV Builders and Characteristic
+def plot_mev_captured(grouped_data):
+    x, y, z = create_meshgrid(grouped_data, 'mev_captured')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 'MEV Captured vs. MEV Builders and Characteristic')
 
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
@@ -60,33 +102,13 @@ if __name__ == '__main__':
     if dataframes:
         all_data = pd.concat(dataframes, ignore_index=True)
     
-        # Group by 'mev_builders' and 'characteristic' and calculate mean gas_captured and mev_captured
+        # Group by 'mev_builders' and 'characteristic' and calculate mean values
         grouped_data = all_data.groupby(['mev_builders', 'characteristic']).mean().reset_index()
-    
-        # Pivot the data to create a grid for plotting
-        pivot_table = grouped_data.pivot('mev_builders', 'characteristic', 'mev_captured')
         
-        # Create a meshgrid for plotting
-        x = pivot_table.index.values
-        y = pivot_table.columns.values
-        x, y = np.meshgrid(x, y)
-        z = pivot_table.values.T  # Transpose to match the shape
-    
-        # Create a 3D plot using Matplotlib
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
-    
-        # Plotting the surface
-        surf = ax.plot_surface(x, y, z, cmap='viridis')
-    
-        # Remove the redundant color bar
-        # color_bar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
-        # color_bar.set_label('MEV Captured')
-    
-        ax.set_xlabel('MEV Builders')
-        ax.set_ylabel('Characteristic')
-        ax.set_zlabel('MEV Captured')
-    
-        plt.show()
+        # Generate plots
+        plot_total_block_value(grouped_data)
+        plot_block_bid(grouped_data)
+        plot_gas_captured(grouped_data)
+        plot_mev_captured(grouped_data)
     else:
         print("No data to plot.")
