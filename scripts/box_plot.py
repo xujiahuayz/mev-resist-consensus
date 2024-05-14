@@ -52,9 +52,10 @@ def plot_reward_distribution(ax, data, file_name):
     # Plot violin plots with Seaborn's pastel palette
     sns.set(style="whitegrid")
     sns.violinplot(ax=ax, x='Builder Type', y='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
-    ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}')
-    ax.set_xlabel('Builder Type')
-    ax.set_ylabel('Log Reward')
+    ax.set_title(f'Distribution of Log-Transformed Rewards\n{file_name}', fontsize=20)
+    ax.set_xlabel('Builder Type', fontsize=18)
+    ax.set_ylabel('Log Reward', fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=16)
 
 if __name__ == '__main__':
     # Define the path to the folder containing the CSV files
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     ]
     
     # Create a 3x3 subplot
-    fig, axes = plt.subplots(3, 3, figsize=(19, 19))
+    fig, axes = plt.subplots(3, 3, figsize=(22, 22))
     axes = axes.flatten()
     
     sns.set(style="whitegrid")  # Set the style once
