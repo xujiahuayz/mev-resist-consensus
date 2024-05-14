@@ -25,28 +25,15 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()
 
-# Function to ensure correct builder type assignment
-def correct_builder_types(df):
-    # Check for MEV and Non-MEV builder types
-    if set(df['builder_type'].unique()) == {0, 1}:
-        # No correction needed
-        return df
-    else:
-        # Correct the assignment if necessary
-        df['builder_type'] = np.where(df['builder_type'] == 1, 1, 0)
-        return df
-
 # Function to create a violin plot for reward distribution
 def plot_reward_distribution(ax, data, file_name):
     # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
-    # Correct builder types
-    data = correct_builder_types(data)
     
     reward_data = pd.DataFrame({
         'Log Reward': data['log_reward'],
-        'Builder Type': np.where(data['builder_type'] == 1, 'Non-MEV', 'MEV')
+        'Builder Type': np.where(data['builder_type'] == 1, 'MEV', 'Non-MEV')
     })
     
     # Plot violin plots with Seaborn's pastel palette
