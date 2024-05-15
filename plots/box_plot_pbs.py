@@ -38,10 +38,10 @@ def plot_reward_distribution(ax, data, mev_builders, characteristic):
         ax.plot([median, median], [i - 0.05, i + 0.05], color='white', linewidth=2.5)
     
     title = f'MEV builders number = {mev_builders},\nLatency characteristics = {characteristic}'
-    ax.set_title(title, fontsize=20)
-    ax.set_ylabel('Builder Type', fontsize=18)
-    ax.set_xlabel('Log Reward', fontsize=18)
-    ax.tick_params(axis='both', which='major', labelsize=16)
+    ax.set_title(title, fontsize=24)
+    ax.set_ylabel('Builder Type', fontsize=22)
+    ax.set_xlabel('Log Reward', fontsize=22)
+    ax.tick_params(axis='both', which='major', labelsize=22)
 
 if __name__ == '__main__':
     csv_path = "/Users/tammy/Downloads/vary_mev_and_characteristic"
