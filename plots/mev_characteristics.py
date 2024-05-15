@@ -52,16 +52,14 @@ def create_meshgrid_interpolated(data, value, sigma=2):
 
     return xi, yi, zi
 
-def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
+def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, filename=None):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(x, y, z, cmap='viridis', alpha=0.8)
-    ax.set_xlabel(xlabel, labelpad=20)
-    ax.set_ylabel(ylabel, labelpad=20)
-    ax.set_zlabel(zlabel, labelpad=20)
-    ax.set_title(title, pad=20)
-    fig.tight_layout(rect=[0, 0, 1, 1])
-    plt.subplots_adjust(left=0.2, right=0.8, top=0.85, bottom=0.2)
+    ax.set_xlabel(xlabel, labelpad=20, fontsize=20)
+    ax.set_ylabel(ylabel, labelpad=20, fontsize=20)
+    ax.set_zlabel(zlabel, labelpad=20, fontsize=20)
+    plt.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.2)
     if filename:
         plt.savefig(filename, bbox_inches='tight', pad_inches=0.5, dpi=300)
     plt.close(fig)
@@ -69,31 +67,26 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
 def plot_total_block_value(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'total_block_value')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 
-                   'Total Block Value vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'total_block_value.png'))
 
 def plot_block_bid(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'block_bid')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 
-                   'Winning Block Bid vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'block_bid.png'))
 
 def plot_gas_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'gas_captured')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 
-                   'Gas Captured vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'gas_captured.png'))
 
 def plot_mev_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'mev_captured')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 
-                   'MEV Captured vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'mev_captured.png'))
 
 def plot_reward(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'reward')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Reward', 
-                   'Reward vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'reward.png'))
 
 if __name__ == '__main__':

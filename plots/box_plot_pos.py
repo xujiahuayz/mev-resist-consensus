@@ -4,12 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Function to read and process a single file
 def process_file(file):
     try:
         df = pd.read_csv(file)
-        
-        # Add the parameters to the DataFrame
         filename = os.path.basename(file)
         params = filename.split('=')[1:]
         mev_validators = int(params[0].split('characteristic')[0])
@@ -25,9 +22,7 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame(), None, None
 
-# Function to create a violin plot for reward distribution
 def plot_reward_distribution(ax, data, mev_validators, characteristic):
-    # Apply log transformation to the reward to reduce skewness
     data['log_reward'] = np.log1p(data['reward'])
     
     reward_data = pd.DataFrame({
@@ -35,30 +30,26 @@ def plot_reward_distribution(ax, data, mev_validators, characteristic):
         'Validator Type': np.where(data['builder_type'] == 1, 'MEV', 'Non-MEV')
     })
     
-    # Plot horizontal violin plots with Seaborn's pastel palette
     sns.set(style="whitegrid")
     sns.violinplot(ax=ax, y='Validator Type', x='Log Reward', data=reward_data, palette='pastel', order=['Non-MEV', 'MEV'])
     
-    # Calculate medians and add them as thicker lines
     medians = reward_data.groupby('Validator Type')['Log Reward'].median().reindex(['Non-MEV', 'MEV'])
     for i, median in enumerate(medians):
         ax.plot([median, median], [i - 0.05, i + 0.05], color='white', linewidth=2.5)
     
-    ax.set_title(f'MEV validators number = {mev_validators}, Latency characteristics = {characteristic}', fontsize=20)
+    title = f'MEV validators number = {mev_validators},\nLatency characteristics = {characteristic}'
+    ax.set_title(title, fontsize=20)
     ax.set_ylabel('Validator Type', fontsize=18)
     ax.set_xlabel('Log Reward', fontsize=18)
     ax.tick_params(axis='both', which='major', labelsize=16)
 
 if __name__ == '__main__':
-    # Define the path to the folder containing the CSV files
     csv_path = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
-    save_dir = "./figures"  
+    save_dir = "./figures"
     
-    # Create directory for saving plots if it doesn't exist
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
-    # Specify the representative CSV files, excluding characteristic = 0.6
     representative_files = [
         "mev_builders=1characteristic=0.2.csv",
         "mev_builders=1characteristic=1.csv",
@@ -71,9 +62,8 @@ if __name__ == '__main__':
     fig, axes = plt.subplots(3, 2, figsize=(15, 22))
     axes = axes.flatten()
     
-    sns.set(style="whitegrid")  # Set the style once
+    sns.set(style="whitegrid")
     
-    # Process and plot each file separately
     for i, file_name in enumerate(representative_files):
         file_path = os.path.join(csv_path, file_name)
         df, mev_builders, characteristic = process_file(file_path)
@@ -82,7 +72,6 @@ if __name__ == '__main__':
         else:
             print(f"No data to plot for {file_name}.")
     
-    # Adjust layout and save the figure
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'reward_distribution_3x3_horizontal_pos.png'), bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.show()

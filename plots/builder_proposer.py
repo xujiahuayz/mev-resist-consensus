@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def gini(array):
-    """Calculate the Gini coefficient of a numpy array."""
-    array = array.flatten().astype(float) 
+    array = array.flatten().astype(float)
     if np.amin(array) < 0:
         array -= np.amin(array)
     array += 0.0000001
@@ -32,15 +31,25 @@ def process_file(file, is_pos=True):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame(), None, None
     
-def plot_heatmap(data, title, save_path):
+def plot_heatmap(data, save_path):
     pivot = data.pivot("MEV Entity", "Characteristic", "Gini Coefficient")
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(pivot, cmap="YlGnBu", cbar_kws={'label': 'Gini Coefficient'}, annot=False)
-    plt.title(title)
-    plt.xlabel('Characteristic')
-    plt.ylabel('MEV Entity')
-
+    
+    plt.xlabel('Characteristic', fontsize=16)
+    plt.ylabel('Number of MEV Builders', fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    
+    cbar = plt.gcf().axes[-1]
+    cbar.tick_params(labelsize=14)
+    cbar.set_ylabel('Gini Coefficient', fontsize=16)
+    
+    # Adjust y-axis ticks to show numbers
+    y_ticks = np.arange(0, pivot.index.max() + 1, 5)
+    plt.yticks(ticks=y_ticks, labels=[str(int(tick)) for tick in y_ticks], fontsize=14)
+    
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches='tight', pad_inches=0.1, dpi=300)
     plt.show()
@@ -49,7 +58,7 @@ def plot_heatmap(data, title, save_path):
 if __name__ == '__main__':
     pos_csv_path = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     pbs_csv_path = "/Users/Tammy/Downloads/vary_mev_and_characteristic"
-    save_dir = "./figures"  
+    save_dir = "./figures"
     
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -80,5 +89,5 @@ if __name__ == '__main__':
     pos_gini_df = pd.DataFrame(pos_gini_data, columns=['MEV Entity', 'Characteristic', 'Gini Coefficient'])
     pbs_gini_df = pd.DataFrame(pbs_gini_data, columns=['MEV Entity', 'Characteristic', 'Gini Coefficient'])
 
-    plot_heatmap(pos_gini_df, 'Gini Coefficient for PoS', os.path.join(save_dir, 'gini_coefficient_heatmap_pos.png'))
-    plot_heatmap(pbs_gini_df, 'Gini Coefficient for PBS', os.path.join(save_dir, 'gini_coefficient_heatmap_pbs.png'))
+    plot_heatmap(pos_gini_df, os.path.join(save_dir, 'gini_coefficient_heatmap_pos.png'))
+    plot_heatmap(pbs_gini_df, os.path.join(save_dir, 'gini_coefficient_heatmap_pbs.png'))
