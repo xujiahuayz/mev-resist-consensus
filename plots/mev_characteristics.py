@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from scipy.interpolate import griddata
 
 # Function to read and process a single file
 def process_file(file):
@@ -40,14 +41,18 @@ def process_files_in_batches(files, dataframes):
             except Exception as e:
                 print(f"Error with file {file}: {e}")
 
-# Create meshgrids for plotting
-def create_meshgrid(data, value):
-    pivot_table = data.pivot('mev_builders', 'characteristic', value)
-    x = pivot_table.index.values
-    y = pivot_table.columns.values
-    x, y = np.meshgrid(x, y)
-    z = pivot_table.values.T  # Transpose to match the shape
-    return x, y, z
+# Create meshgrids for plotting with interpolation
+def create_meshgrid_interpolated(data, value):
+    x = data['mev_builders']
+    y = data['characteristic']
+    z = data[value]
+
+    xi = np.linspace(x.min(), x.max(), 100)
+    yi = np.linspace(y.min(), y.max(), 100)
+    xi, yi = np.meshgrid(xi, yi)
+    zi = griddata((x, y), z, (xi, yi), method='cubic')
+
+    return xi, yi, zi
 
 # Function to create a 3D plot and save it with a filename
 def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
@@ -66,28 +71,28 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, title, filename=None):
 
 # Plot 1: Total Block Value vs. MEV Builders and Characteristic
 def plot_total_block_value(grouped_data, save_dir):
-    x, y, z = create_meshgrid(grouped_data, 'total_block_value')
+    x, y, z = create_meshgrid_interpolated(grouped_data, 'total_block_value')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Total Block Value', 
                    'Total Block Value vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'total_block_value.png'))
 
 # Plot 2: Winning Block Bid vs. MEV Builders and Characteristic
 def plot_block_bid(grouped_data, save_dir):
-    x, y, z = create_meshgrid(grouped_data, 'block_bid')
+    x, y, z = create_meshgrid_interpolated(grouped_data, 'block_bid')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Winning Block Bid', 
                    'Winning Block Bid vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'block_bid.png'))
 
 # Plot 3: Gas Captured vs. MEV Builders and Characteristic
 def plot_gas_captured(grouped_data, save_dir):
-    x, y, z = create_meshgrid(grouped_data, 'gas_captured')
+    x, y, z = create_meshgrid_interpolated(grouped_data, 'gas_captured')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Gas Captured', 
                    'Gas Captured vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'gas_captured.png'))
 
 # Plot 4: MEV Captured vs. MEV Builders and Characteristic
 def plot_mev_captured(grouped_data, save_dir):
-    x, y, z = create_meshgrid(grouped_data, 'mev_captured')
+    x, y, z = create_meshgrid_interpolated(grouped_data, 'mev_captured')
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'MEV Captured', 
                    'MEV Captured vs. MEV Builders and Characteristic', 
                    os.path.join(save_dir, 'mev_captured.png'))
