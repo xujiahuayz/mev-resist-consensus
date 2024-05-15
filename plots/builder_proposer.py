@@ -37,14 +37,14 @@ def plot_heatmap(data, save_path):
     plt.figure(figsize=(10, 8))
     sns.heatmap(pivot, cmap="YlGnBu", cbar_kws={'label': 'Gini Coefficient'}, annot=False)
     
-    plt.xlabel('Characteristic', fontsize=16)
-    plt.ylabel('Number of MEV Builders', fontsize=16)
+    plt.xlabel('Characteristic', fontsize=22)
+    plt.ylabel('Number of MEV Builders', fontsize=22)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
     
     cbar = plt.gcf().axes[-1]
     cbar.tick_params(labelsize=14)
-    cbar.set_ylabel('Gini Coefficient', fontsize=16)
+    cbar.set_ylabel('Gini Coefficient', fontsize=18)
     
     # Adjust y-axis ticks to show numbers
     y_ticks = np.arange(0, pivot.index.max() + 1, 5)
