@@ -133,4 +133,4 @@ if __name__ == '__main__':
         plot_gas_captured(grouped_data, save_dir)
         plot_mev_captured(grouped_data, save_dir)
     else:
-        print("No data to plot.")
+        print("No data to plot")
