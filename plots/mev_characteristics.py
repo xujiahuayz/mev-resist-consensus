@@ -59,9 +59,9 @@ def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, filename=None):
     ax.set_xlabel(xlabel, labelpad=20, fontsize=20)
     ax.set_ylabel(ylabel, labelpad=20, fontsize=20)
     ax.set_zlabel(zlabel, labelpad=20, fontsize=20)
-    plt.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.2)
+    plt.subplots_adjust(left=0.2, right=0.95, top=0.9, bottom=0.2)
     if filename:
-        plt.savefig(filename, bbox_inches='tight', pad_inches=0.5, dpi=300)
+        plt.savefig(filename, bbox_inches='tight', pad_inches=1, dpi=300)
     plt.close(fig)
 
 def plot_total_block_value(grouped_data, save_dir):
