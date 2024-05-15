@@ -58,21 +58,18 @@ if __name__ == '__main__':
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
-    # Specify the representative CSV files
+    # Specify the representative CSV files, excluding characteristic = 0.6
     representative_files = [
         "mev_builders=1characteristic=0.2.csv",
-        "mev_builders=1characteristic=0.6.csv",
         "mev_builders=1characteristic=1.csv",
         "mev_builders=25characteristic=0.2.csv",
-        "mev_builders=25characteristic=0.6.csv",
         "mev_builders=25characteristic=1.csv",
         "mev_builders=49characteristic=0.2.csv",
-        "mev_builders=49characteristic=0.6.csv",
         "mev_builders=49characteristic=1.csv"
     ]
     
-    # Create a 3x3 subplot
-    fig, axes = plt.subplots(3, 3, figsize=(22, 22))
+    # Create a 2x3 subplot
+    fig, axes = plt.subplots(3, 2, figsize=(15, 22))
     axes = axes.flatten()
     
     sns.set(style="whitegrid")  # Set the style once
