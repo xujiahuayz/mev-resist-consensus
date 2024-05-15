@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from scipy.interpolate import griddata
+from scipy.ndimage import gaussian_filter
 
 # Function to read and process a single file
 def process_file(file):
@@ -41,8 +42,8 @@ def process_files_in_batches(files, dataframes):
             except Exception as e:
                 print(f"Error with file {file}: {e}")
 
-# Create meshgrids for plotting with interpolation
-def create_meshgrid_interpolated(data, value):
+# Create meshgrids for plotting with interpolation and smoothing
+def create_meshgrid_interpolated(data, value, sigma=2):
     x = data['mev_builders']
     y = data['characteristic']
     z = data[value]
@@ -51,6 +52,7 @@ def create_meshgrid_interpolated(data, value):
     yi = np.linspace(y.min(), y.max(), 100)
     xi, yi = np.meshgrid(xi, yi)
     zi = griddata((x, y), z, (xi, yi), method='cubic')
+    zi = gaussian_filter(zi, sigma=sigma)  # Apply Gaussian filter to smooth the data
 
     return xi, yi, zi
 
