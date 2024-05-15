@@ -62,26 +62,21 @@ def load_and_calculate_profit(csv_path):
     return total_profit
 
 if __name__ == '__main__':
-    # Define the paths to the folders containing the CSV files
     csv_path_pos = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     csv_path_pbs = "/Users/tammy/Downloads/vary_mev_and_characteristic"
     
-    # Load data and calculate total profit for PoS
     total_profit_pos = load_and_calculate_profit(csv_path_pos)
     
-    # Load data and calculate total profit for PBS
     total_profit_pbs = load_and_calculate_profit(csv_path_pbs)
     
-    # Calculate the difference in profit
     profit_difference = total_profit_pbs - total_profit_pos
     
     # Check for zero total profit in PoS to avoid division by zero
     if total_profit_pos != 0:
         percentage_difference = (profit_difference / total_profit_pos) * 100
     else:
-        percentage_difference = float('inf')  # Represents an infinitely large increase
-    
-    # Print the results
+        percentage_difference = float('inf') 
+
     print(f"Total Profit for PoS: {total_profit_pos}")
     print(f"Total Profit for PBS: {total_profit_pbs}")
     print(f"Profit Difference: {profit_difference}")
