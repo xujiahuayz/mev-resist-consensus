@@ -3,7 +3,7 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import seaborn as sns
 
 # Function to read and process a single file
 def process_file(file):
@@ -27,71 +27,57 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()  # Return an empty DataFrame in case of error
 
-# Function to process files in batches
-def process_files_in_batches(files):
-    dataframes = []
-    with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(process_file, file): file for file in files}
-        for future in as_completed(futures):
-            file = futures[future]
-            try:
-                result = future.result()
-                if not result.empty:
-                    dataframes.append(result)
-            except Exception as e:
-                print(f"Error with file {file}: {e}")
-    return dataframes
-
-# Function to calculate total profit
-def calculate_total_profit(dataframes):
-    if dataframes:
-        all_data = pd.concat(dataframes, ignore_index=True)
-        total_profit = all_data['total_block_value'].sum()
-        return total_profit
-    return 0
-
-# Function to load data and calculate total profit
-def load_and_calculate_profit(csv_path):
+# Function to load data and calculate total reward for all files in a directory
+def load_and_calculate_total_reward(csv_path):
     all_files = glob.glob(os.path.join(csv_path, "*.csv"))
     dataframes = []
-    batch_size = 50  # Adjust batch size based on memory constraints
-    for i in range(0, len(all_files), batch_size):
-        batch_files = all_files[i:i + batch_size]
-        dataframes.extend(process_files_in_batches(batch_files))
-    total_profit = calculate_total_profit(dataframes)
-    return total_profit
+    for file in all_files:
+        df = process_file(file)
+        if not df.empty:
+            dataframes.append(df)
+    return dataframes
+
+# Function to compute the total reward differences
+def compute_reward_differences(pos_data, pbs_data):
+    differences = []
+    for pos_df, pbs_df in zip(pos_data, pbs_data):
+        pos_total_reward = pos_df['total_block_value'].sum()
+        pbs_total_reward = pbs_df['total_block_value'].sum()
+        differences.append(pbs_total_reward - pos_total_reward)
+    return differences
+
+# Function to create a heatmap
+def create_heatmap(differences, labels):
+    data_matrix = np.array(differences).reshape(len(set(labels[0])), len(set(labels[1])))
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(data_matrix, annot=False, cmap="YlGnBu", xticklabels=sorted(set(labels[1])), yticklabels=sorted(set(labels[0])))
+    plt.xlabel('Characteristic', fontsize=16)
+    plt.ylabel('MEV Builders', fontsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=12)
+    
+    # Custom y-tick labels to show every 5 MEV Builders
+    y_ticks = plt.gca().get_yticks()
+    y_labels = [int(label) if idx % 5 == 0 else '' for idx, label in enumerate(y_ticks)]
+    plt.gca().set_yticklabels(y_labels)
+    
+    # Save the figure as 'total_reward_difference_heatmap.png'
+    plt.savefig('total_reward_difference_heatmap.png', bbox_inches='tight')
+    plt.show()
 
 if __name__ == '__main__':
     csv_path_pos = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     csv_path_pbs = "/Users/tammy/Downloads/vary_mev_and_characteristic"
     
-    total_profit_pos = load_and_calculate_profit(csv_path_pos)
+    pos_data = load_and_calculate_total_reward(csv_path_pos)
+    pbs_data = load_and_calculate_total_reward(csv_path_pbs)
     
-    total_profit_pbs = load_and_calculate_profit(csv_path_pbs)
-    
-    profit_difference = total_profit_pbs - total_profit_pos
-    
-    # Check for zero total profit in PoS to avoid division by zero
-    if total_profit_pos != 0:
-        percentage_difference = (profit_difference / total_profit_pos) * 100
+    if len(pos_data) != len(pbs_data):
+        print("Mismatch in the number of files between PoS and PBS directories.")
     else:
-        percentage_difference = float('inf') 
-
-    print(f"Total Profit for PoS: {total_profit_pos}")
-    print(f"Total Profit for PBS: {total_profit_pbs}")
-    print(f"Profit Difference: {profit_difference}")
-    if total_profit_pos != 0:
-        print(f"Percentage Difference: {percentage_difference}%")
-    else:
-        print("Percentage Difference: Infinity (PoS profit is zero)")
-    
-    # Visualize the comparison
-    labels = ['PoS', 'PBS']
-    profits = [total_profit_pos, total_profit_pbs]
-    
-    plt.figure(figsize=(10, 6))
-    plt.bar(labels, profits, color=['blue', 'orange'])
-    plt.xlabel('System')
-    plt.ylabel('Total Profit')
-    plt.title('Total Profit Comparison between PoS and PBS')
-    plt.show()
+        reward_differences = compute_reward_differences(pos_data, pbs_data)
+        
+        # Extract parameters for labeling the heatmap axes
+        mev_builders = [df['mev_builders'].iloc[0] for df in pos_data]
+        characteristics = [df['characteristic'].iloc[0] for df in pos_data]
+        
+        create_heatmap(reward_differences, (mev_builders, characteristics))
