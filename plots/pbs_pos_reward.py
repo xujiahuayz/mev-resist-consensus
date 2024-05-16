@@ -37,37 +37,67 @@ def load_and_calculate_total_reward(csv_path):
             dataframes.append(df)
     return dataframes
 
-# Function to compute the total reward differences
-def compute_reward_differences(pos_data, pbs_data):
-    differences = []
-    for pos_df, pbs_df in zip(pos_data, pbs_data):
-        pos_total_reward = pos_df['total_block_value'].sum()
-        pbs_total_reward = pbs_df['total_block_value'].sum()
-        differences.append(pbs_total_reward - pos_total_reward)
-    return differences
+# Function to compute means for every 50 CSV files (representing 10 builders)
+def compute_means(dataframes, interval=50):
+    gas_means = []
+    mev_means = []
+    for i in range(0, len(dataframes), interval):
+        subset = pd.concat(dataframes[i:i + interval])
+        mean_gas = subset['gas_captured'].mean()
+        mean_mev = subset['mev_captured'].mean()
+        gas_means.append(mean_gas)
+        mev_means.append(mean_mev)
+    return gas_means, mev_means
 
-# Function to create a heatmap
-def create_heatmap(differences, labels, save_path):
-    data_matrix = np.array(differences).reshape(len(set(labels[0])), len(set(labels[1])))
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(data_matrix, annot=False, cmap="YlGnBu", xticklabels=sorted(set(labels[1])), yticklabels=sorted(set(labels[0])))
-    plt.xlabel('Characteristic', fontsize=16)
-    plt.ylabel('MEV Builders', fontsize=16)
-    plt.tick_params(axis='both', which='major', labelsize=12)
+# Function to create bar plots using seaborn
+def create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means, save_path):
+    labels = [f'{10*i+1}-{10*(i+1)}' for i in range(len(pos_gas_means))]
     
-    # Custom y-tick labels to show every 5 MEV Builders
-    y_ticks = plt.gca().get_yticks()
-    y_labels = [int(label) if idx % 5 == 0 else '' for idx, label in enumerate(y_ticks)]
-    plt.gca().set_yticklabels(y_labels)
+    pos_data = pd.DataFrame({
+        'Batch': labels,
+        'Gas': pos_gas_means,
+        'MEV': pos_mev_means,
+        'Type': 'PoS Gas'
+    })
     
-    # Save the figure as 'total_reward_difference_heatmap.png'
-    plt.savefig(save_dir, bbox_inches='tight')
+    pbs_data = pd.DataFrame({
+        'Batch': labels,
+        'Gas': pbs_gas_means,
+        'MEV': pbs_mev_means,
+        'Type': 'PBS Gas'
+    })
+    
+    data = pd.concat([pos_data, pbs_data])
+    
+    pastel_colors = sns.color_palette("pastel")
+    
+    fig, ax = plt.subplots(figsize=(14, 8))
+    
+    # Plot gas
+    sns.barplot(data=data, x='Batch', y='Gas', hue='Type', ax=ax, palette=pastel_colors[:2])
+    
+    # Plot MEV on top of gas
+    for i in range(len(labels)):
+        ax.bar(i - 0.2, pos_mev_means[i], width=0.4, bottom=pos_gas_means[i], color=pastel_colors[2], label='PoS MEV' if i == 0 else "")
+        ax.bar(i + 0.2, pbs_mev_means[i], width=0.4, bottom=pbs_gas_means[i], color=pastel_colors[3], label='PBS MEV' if i == 0 else "")
+    
+    ax.set_xlabel('MEV Builders Range', fontsize=16)
+    ax.set_ylabel('Mean Reward', fontsize=16)
+    ax.set_xticklabels(labels, rotation=45, fontsize=12)
+    ax.legend(loc='upper right', fontsize=12)
+
+    fig.tight_layout()
+    
+    # Save the figure
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path, bbox_inches='tight')
     plt.show()
 
 if __name__ == '__main__':
     csv_path_pos = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     csv_path_pbs = "/Users/tammy/Downloads/vary_mev_and_characteristic"
     save_dir = "./figures"
+    save_path = os.path.join(save_dir, 'reward_comparison_bar_plot.png')
     
     pos_data = load_and_calculate_total_reward(csv_path_pos)
     pbs_data = load_and_calculate_total_reward(csv_path_pbs)
@@ -75,10 +105,7 @@ if __name__ == '__main__':
     if len(pos_data) != len(pbs_data):
         print("Mismatch in the number of files between PoS and PBS directories.")
     else:
-        reward_differences = compute_reward_differences(pos_data, pbs_data)
+        pos_gas_means, pos_mev_means = compute_means(pos_data, interval=50)
+        pbs_gas_means, pbs_mev_means = compute_means(pbs_data, interval=50)
         
-        # Extract parameters for labeling the heatmap axes
-        mev_builders = [df['mev_builders'].iloc[0] for df in pos_data]
-        characteristics = [df['characteristic'].iloc[0] for df in pos_data]
-        
-        create_heatmap(reward_differences, (mev_builders, characteristics), save_dir)
+        create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means, save_path)
