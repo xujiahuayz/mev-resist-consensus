@@ -47,7 +47,7 @@ def compute_reward_differences(pos_data, pbs_data):
     return differences
 
 # Function to create a heatmap
-def create_heatmap(differences, labels):
+def create_heatmap(differences, labels, save_path):
     data_matrix = np.array(differences).reshape(len(set(labels[0])), len(set(labels[1])))
     plt.figure(figsize=(12, 8))
     sns.heatmap(data_matrix, annot=False, cmap="YlGnBu", xticklabels=sorted(set(labels[1])), yticklabels=sorted(set(labels[0])))
@@ -61,12 +61,13 @@ def create_heatmap(differences, labels):
     plt.gca().set_yticklabels(y_labels)
     
     # Save the figure as 'total_reward_difference_heatmap.png'
-    plt.savefig('total_reward_difference_heatmap.png', bbox_inches='tight')
+    plt.savefig(save_dir, bbox_inches='tight')
     plt.show()
 
 if __name__ == '__main__':
     csv_path_pos = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     csv_path_pbs = "/Users/tammy/Downloads/vary_mev_and_characteristic"
+    save_dir = "./figures"
     
     pos_data = load_and_calculate_total_reward(csv_path_pos)
     pbs_data = load_and_calculate_total_reward(csv_path_pbs)
@@ -80,4 +81,4 @@ if __name__ == '__main__':
         mev_builders = [df['mev_builders'].iloc[0] for df in pos_data]
         characteristics = [df['characteristic'].iloc[0] for df in pos_data]
         
-        create_heatmap(reward_differences, (mev_builders, characteristics))
+        create_heatmap(reward_differences, (mev_builders, characteristics), save_dir)
