@@ -3,7 +3,7 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import seaborn as sns
 
 # Function to read and process a single file
 def process_file(file):
@@ -27,55 +27,85 @@ def process_file(file):
         print(f"Error processing file {file}: {e}")
         return pd.DataFrame()  # Return an empty DataFrame in case of error
 
-# Function to process files in batches
-def process_files_in_batches(files):
-    dataframes = []
-    with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(process_file, file): file for file in files}
-        for future in as_completed(futures):
-            file = futures[future]
-            try:
-                result = future.result()
-                if not result.empty:
-                    dataframes.append(result)
-            except Exception as e:
-                print(f"Error with file {file}: {e}")
-    return dataframes
-
-# Function to calculate total profit
-def calculate_total_profit(dataframes):
-    if dataframes:
-        all_data = pd.concat(dataframes, ignore_index=True)
-        total_profit = all_data['total_block_value'].sum()
-        return total_profit
-    return 0
-
-# Function to load data and calculate total profit
-def load_and_calculate_profit(csv_path):
+# Function to load data and calculate total reward for all files in a directory
+def load_and_calculate_total_reward(csv_path):
     all_files = glob.glob(os.path.join(csv_path, "*.csv"))
     dataframes = []
-    batch_size = 50  # Adjust batch size based on memory constraints
-    for i in range(0, len(all_files), batch_size):
-        batch_files = all_files[i:i + batch_size]
-        dataframes.extend(process_files_in_batches(batch_files))
-    total_profit = calculate_total_profit(dataframes)
-    return total_profit
+    for file in all_files:
+        df = process_file(file)
+        if not df.empty:
+            dataframes.append(df)
+    return dataframes
+
+# Function to compute means for every 50 CSV files (representing 10 builders)
+def compute_means(dataframes, interval=50):
+    gas_means = []
+    mev_means = []
+    for i in range(0, len(dataframes), interval):
+        subset = pd.concat(dataframes[i:i + interval])
+        mean_gas = subset['gas_captured'].mean()
+        mean_mev = subset['mev_captured'].mean()
+        gas_means.append(mean_gas)
+        mev_means.append(mean_mev)
+    return gas_means, mev_means
+
+# Function to create bar plots using seaborn
+def create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means, save_path):
+    labels = [f'{10*i+1}-{10*(i+1)}' for i in range(len(pos_gas_means))]
+    
+    pos_data = pd.DataFrame({
+        'Batch': labels,
+        'Gas': pos_gas_means,
+        'MEV': pos_mev_means,
+        'Type': 'PoS Gas'
+    })
+    
+    pbs_data = pd.DataFrame({
+        'Batch': labels,
+        'Gas': pbs_gas_means,
+        'MEV': pbs_mev_means,
+        'Type': 'PBS Gas'
+    })
+    
+    data = pd.concat([pos_data, pbs_data])
+    
+    pastel_colors = sns.color_palette("pastel")
+    
+    fig, ax = plt.subplots(figsize=(14, 8))
+    
+    # Plot gas
+    sns.barplot(data=data, x='Batch', y='Gas', hue='Type', ax=ax, palette=pastel_colors[:2])
+    
+    # Plot MEV on top of gas
+    for i in range(len(labels)):
+        ax.bar(i - 0.2, pos_mev_means[i], width=0.4, bottom=pos_gas_means[i], color=pastel_colors[2], label='PoS MEV' if i == 0 else "")
+        ax.bar(i + 0.2, pbs_mev_means[i], width=0.4, bottom=pbs_gas_means[i], color=pastel_colors[3], label='PBS MEV' if i == 0 else "")
+    
+    ax.set_xlabel('MEV Builders Range', fontsize=16)
+    ax.set_ylabel('Mean Reward', fontsize=16)
+    ax.set_xticklabels(labels, rotation=45, fontsize=12)
+    ax.legend(loc='upper right', fontsize=12)
+
+    fig.tight_layout()
+    
+    # Save the figure
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.show()
 
 if __name__ == '__main__':
     csv_path_pos = "/Users/Tammy/Downloads/pos_vary_mev_and_characteristic"
     csv_path_pbs = "/Users/tammy/Downloads/vary_mev_and_characteristic"
+    save_dir = "./figures"
+    save_path = os.path.join(save_dir, 'reward_comparison_bar_plot.png')
     
-    total_profit_pos = load_and_calculate_profit(csv_path_pos)
+    pos_data = load_and_calculate_total_reward(csv_path_pos)
+    pbs_data = load_and_calculate_total_reward(csv_path_pbs)
     
-    total_profit_pbs = load_and_calculate_profit(csv_path_pbs)
-    
-    profit_difference = total_profit_pbs - total_profit_pos
-    
-    # Check for zero total profit in PoS to avoid division by zero
-    if total_profit_pos != 0:
-        percentage_difference = (profit_difference / total_profit_pos) * 100
+    if len(pos_data) != len(pbs_data):
+        print("Mismatch in the number of files between PoS and PBS directories.")
     else:
-        percentage_difference = float('inf')
+        percentage_difference = float('inf') 
 
     print(f"Total Profit for PoS: {total_profit_pos}")
     print(f"Total Profit for PBS: {total_profit_pbs}")
