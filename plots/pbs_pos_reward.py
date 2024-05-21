@@ -105,23 +105,7 @@ if __name__ == '__main__':
     if len(pos_data) != len(pbs_data):
         print("Mismatch in the number of files between PoS and PBS directories.")
     else:
-        percentage_difference = float('inf') 
-
-    print(f"Total Profit for PoS: {total_profit_pos}")
-    print(f"Total Profit for PBS: {total_profit_pbs}")
-    print(f"Profit Difference: {profit_difference}")
-    if total_profit_pos != 0:
-        print(f"Percentage Difference: {percentage_difference}%")
-    else:
-        print("Percentage Difference: Infinity (PoS profit is zero)")
-    
-    # Visualize the comparison
-    labels = ['PoS', 'PBS']
-    profits = [total_profit_pos, total_profit_pbs]
-    
-    plt.figure(figsize=(10, 6))
-    plt.bar(labels, profits, color=['blue', 'orange'])
-    plt.xlabel('System')
-    plt.ylabel('Total Profit')
-    plt.title('Total Profit Comparison between PoS and PBS')
-    plt.show()
+        pos_gas_means, pos_mev_means = compute_means(pos_data, interval=50)
+        pbs_gas_means, pbs_mev_means = compute_means(pbs_data, interval=50)
+        
+        create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means, save_path)
