@@ -75,7 +75,7 @@ if __name__ == '__main__':
     if total_profit_pos != 0:
         percentage_difference = (profit_difference / total_profit_pos) * 100
     else:
-        percentage_difference = float('inf') 
+        percentage_difference = float('inf')
 
     print(f"Total Profit for PoS: {total_profit_pos}")
     print(f"Total Profit for PBS: {total_profit_pbs}")
