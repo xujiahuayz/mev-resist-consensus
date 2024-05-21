@@ -89,6 +89,13 @@ def plot_reward(grouped_data, save_dir):
     create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Reward', 
                    os.path.join(save_dir, 'reward.png'))
 
+def plot_last_1000_bid_percentage(data, save_dir):
+    data = data.groupby(['mev_builders', 'characteristic']).tail(1000).reset_index()
+    data['bid_percentage'] = (data['block_bid'] / data['total_block_value']) * 100
+    x, y, z = create_meshgrid_interpolated(data, 'bid_percentage')
+    create_3d_plot(x, y, z, 'MEV Builders', 'Characteristic', 'Last 1000 Bid Percentage of Block Value',
+                   os.path.join(save_dir, 'last_1000_bid_percentage.png'))
+
 if __name__ == '__main__':
     csv_path = "/Users/tammy/Downloads/vary_mev_and_characteristic"
     save_dir = "./figures"
@@ -110,10 +117,11 @@ if __name__ == '__main__':
     
         grouped_data = all_data.groupby(['mev_builders', 'characteristic']).mean().reset_index()
         
-        plot_total_block_value(grouped_data, save_dir)
-        plot_block_bid(grouped_data, save_dir)
-        plot_gas_captured(grouped_data, save_dir)
-        plot_mev_captured(grouped_data, save_dir)
-        plot_reward(grouped_data, save_dir)
+        # plot_total_block_value(grouped_data, save_dir)
+        # plot_block_bid(grouped_data, save_dir)
+        # plot_gas_captured(grouped_data, save_dir)
+        # plot_mev_captured(grouped_data, save_dir)
+        # plot_reward(grouped_data, save_dir)
+        plot_last_1000_bid_percentage(all_data, save_dir)
     else:
         print("No data to plot.")
