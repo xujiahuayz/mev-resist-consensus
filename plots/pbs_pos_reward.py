@@ -5,19 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Function to read and process a single file
 def process_file(file):
     try:
-        # Extract parameters from the filename
         filename = os.path.basename(file)
         params = filename.split('=')[1:]
         mev_builders = int(params[0].split('characteristic')[0])
-        characteristic = float(params[1].replace('.csv', ''))  # Correct extraction of characteristic
-        
-        # Read the CSV file
+        characteristic = float(params[1].replace('.csv', ''))
+
         df = pd.read_csv(file)
-        
-        # Add the parameters to the DataFrame
+
         df['mev_builders'] = mev_builders
         df['characteristic'] = characteristic
         df['total_block_value'] = df['gas_captured'] + df['mev_captured']
@@ -70,11 +66,9 @@ def create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means,
     pastel_colors = sns.color_palette("pastel")
     
     fig, ax = plt.subplots(figsize=(14, 8))
-    
-    # Plot gas
+
     sns.barplot(data=data, x='Batch', y='Gas', hue='Type', ax=ax, palette=pastel_colors[:2])
-    
-    # Plot MEV on top of gas
+
     for i in range(len(labels)):
         ax.bar(i - 0.2, pos_mev_means[i], width=0.4, bottom=pos_gas_means[i], color=pastel_colors[2], label='PoS MEV' if i == 0 else "")
         ax.bar(i + 0.2, pbs_mev_means[i], width=0.4, bottom=pbs_gas_means[i], color=pastel_colors[3], label='PBS MEV' if i == 0 else "")
@@ -85,8 +79,7 @@ def create_bar_plots(pos_gas_means, pos_mev_means, pbs_gas_means, pbs_mev_means,
     ax.legend(loc='upper right', fontsize=12)
 
     fig.tight_layout()
-    
-    # Save the figure
+
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, bbox_inches='tight')
     plt.show()
