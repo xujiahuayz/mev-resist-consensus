@@ -25,9 +25,8 @@ def process_file(file):
         return df
     except Exception as e:
         print(f"Error processing file {file}: {e}")
-        return pd.DataFrame()  # Return an empty DataFrame in case of error
+        return pd.DataFrame()
 
-# Function to load data and calculate total reward for all files in a directory
 def load_and_calculate_total_reward(csv_path):
     all_files = glob.glob(os.path.join(csv_path, "*.csv"))
     dataframes = []
@@ -37,7 +36,6 @@ def load_and_calculate_total_reward(csv_path):
             dataframes.append(df)
     return dataframes
 
-# Function to compute means for every 50 CSV files (representing 10 builders)
 def compute_means(dataframes, interval=50):
     gas_means = []
     mev_means = []
