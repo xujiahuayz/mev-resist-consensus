@@ -37,7 +37,7 @@ def plot_heatmap(data, save_path):
     plt.figure(figsize=(10, 8))
     sns.heatmap(pivot, cmap="YlGnBu", cbar_kws={'label': 'Gini Coefficient'}, annot=False)
     
-    plt.xlabel('Characteristic', fontsize=22)
+    plt.xlabel('Connectivity', fontsize=22)
     plt.ylabel('Number of MEV Builders', fontsize=22)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
