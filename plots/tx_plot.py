@@ -1,11 +1,11 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import os
+import matplotlib.pyplot as plt
 
 def load_data(file_path):
     return pd.read_csv(file_path)
 
-def reshape_transaction_data(data):
+def reshape(data):
     transaction_records = []
     for idx, row in data.iterrows():
         for i in range(100):
@@ -23,6 +23,19 @@ def reshape_transaction_data(data):
                     'block_time': row[block_time_col]
                 })
     return pd.DataFrame(transaction_records)
+
+def process_files(folder_path):
+    all_transactions = []
+    
+    for file_name in os.listdir(folder_path):
+        if file_name.endswith('.csv'):
+            file_path = os.path.join(folder_path, file_name)
+            data = load_data(file_path)
+            transaction_data_long = reshape(data)
+            all_transactions.append(transaction_data_long)
+    
+    combined_data = pd.concat(all_transactions, ignore_index=True)
+    return combined_data
 
 def plot_mev_transactions(data):
     mev_transactions = data[data['mev'] > 0]
@@ -43,21 +56,10 @@ def plot_block_time_distribution(data):
     plt.grid(True)
     plt.show()
 
-def main(folder_path):
-    all_transactions = []
+
+if __name__ == '__main__':
+    folder_path = "/Users/Tammy/Downloads/transaction_data"
+    combined_data = process_files(folder_path)
     
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.csv'):
-            file_path = os.path.join(folder_path, file_name)
-            data = load_data(file_path)
-            transaction_data_long = reshape_transaction_data(data)
-            all_transactions.append(transaction_data_long)
-    
-    combined_data = pd.concat(all_transactions, ignore_index=True)
     plot_mev_transactions(combined_data)
     plot_block_time_distribution(combined_data)
-
-folder_path = "/Users/Tammy/Downloads/transaction_data"
-
-# Run the main function
-main(folder_path)
