@@ -13,12 +13,12 @@ def extract_params(file_name):
     try:
         params = file_name.split('=')[1:]
         mev_builders = int(params[0].split('characteristic')[0])
-        characteristic = float(params[1].replace('.csv', ''))
-        return mev_builders, characteristic
+        connectivity = float(params[1].replace('.csv', ''))
+        return mev_builders, connectivity
     except Exception:
         return None, None
 
-def reshape_data(data, mev_builders, characteristic):
+def reshape_data(data, mev_builders, connectivity):
     records = []
     for i in range(100):
         trans_id_col = f'transaction_id.{i}'
@@ -30,7 +30,9 @@ def reshape_data(data, mev_builders, characteristic):
             subset = data[['block_index', trans_id_col, gas_col, mev_col, block_time_col]].dropna()
             subset.columns = ['block_index', 'transaction_id', 'gas', 'mev', 'block_time']
             subset['mev_builders'] = mev_builders
-            subset['connectivity'] = characteristic
+            subset['connectivity'] = connectivity
+            subset['inclusion_time'] = subset['block_index'] - subset['block_time']
+            subset = subset[subset['inclusion_time'] >= 0]  # Filter out negative inclusion times
             records.append(subset)
     
     if records:
@@ -44,33 +46,25 @@ def process_file(file_path):
         return pd.DataFrame()
     
     file_name = os.path.basename(file_path)
-    mev_builders, characteristic = extract_params(file_name)
-    if mev_builders is None or characteristic is None:
+    mev_builders, connectivity = extract_params(file_name)
+    if mev_builders is None or connectivity is None:
         return pd.DataFrame()
     
-    return reshape_data(data, mev_builders, characteristic)
+    return reshape_data(data, mev_builders, connectivity)
 
-def plot_inclusion_time_subplots(data_dict, save_dir):
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharex=True, sharey=True)
-    axes = axes.flatten()
-
-    for ax, (file_label, data) in zip(axes, data_dict.items()):
-        data['inclusion_time'] = data['block_index'] - data['block_time']
+def plot_split_violin(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
         data['mev_exploited'] = data['mev'] > 0
+        plt.subplot(2, 3, idx)
+        sns.violinplot(data=data, x='mev_builders', y='inclusion_time', hue='mev_exploited', split=True, inner="quart", palette={True: 'lightcoral', False: 'skyblue'})
+        plt.title(f'Inclusion Time of Transactions for {file_label}', fontsize=14)
+        plt.xlabel('MEV Builders\nConnectivity', fontsize=12)
+        plt.ylabel('Inclusion Time (blocks)', fontsize=12)
+        plt.legend(title='MEV Exploited', labels=['Non-MEV', 'MEV'], loc='upper right')
 
-        inclusion_time_counts = data.groupby(['inclusion_time', 'mev_exploited']).size().unstack(fill_value=0)
-        inclusion_time_counts.plot(kind='bar', stacked=True, ax=ax, color={True: 'red', False: 'blue'}, legend=False)
-        
-        ax.set_xlabel('Inclusion Time (blocks)')
-        ax.set_ylabel('Number of Transactions')
-        ax.set_title(f'Inclusion Time of Transactions for {file_label}')
-        ax.set_ylim(0, 150)
-
-    handles, labels = axes[-1].get_legend_handles_labels()
-    fig.legend(handles, ['Non-MEV', 'MEV'], title='MEV Exploited', loc='upper right')
-
-    plt.tight_layout(rect=[0, 0, 0.9, 1])
-    plt.savefig(os.path.join(save_dir, 'inclusion_time_comparison.png'))
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
     plt.close()
 
 def main():
@@ -97,7 +91,7 @@ def main():
             data_dict[rep_file.replace(".csv", "")] = data
 
     if data_dict:
-        plot_inclusion_time_subplots(data_dict, save_dir)
+        plot_split_violin(data_dict, save_dir)
 
 if __name__ == '__main__':
     main()
