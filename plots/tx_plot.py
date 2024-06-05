@@ -2,143 +2,102 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
-from concurrent.futures import ProcessPoolExecutor
 
 def load_csv(file_path):
-    df = pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column == 'mev_builders' or column == 'characteristic')
-    if 'mev_builders' not in df.columns or 'characteristic' not in df.columns:
-        raise KeyError(f"Expected columns 'mev_builders' and 'characteristic' not found in {file_path}")
-    return df
+    try:
+        return pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index')
+    except Exception:
+        return pd.DataFrame()
 
-def reshape_data(data):
+def extract_params(file_name):
+    try:
+        params = file_name.split('=')[1:]
+        mev_builders = int(params[0].split('characteristic')[0])
+        characteristic = float(params[1].replace('.csv', ''))
+        return mev_builders, characteristic
+    except Exception:
+        return None, None
+
+def reshape_data(data, mev_builders, characteristic):
     records = []
-    for idx, row in data.iterrows():
-        for i in range(100):
-            trans_id_col = f'transaction_id.{i}'
-            gas_col = f'gas.{i}'
-            mev_col = f'mev.{i}'
-            block_time_col = f'block_created.{i}'
+    for i in range(100):
+        trans_id_col = f'transaction_id.{i}'
+        gas_col = f'gas.{i}'
+        mev_col = f'mev.{i}'
+        block_time_col = f'block_created.{i}'
 
-            if trans_id_col in data.columns and not pd.isna(row[trans_id_col]):
-                records.append({
-                    'block_index': row['block_index'],
-                    'transaction_id': row[trans_id_col],
-                    'gas': row[gas_col],
-                    'mev': row[mev_col],
-                    'block_time': row[block_time_col],
-                    'mev_builders': row['mev_builders'],
-                    'connectivity': row['characteristic']
-                })
-    return pd.DataFrame(records)
+        if trans_id_col in data.columns:
+            subset = data[['block_index', trans_id_col, gas_col, mev_col, block_time_col]].dropna()
+            subset.columns = ['block_index', 'transaction_id', 'gas', 'mev', 'block_time']
+            subset['mev_builders'] = mev_builders
+            subset['connectivity'] = characteristic
+            records.append(subset)
+    
+    if records:
+        return pd.concat(records, ignore_index=True)
+    else:
+        return pd.DataFrame()
 
 def process_file(file_path):
     data = load_csv(file_path)
-    return reshape_data(data)
-
-def process_folder(folder_path):
-    all_records = []
-    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
-
-    with ProcessPoolExecutor() as executor:
-        results = executor.map(process_file, files)
-        for result in results:
-            all_records.append(result)
+    if data.empty:
+        return pd.DataFrame()
     
-    combined_data = pd.concat(all_records, ignore_index=True)
-    return combined_data
+    file_name = os.path.basename(file_path)
+    mev_builders, characteristic = extract_params(file_name)
+    if mev_builders is None or characteristic is None:
+        return pd.DataFrame()
+    
+    return reshape_data(data, mev_builders, characteristic)
 
-def save_plot(fig, save_path):
-    fig.savefig(save_path, bbox_inches='tight', pad_inches=0.1, dpi=300)
-    plt.close(fig)
+def plot_inclusion_time_subplots(data_dict, save_dir):
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12), sharex=True, sharey=True)
+    axes = axes.flatten()
 
-def plot_mev_vs_builders(data, save_dir):
-    fig = plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='mev_builders', y='mev', data=data, alpha=0.6)
-    plt.xlabel('Number of MEV Builders')
-    plt.ylabel('MEV Captured per Transaction')
-    plt.title('MEV Captured per Transaction vs. Number of MEV Builders')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'mev_vs_builders.png'))
+    for ax, (file_label, data) in zip(axes, data_dict.items()):
+        data['inclusion_time'] = data['block_index'] - data['block_time']
+        data['mev_exploited'] = data['mev'] > 0
 
-def plot_mev_vs_connectivity(data, save_dir):
-    fig = plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='connectivity', y='mev', data=data, alpha=0.6)
-    plt.xlabel('Connectivity')
-    plt.ylabel('MEV Captured per Transaction')
-    plt.title('MEV Captured per Transaction vs. Connectivity')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'mev_vs_connectivity.png'))
+        inclusion_time_counts = data.groupby(['inclusion_time', 'mev_exploited']).size().unstack(fill_value=0)
+        inclusion_time_counts.plot(kind='bar', stacked=True, ax=ax, color={True: 'red', False: 'blue'}, legend=False)
+        
+        ax.set_xlabel('Inclusion Time (blocks)')
+        ax.set_ylabel('Number of Transactions')
+        ax.set_title(f'Inclusion Time of Transactions for {file_label}')
+        ax.set_ylim(0, 150)
 
-def plot_transaction_count_vs_builders(data, save_dir):
-    builder_counts = data.groupby('mev_builders')['transaction_id'].count().reset_index()
-    builder_counts.columns = ['mev_builders', 'transaction_count']
-    fig = plt.figure(figsize=(10, 6))
-    sns.barplot(x='mev_builders', y='transaction_count', data=builder_counts, palette="viridis")
-    plt.xlabel('Number of MEV Builders')
-    plt.ylabel('Number of Transactions')
-    plt.title('Number of Transactions vs. Number of MEV Builders')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'transaction_count_vs_builders.png'))
+    handles, labels = axes[-1].get_legend_handles_labels()
+    fig.legend(handles, ['Non-MEV', 'MEV'], title='MEV Exploited', loc='upper right')
 
-def plot_transaction_count_vs_connectivity(data, save_dir):
-    connectivity_counts = data.groupby('connectivity')['transaction_id'].count().reset_index()
-    connectivity_counts.columns = ['connectivity', 'transaction_count']
-    fig = plt.figure(figsize=(10, 6))
-    sns.barplot(x='connectivity', y='transaction_count', data=connectivity_counts, palette="viridis")
-    plt.xlabel('Connectivity')
-    plt.ylabel('Number of Transactions')
-    plt.title('Number of Transactions vs. Connectivity')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'transaction_count_vs_connectivity.png'))
+    plt.tight_layout(rect=[0, 0, 0.9, 1])
+    plt.savefig(os.path.join(save_dir, 'inclusion_time_comparison.png'))
+    plt.close()
 
-def plot_gas_vs_builders(data, save_dir):
-    fig = plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='mev_builders', y='gas', data=data, alpha=0.6)
-    plt.xlabel('Number of MEV Builders')
-    plt.ylabel('Gas Used per Transaction')
-    plt.title('Gas Used per Transaction vs. Number of MEV Builders')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'gas_vs_builders.png'))
-
-def plot_gas_vs_connectivity(data, save_dir):
-    fig = plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='connectivity', y='gas', data=data, alpha=0.6)
-    plt.xlabel('Connectivity')
-    plt.ylabel('Gas Used per Transaction')
-    plt.title('Gas Used per Transaction vs. Connectivity')
-    plt.grid(True)
-    save_plot(fig, os.path.join(save_dir, 'gas_vs_connectivity.png'))
-
-def plot_mev_heatmap(data, save_dir):
-    heatmap_data = data.pivot_table(values='mev', index='mev_builders', columns='connectivity', aggfunc='mean')
-    fig = plt.figure(figsize=(12, 8))
-    sns.heatmap(heatmap_data, cmap="YlGnBu", cbar_kws={'label': 'Average MEV per Transaction'})
-    plt.xlabel('Connectivity')
-    plt.ylabel('Number of MEV Builders')
-    plt.title('Heatmap of Average MEV per Transaction')
-    save_plot(fig, os.path.join(save_dir, 'mev_heatmap.png'))
-
-if __name__ == '__main__':
+def main():
     folder_path = "/Users/Tammy/Downloads/transaction_data"
     save_dir = "./figures"
-    
+
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    combined_data = pd.DataFrame()  # Initialize combined_data to an empty DataFrame
+    representative_files = [
+        "mev_builders=1characteristic=0.2.csv",
+        "mev_builders=1characteristic=1.csv",
+        "mev_builders=25characteristic=0.2.csv",
+        "mev_builders=25characteristic=1.csv",
+        "mev_builders=49characteristic=0.2.csv",
+        "mev_builders=49characteristic=1.csv"
+    ]
 
-    try:
-        combined_data = process_folder(folder_path)
-    except KeyError as e:
-        print(f"Error processing files: {e}")
-    
-    if not combined_data.empty:
-        plot_mev_vs_builders(combined_data, save_dir)
-        plot_mev_vs_connectivity(combined_data, save_dir)
-        plot_transaction_count_vs_builders(combined_data, save_dir)
-        plot_transaction_count_vs_connectivity(combined_data, save_dir)
-        plot_gas_vs_builders(combined_data, save_dir)
-        plot_gas_vs_connectivity(combined_data, save_dir)
-        plot_mev_heatmap(combined_data, save_dir)
-    else:
-        print("No data to plot.")
+    data_dict = {}
+    for rep_file in representative_files:
+        file_path = os.path.join(folder_path, rep_file)
+        data = process_file(file_path)
+        if not data.empty:
+            data_dict[rep_file.replace(".csv", "")] = data
+
+    if data_dict:
+        plot_inclusion_time_subplots(data_dict, save_dir)
+
+if __name__ == '__main__':
+    main()
