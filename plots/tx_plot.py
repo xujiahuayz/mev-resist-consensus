@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 def load_csv(file_path):
     try:
@@ -20,7 +21,7 @@ def extract_params(file_name):
         print(f"Error extracting params from {file_name}: {e}")
         return None, None
 
-def reshape_data(data, mev_builders, connectivity, file_path):
+def reshape_data(data, mev_builders, connectivity):
     records = []
     for i in range(100):
         trans_id_col = f'transaction_id.{i}'
@@ -35,9 +36,6 @@ def reshape_data(data, mev_builders, connectivity, file_path):
             subset['connectivity'] = connectivity
 
             subset['inclusion_time'] = subset['block_index'].astype(int) - subset['block_created'].astype(int)
-
-            # print(f"File: {file_path}, Transaction ID: {subset['transaction_id'].tolist()[:5]}, Block Index: {subset['block_index'].tolist()[:5]}, Block Created: {subset['block_created'].tolist()[:5]}, Inclusion Time: {subset['inclusion_time'].tolist()[:5]}")
-
             subset = subset[subset['inclusion_time'] >= 0]
             records.append(subset)
     
@@ -56,9 +54,24 @@ def process_file(file_path):
     if mev_builders is None or connectivity is None:
         return pd.DataFrame()
     
-    return reshape_data(data, mev_builders, connectivity, file_path)
+    return reshape_data(data, mev_builders, connectivity)
 
-def plot_split_violin(data_dict, save_dir):
+def process_files_in_parallel(file_paths):
+    data_dict = {}
+    with ProcessPoolExecutor() as executor:
+        futures = {executor.submit(process_file, file_path): file_path for file_path in file_paths}
+        for future in as_completed(futures):
+            file_path = futures[future]
+            try:
+                data = future.result()
+                if not data.empty:
+                    file_label = os.path.basename(file_path).replace(".csv", "")
+                    data_dict[file_label] = data
+            except Exception as e:
+                print(f"Error processing {file_path}: {e}")
+    return data_dict
+
+def plot_violin(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
         data['mev_exploited'] = data['mev'] > 0
@@ -71,9 +84,45 @@ def plot_split_violin(data_dict, save_dir):
         plt.ylabel('Inclusion Time (blocks)', fontsize=12)
         handles, labels = plt.gca().get_legend_handles_labels()
         plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
-
+    
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
+    plt.close()
+
+def plot_scatter_mev(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data['mev_exploited'] = data['mev'] > 0
+        plt.subplot(2, 3, idx)
+        sns.scatterplot(data=data, x='inclusion_time', y='mev', hue='mev_exploited', palette='pastel')
+        mev_builders = data['mev_builders'].iloc[0]
+        connectivity = data['connectivity'].iloc[0]
+        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylabel('MEV Extracted', fontsize=12)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'scatter_mev.png'))
+    plt.close()
+
+def plot_scatter_gas(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data['mev_exploited'] = data['mev'] > 0
+        plt.subplot(2, 3, idx)
+        sns.scatterplot(data=data, x='inclusion_time', y='gas', hue='mev_exploited', palette='pastel')
+        mev_builders = data['mev_builders'].iloc[0]
+        connectivity = data['connectivity'].iloc[0]
+        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylabel('Gas Used', fontsize=12)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'scatter_gas.png'))
     plt.close()
 
 def main():
@@ -92,15 +141,13 @@ def main():
         "mev_builders=49characteristic=1.csv"
     ]
 
-    data_dict = {}
-    for rep_file in representative_files:
-        file_path = os.path.join(folder_path, rep_file)
-        data = process_file(file_path)
-        if not data.empty:
-            data_dict[rep_file.replace(".csv", "")] = data
+    file_paths = [os.path.join(folder_path, rep_file) for rep_file in representative_files]
+    data_dict = process_files_in_parallel(file_paths)
 
     if data_dict:
-        plot_split_violin(data_dict, save_dir)
+        plot_violin(data_dict, save_dir)
+        plot_scatter_mev(data_dict, save_dir)
+        plot_scatter_gas(data_dict, save_dir)
 
 if __name__ == '__main__':
     main()
