@@ -89,37 +89,39 @@ def plot_violin(data_dict, save_dir):
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
     plt.close()
 
-def plot_scatter_mev(data_dict, save_dir):
-    plt.figure(figsize=(18, 12))
-    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
-        data['mev_exploited'] = data['mev'] > 0
-        plt.subplot(2, 3, idx)
-        sns.scatterplot(data=data, x='inclusion_time', y='mev', hue='mev_exploited', palette='pastel')
-        mev_builders = data['mev_builders'].iloc[0]
-        connectivity = data['connectivity'].iloc[0]
-        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
-        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
-        plt.ylabel('MEV Extracted', fontsize=12)
-        handles, labels = plt.gca().get_legend_handles_labels()
-        plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
+def plot_scatter_mev(data_dict, save_dir, sample_fraction=0.1):
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    axes = axes.flatten()
+    for idx, (file_label, data) in enumerate(data_dict.items()):
+        data_sample = data.sample(frac=sample_fraction, random_state=1)
+        data_sample['mev_exploited'] = data_sample['mev'] > 0
+        sns.scatterplot(data=data_sample, x='inclusion_time', y='mev', hue='mev_exploited', palette='pastel', alpha=0.6, ax=axes[idx])
+        mev_builders = data_sample['mev_builders'].iloc[0]
+        connectivity = data_sample['connectivity'].iloc[0]
+        axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        axes[idx].set_xlabel('Inclusion Time (blocks)', fontsize=12)
+        axes[idx].set_ylabel('MEV Extracted', fontsize=12)
+        handles, labels = axes[idx].get_legend_handles_labels()
+        axes[idx].legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
 
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'scatter_mev.png'))
     plt.close()
 
-def plot_scatter_gas(data_dict, save_dir):
-    plt.figure(figsize=(18, 12))
-    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
-        data['mev_exploited'] = data['mev'] > 0
-        plt.subplot(2, 3, idx)
-        sns.scatterplot(data=data, x='inclusion_time', y='gas', hue='mev_exploited', palette='pastel')
-        mev_builders = data['mev_builders'].iloc[0]
-        connectivity = data['connectivity'].iloc[0]
-        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
-        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
-        plt.ylabel('Gas Used', fontsize=12)
-        handles, labels = plt.gca().get_legend_handles_labels()
-        plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
+def plot_scatter_gas(data_dict, save_dir, sample_fraction=0.1):
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+    axes = axes.flatten()
+    for idx, (file_label, data) in enumerate(data_dict.items()):
+        data_sample = data.sample(frac=sample_fraction, random_state=1)
+        data_sample['mev_exploited'] = data_sample['mev'] > 0
+        sns.scatterplot(data=data_sample, x='inclusion_time', y='gas', hue='mev_exploited', palette='pastel', alpha=0.6, ax=axes[idx])
+        mev_builders = data_sample['mev_builders'].iloc[0]
+        connectivity = data_sample['connectivity'].iloc[0]
+        axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        axes[idx].set_xlabel('Inclusion Time (blocks)', fontsize=12)
+        axes[idx].set_ylabel('Gas Used', fontsize=12)
+        handles, labels = axes[idx].get_legend_handles_labels()
+        axes[idx].legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
 
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'scatter_gas.png'))
@@ -140,6 +142,8 @@ def main():
         "mev_builders=49characteristic=0.2.csv",
         "mev_builders=49characteristic=1.csv"
     ]
+
+    representative_files.sort(key=lambda x: (int(x.split('=')[1].split('characteristic')[0]), float(x.split('=')[2].replace('.csv', ''))))
 
     file_paths = [os.path.join(folder_path, rep_file) for rep_file in representative_files]
     data_dict = process_files_in_parallel(file_paths)
