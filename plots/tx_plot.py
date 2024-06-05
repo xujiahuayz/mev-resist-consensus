@@ -71,10 +71,6 @@ def plot_split_violin(data_dict, save_dir):
         plt.ylabel('Inclusion Time (blocks)', fontsize=12)
         handles, labels = plt.gca().get_legend_handles_labels()
         plt.legend(handles, ['Non-MEV', 'MEV'], title='Transaction Type', loc='upper right')
-        
-        transaction_counts = data['transaction_id'].value_counts()
-        tick_labels = [f'{count} transactions' for count in transaction_counts]
-        plt.xticks(ticks=range(len(transaction_counts)), labels=tick_labels, rotation=45, ha='right')
 
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
