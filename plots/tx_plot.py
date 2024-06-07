@@ -77,7 +77,7 @@ def plot_violin(data_dict, save_dir):
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
         data['mev_exploited'] = data['transaction_type'].isin(['attack', 'attacked'])
         plt.subplot(2, 3, idx)
-        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='mev_exploited', split=True, inner="quart", palette='pastel')
+        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='mev_exploited', split=True, inner="quart", palette={False: 'lightblue', True: 'lightcoral'})
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
@@ -96,7 +96,7 @@ def plot_scatter_mev(data_dict, save_dir, sample_fraction=0.1):
     for idx, (file_label, data) in enumerate(data_dict.items()):
         data_sample = data.sample(frac=sample_fraction, random_state=1)
         data_sample = data_sample[data_sample['transaction_type'].isin(['attack', 'attacked'])]
-        sns.scatterplot(data=data_sample, x='inclusion_time', y='mev', hue='transaction_type', palette='pastel', alpha=0.6, ax=axes[idx])
+        sns.scatterplot(data=data_sample, x='inclusion_time', y='mev', hue='transaction_type', palette={'attack': 'lightblue', 'attacked': 'lightcoral'}, alpha=0.6, ax=axes[idx])
         mev_builders = data_sample['mev_builders'].iloc[0]
         connectivity = data_sample['connectivity'].iloc[0]
         axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
@@ -115,7 +115,7 @@ def plot_scatter_gas(data_dict, save_dir, sample_fraction=0.1):
     for idx, (file_label, data) in enumerate(data_dict.items()):
         data_sample = data.sample(frac=sample_fraction, random_state=1)
         data_sample = data_sample[data_sample['transaction_type'].isin(['attack', 'attacked'])]
-        sns.scatterplot(data=data_sample, x='inclusion_time', y='gas', hue='transaction_type', palette='pastel', alpha=0.6, ax=axes[idx])
+        sns.scatterplot(data=data_sample, x='inclusion_time', y='gas', hue='transaction_type', palette={'attack': 'lightblue', 'attacked': 'lightcoral'}, alpha=0.6, ax=axes[idx])
         mev_builders = data_sample['mev_builders'].iloc[0]
         connectivity = data_sample['connectivity'].iloc[0]
         axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
@@ -144,6 +144,7 @@ def main():
         "mev_builders=49characteristic=1.csv"
     ]
 
+    # Sort the representative files based on MEV builders and connectivity
     representative_files.sort(key=lambda x: (int(x.split('=')[1].split('characteristic')[0]), float(x.split('=')[2].replace('.csv', ''))))
 
     file_paths = [os.path.join(folder_path, rep_file) for rep_file in representative_files]
