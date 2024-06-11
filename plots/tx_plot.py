@@ -75,16 +75,13 @@ def process_files_in_parallel(file_paths):
 def plot_violin(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
-        data['mev_exploited'] = data['transaction_type'].isin(['attack', 'attacked'])
         plt.subplot(2, 3, idx)
-        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='mev_exploited', split=True, inner="quart", palette={False: 'lightblue', True: 'lightcoral'})
+        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', inner="quart", palette='pastel')
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Transaction Type', fontsize=12)
         plt.ylabel('Inclusion Time (blocks)', fontsize=12)
-        handles, labels = plt.gca().get_legend_handles_labels()
-        plt.legend(handles, ['Normal', 'MEV'], title='Transaction Type', loc='upper right')
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
@@ -93,9 +90,8 @@ def plot_violin(data_dict, save_dir):
 def plot_kde_mev(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
-        data = data[data['transaction_type'].isin(['attack', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.kdeplot(data=data, x='inclusion_time', y='mev', hue='transaction_type', fill=True, palette={'attack': 'lightblue', 'attacked': 'lightcoral'})
+        sns.kdeplot(data=data, x='inclusion_time', y='mev', hue='transaction_type', fill=True, palette={'normal': 'lightblue', 'attack': 'lightcoral', 'attacked': 'lightgreen'})
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
@@ -109,9 +105,8 @@ def plot_kde_mev(data_dict, save_dir):
 def plot_kde_gas(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
-        data = data[data['transaction_type'].isin(['attack', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.kdeplot(data=data, x='inclusion_time', y='gas', hue='transaction_type', fill=True, palette={'attack': 'lightblue', 'attacked': 'lightcoral'})
+        sns.kdeplot(data=data, x='inclusion_time', y='gas', hue='transaction_type', fill=True, palette={'normal': 'lightblue', 'attack': 'lightcoral', 'attacked': 'lightgreen'})
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
