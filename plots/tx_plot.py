@@ -133,8 +133,6 @@ def main():
         "mev_builders=49characteristic=1.csv"
     ]
 
-    # Sort the representative files based on MEV builders and connectivity
-    representative_files.sort(key=lambda x: (int(x.split('=')[1].split('characteristic')[0]), float(x.split('=')[2].replace('.csv', ''))))
 
     file_paths = [os.path.join(folder_path, rep_file) for rep_file in representative_files]
     data_dict = process_files_in_parallel(file_paths)
