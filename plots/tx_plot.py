@@ -90,42 +90,36 @@ def plot_violin(data_dict, save_dir):
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
     plt.close()
 
-def plot_scatter_mev(data_dict, save_dir, sample_fraction=0.1):
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    axes = axes.flatten()
-    for idx, (file_label, data) in enumerate(data_dict.items()):
-        data_sample = data.sample(frac=sample_fraction, random_state=1)
-        data_sample = data_sample[data_sample['transaction_type'].isin(['attack', 'attacked'])]
-        sns.scatterplot(data=data_sample, x='inclusion_time', y='mev', hue='transaction_type', palette={'attack': 'lightblue', 'attacked': 'lightcoral'}, alpha=0.6, ax=axes[idx])
-        mev_builders = data_sample['mev_builders'].iloc[0]
-        connectivity = data_sample['connectivity'].iloc[0]
-        axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
-        axes[idx].set_xlabel('Inclusion Time (blocks)', fontsize=12)
-        axes[idx].set_ylabel('MEV Extracted', fontsize=12)
-        handles, labels = axes[idx].get_legend_handles_labels()
-        axes[idx].legend(handles, labels, title='Transaction Type', loc='upper right')
-
+def plot_kde_mev(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['attack', 'attacked'])]
+        plt.subplot(2, 3, idx)
+        sns.kdeplot(data=data, x='inclusion_time', y='mev', hue='transaction_type', fill=True, palette={'attack': 'lightblue', 'attacked': 'lightcoral'})
+        mev_builders = data['mev_builders'].iloc[0]
+        connectivity = data['connectivity'].iloc[0]
+        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylabel('MEV Extracted', fontsize=12)
+    
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'scatter_mev.png'))
+    plt.savefig(os.path.join(save_dir, 'kde_mev.png'))
     plt.close()
 
-def plot_scatter_gas(data_dict, save_dir, sample_fraction=0.1):
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    axes = axes.flatten()
-    for idx, (file_label, data) in enumerate(data_dict.items()):
-        data_sample = data.sample(frac=sample_fraction, random_state=1)
-        data_sample = data_sample[data_sample['transaction_type'].isin(['attack', 'attacked'])]
-        sns.scatterplot(data=data_sample, x='inclusion_time', y='gas', hue='transaction_type', palette={'attack': 'lightblue', 'attacked': 'lightcoral'}, alpha=0.6, ax=axes[idx])
-        mev_builders = data_sample['mev_builders'].iloc[0]
-        connectivity = data_sample['connectivity'].iloc[0]
-        axes[idx].set_title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
-        axes[idx].set_xlabel('Inclusion Time (blocks)', fontsize=12)
-        axes[idx].set_ylabel('Gas Used', fontsize=12)
-        handles, labels = axes[idx].get_legend_handles_labels()
-        axes[idx].legend(handles, labels, title='Transaction Type', loc='upper right')
-
+def plot_kde_gas(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['attack', 'attacked'])]
+        plt.subplot(2, 3, idx)
+        sns.kdeplot(data=data, x='inclusion_time', y='gas', hue='transaction_type', fill=True, palette={'attack': 'lightblue', 'attacked': 'lightcoral'})
+        mev_builders = data['mev_builders'].iloc[0]
+        connectivity = data['connectivity'].iloc[0]
+        plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
+        plt.xlabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylabel('Gas Used', fontsize=12)
+    
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'scatter_gas.png'))
+    plt.savefig(os.path.join(save_dir, 'kde_gas.png'))
     plt.close()
 
 def main():
@@ -152,8 +146,8 @@ def main():
 
     if data_dict:
         plot_violin(data_dict, save_dir)
-        plot_scatter_mev(data_dict, save_dir)
-        plot_scatter_gas(data_dict, save_dir)
+        plot_kde_mev(data_dict, save_dir)
+        plot_kde_gas(data_dict, save_dir)
 
 if __name__ == '__main__':
     main()
