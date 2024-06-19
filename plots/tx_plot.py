@@ -68,7 +68,7 @@ def process_file(file_path):
 
 def process_files_in_parallel(file_paths):
     data_dict = {}
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(process_file, file_path): file_path for file_path in file_paths}
         for future in as_completed(futures):
             file_path = futures[future]
@@ -84,12 +84,17 @@ def process_files_in_parallel(file_paths):
                 print(f"Error processing {file_path}: {e}")
     return data_dict
 
+def sort_data_dict(data_dict):
+    sorted_items = sorted(data_dict.items(), key=lambda item: (item[1]['mev_builders'].iloc[0], item[1]['connectivity'].iloc[0]))
+    return {k: v for k, v in sorted_items}
+
 def plot_violin(data_dict, save_dir):
+    sorted_data_dict = sort_data_dict(data_dict)
     plt.figure(figsize=(18, 12))
-    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+    for idx, (file_label, data) in enumerate(sorted_data_dict.items(), 1):
         data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', inner="quart", palette=palette, order=order)
+        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='transaction_type', inner="quart", palette=palette, order=order, dodge=False, legend=False)
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
@@ -102,8 +107,9 @@ def plot_violin(data_dict, save_dir):
     plt.close()
 
 def plot_kde_mev(data_dict, save_dir):
+    sorted_data_dict = sort_data_dict(data_dict)
     plt.figure(figsize=(18, 12))
-    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+    for idx, (file_label, data) in enumerate(sorted_data_dict.items(), 1):
         data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
         sns.kdeplot(data=data[data['transaction_type'] == 'normal'], x='inclusion_time', y='mev', fill=True, color='lightblue', label='normal')
@@ -122,8 +128,9 @@ def plot_kde_mev(data_dict, save_dir):
     plt.close()
 
 def plot_kde_gas(data_dict, save_dir):
+    sorted_data_dict = sort_data_dict(data_dict)
     plt.figure(figsize=(18, 12))
-    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+    for idx, (file_label, data) in enumerate(sorted_data_dict.items(), 1):
         data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
         sns.kdeplot(data=data[data['transaction_type'] == 'normal'], x='inclusion_time', y='gas', fill=True, color='lightblue', label='normal')
