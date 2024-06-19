@@ -141,6 +141,23 @@ def plot_kde_gas_congestion(data_dict, save_dir):
     plt.savefig(os.path.join(save_dir, 'kde_gas_congestion.png'))
     plt.close()
 
+def plot_box_inclusion_time(data_dict, save_dir):
+    plt.figure(figsize=(18, 12))
+    for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['normal', 'attacked'])]
+        plt.subplot(2, 3, idx)
+        sns.boxplot(data=data, x='transaction_type', y='inclusion_time', palette=palette, order=order)
+        num_transactions = data['num_transactions'].iloc[0]
+        characteristic = data['characteristic'].iloc[0]
+        plt.title(f'Num transactions = {num_transactions}\nCharacteristic = {characteristic}', fontsize=14)
+        plt.xlabel('Transaction Type', fontsize=12)
+        plt.ylabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylim(0, data['inclusion_time'].max() * 1.1)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'box_inclusion_time.png'))
+    plt.close()
+
 def main():
     folder_path = "/Users/Tammy/Downloads/pbs_vary_num_transactions"
     save_dir = "./figures"
@@ -158,9 +175,10 @@ def main():
     data_dict = process_files_in_parallel(file_paths)
 
     if data_dict:
-        plot_violin_congestion(data_dict, save_dir)
-        plot_kde_mev_congestion(data_dict, save_dir)
-        plot_kde_gas_congestion(data_dict, save_dir)
+        # plot_violin_congestion(data_dict, save_dir)
+        # plot_kde_mev_congestion(data_dict, save_dir)
+        # plot_kde_gas_congestion(data_dict, save_dir)
+        plot_box_inclusion_time(data_dict, save_dir)
 
 if __name__ == '__main__':
     main()

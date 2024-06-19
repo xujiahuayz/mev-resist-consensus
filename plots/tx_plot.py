@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+# Define consistent palette and order
+palette = {'normal': 'lightblue', 'attacked': 'lightgreen'}
+order = ['normal', 'attacked']
+
 def load_csv(file_path):
     try:
         return pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column.startswith('transaction_type'))
@@ -37,7 +41,7 @@ def reshape_data(data, mev_builders, connectivity):
             subset['connectivity'] = connectivity
 
             subset['inclusion_time'] = subset['block_index'].astype(int) - subset['block_created'].astype(int)
-            subset = subset[subset['inclusion_time'] >= 0]
+            subset = subset[(subset['inclusion_time'] >= 0) & (subset['mev'] >= 0) & (subset['gas'] >= 0)]
             records.append(subset)
     
     if records:
@@ -48,14 +52,19 @@ def reshape_data(data, mev_builders, connectivity):
 def process_file(file_path):
     data = load_csv(file_path)
     if data.empty:
+        print(f"No data found in {file_path}")
         return pd.DataFrame()
     
     file_name = os.path.basename(file_path)
     mev_builders, connectivity = extract_params(file_name)
     if mev_builders is None or connectivity is None:
+        print(f"Could not extract parameters from {file_name}")
         return pd.DataFrame()
     
-    return reshape_data(data, mev_builders, connectivity)
+    reshaped_data = reshape_data(data, mev_builders, connectivity)
+    if reshaped_data.empty:
+        print(f"No valid transactions in {file_path}")
+    return reshaped_data
 
 def process_files_in_parallel(file_paths):
     data_dict = {}
@@ -68,6 +77,9 @@ def process_files_in_parallel(file_paths):
                 if not data.empty:
                     file_label = os.path.basename(file_path).replace(".csv", "")
                     data_dict[file_label] = data
+                    print(f"Processed {file_label} with {len(data)} records.")
+                else:
+                    print(f"No data after processing {file_path}")
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")
     return data_dict
@@ -75,13 +87,15 @@ def process_files_in_parallel(file_paths):
 def plot_violin(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', inner="quart", palette='pastel')
+        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', inner="quart", palette=palette, order=order)
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Transaction Type', fontsize=12)
         plt.ylabel('Inclusion Time (blocks)', fontsize=12)
+        plt.ylim(0, data['inclusion_time'].max() * 1.1)
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
@@ -90,13 +104,18 @@ def plot_violin(data_dict, save_dir):
 def plot_kde_mev(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.kdeplot(data=data, x='inclusion_time', y='mev', hue='transaction_type', fill=True, palette={'normal': 'lightblue', 'attack': 'lightcoral', 'attacked': 'lightgreen'})
+        sns.kdeplot(data=data[data['transaction_type'] == 'normal'], x='inclusion_time', y='mev', fill=True, color='lightblue', label='normal')
+        sns.kdeplot(data=data[data['transaction_type'] == 'attacked'], x='inclusion_time', y='mev', fill=True, color='lightgreen', label='attacked')
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Inclusion Time (blocks)', fontsize=12)
         plt.ylabel('MEV Extracted', fontsize=12)
+        plt.legend()
+        plt.xlim(0, data['inclusion_time'].max() * 1.1)
+        plt.ylim(0, data['mev'].max() * 1.1)
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'kde_mev.png'))
@@ -105,13 +124,18 @@ def plot_kde_mev(data_dict, save_dir):
 def plot_kde_gas(data_dict, save_dir):
     plt.figure(figsize=(18, 12))
     for idx, (file_label, data) in enumerate(data_dict.items(), 1):
+        data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.kdeplot(data=data, x='inclusion_time', y='gas', hue='transaction_type', fill=True, palette={'normal': 'lightblue', 'attack': 'lightcoral', 'attacked': 'lightgreen'})
+        sns.kdeplot(data=data[data['transaction_type'] == 'normal'], x='inclusion_time', y='gas', fill=True, color='lightblue', label='normal')
+        sns.kdeplot(data=data[data['transaction_type'] == 'attacked'], x='inclusion_time', y='gas', fill=True, color='lightgreen', label='attacked')
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Inclusion Time (blocks)', fontsize=12)
         plt.ylabel('Gas Used', fontsize=12)
+        plt.legend()
+        plt.xlim(0, data['inclusion_time'].max() * 1.1)
+        plt.ylim(0, data['gas'].max() * 1.1)
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'kde_gas.png'))
@@ -132,7 +156,6 @@ def main():
         "mev_builders=49characteristic=0.2.csv",
         "mev_builders=49characteristic=1.csv"
     ]
-
 
     file_paths = [os.path.join(folder_path, rep_file) for rep_file in representative_files]
     data_dict = process_files_in_parallel(file_paths)
