@@ -94,13 +94,14 @@ def plot_violin(data_dict, save_dir):
     for idx, (file_label, data) in enumerate(sorted_data_dict.items(), 1):
         data = data[data['transaction_type'].isin(['normal', 'attacked'])]
         plt.subplot(2, 3, idx)
-        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='transaction_type', inner="quart", palette=palette, order=order, dodge=False, legend=False)
+        sns.violinplot(data=data, x='transaction_type', y='inclusion_time', hue='transaction_type', inner="quart", palette=palette, order=order, dodge=False)
         mev_builders = data['mev_builders'].iloc[0]
         connectivity = data['connectivity'].iloc[0]
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Transaction Type', fontsize=12)
         plt.ylabel('Inclusion Time (blocks)', fontsize=12)
         plt.ylim(0, data['inclusion_time'].max() * 1.1)
+        plt.legend(title='Transaction Type')
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'inclusion_time_violin.png'))
@@ -119,7 +120,7 @@ def plot_kde_mev(data_dict, save_dir):
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Inclusion Time (blocks)', fontsize=12)
         plt.ylabel('MEV Extracted', fontsize=12)
-        plt.legend()
+        plt.legend(title='Transaction Type')
         plt.xlim(0, data['inclusion_time'].max() * 1.1)
         plt.ylim(0, data['mev'].max() * 1.1)
     
@@ -140,7 +141,7 @@ def plot_kde_gas(data_dict, save_dir):
         plt.title(f'MEV builder number = {mev_builders}\nConnectivity = {connectivity}', fontsize=14)
         plt.xlabel('Inclusion Time (blocks)', fontsize=12)
         plt.ylabel('Gas Used', fontsize=12)
-        plt.legend()
+        plt.legend(title='Transaction Type')
         plt.xlim(0, data['inclusion_time'].max() * 1.1)
         plt.ylim(0, data['gas'].max() * 1.1)
     
