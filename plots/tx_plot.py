@@ -5,7 +5,9 @@ import seaborn as sns
 from concurrent.futures import ProcessPoolExecutor
 
 def load_csv(file_path):
+    print(f"Loading file: {file_path}")
     df = pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column == 'mev_builders' or column == 'characteristic')
+    print(f"Columns in {file_path}: {df.columns.tolist()}")
     if 'mev_builders' not in df.columns or 'characteristic' not in df.columns:
         raise KeyError(f"Expected columns 'mev_builders' and 'characteristic' not found in {file_path}")
     return df
@@ -29,11 +31,18 @@ def reshape_data(data):
                     'mev_builders': row['mev_builders'],
                     'connectivity': row['characteristic']
                 })
-    return pd.DataFrame(records)
+    reshaped_df = pd.DataFrame(records)
+    print(f"Reshaped data has {len(reshaped_df)} records.")
+    return reshaped_df
 
 def process_file(file_path):
-    data = load_csv(file_path)
-    return reshape_data(data)
+    try:
+        data = load_csv(file_path)
+        reshaped_data = reshape_data(data)
+        return reshaped_data
+    except KeyError as e:
+        print(f"Skipping file {file_path} due to error: {e}")
+        return pd.DataFrame()
 
 def process_folder(folder_path):
     all_records = []
@@ -42,9 +51,14 @@ def process_folder(folder_path):
     with ProcessPoolExecutor() as executor:
         results = executor.map(process_file, files)
         for result in results:
-            all_records.append(result)
+            if not result.empty:
+                all_records.append(result)
     
-    combined_data = pd.concat(all_records, ignore_index=True)
+    if all_records:
+        combined_data = pd.concat(all_records, ignore_index=True)
+        print(f"Combined data has {len(combined_data)} records.")
+    else:
+        combined_data = pd.DataFrame()
     return combined_data
 
 def save_plot(fig, save_path):
