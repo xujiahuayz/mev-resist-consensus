@@ -10,7 +10,6 @@ random.seed(42)
 NUM_USERS = 100
 NUM_BUILDERS = 20
 NUM_VALIDATORS = 20
-NUM_PROPOSERS = 5
 BLOCK_CAPACITY = 50
 NUM_TRANSACTIONS = 100
 NUM_BLOCKS = 100
@@ -34,8 +33,10 @@ class Participant:
         self.id = id
         self.transactions = []
 
-    def create_transaction(self, is_mev):
+    def create_transaction(self, is_mev=False):
         fee = random.uniform(NON_MEV_FEE_MIN, NON_MEV_FEE_MAX)
+        if is_mev:
+            fee = random.uniform(MEV_FEE_MIN, MEV_FEE_MAX)
         tx = Transaction(fee, is_mev, self.id)
         self.transactions.append(tx)
         return tx
@@ -103,7 +104,7 @@ class Validator(Participant):
         
         return selected_transactions
 
-def run_pbs(builders, proposers, num_blocks):
+def run_pbs(builders, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
     builder_profits = {builder.id: [] for builder in builders}
     block_data = []
@@ -147,7 +148,7 @@ def run_pbs(builders, proposers, num_blocks):
                 'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.id if tx.targeted else None,
-                'type_of_user': 'attack' if isinstance(builders[tx.creator_id], AttackUser) else 'normal',
+                'type_of_user': 'attack' if isinstance(users[tx.creator_id], AttackUser) else 'normal',
                 'block_number': block_num + 1
             })
 
@@ -188,7 +189,7 @@ def run_pos(validators, num_blocks):
                 'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.id if tx.targeted else None,
-                'type_of_user': 'attack' if isinstance(validators[tx.creator_id], AttackUser) else 'normal',
+                'type_of_user': 'attack' if isinstance(users[tx.creator_id], AttackUser) else 'normal',
                 'block_number': block_num + 1
             })
     
@@ -258,15 +259,18 @@ def plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_
 users = [NormalUser(i) if random.random() > 0.1 else AttackUser(i) for i in range(NUM_USERS)]
 builders = [Builder(i, random.random() > 0.5) for i in range(NUM_BUILDERS)]
 validators = [Validator(i) for i in range(NUM_VALIDATORS)]
-proposers = [Proposer(i) for i in range(NUM_PROPOSERS)]
 
-# Generate transactions for users
 for user in users:
     for _ in range(NUM_TRANSACTIONS // NUM_USERS):
-        user.create_transaction()
+        if isinstance(user, AttackUser):
+            # Find a target transaction with MEV potential
+            target_tx = next((tx for tx in user.transactions if tx.is_mev), None)
+            user.create_transaction(target_tx)
+        else:
+            user.create_transaction()
 
-total_mev_created = sum(user.create_transaction().is_mev for user in users)
-cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, proposers, NUM_BLOCKS)
+total_mev_created = sum(1 for user in users for tx in user.transactions if tx.is_mev)
+cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
 cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
 plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
