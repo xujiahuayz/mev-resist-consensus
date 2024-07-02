@@ -193,7 +193,6 @@ def run_pos(validators, num_blocks):
                 'block_number': block_num + 1
             })
     
-        # Diagnostic print for each block
         print(f"Block {block_num + 1}:")
         print(f"Total MEV Transactions in Block: {mev_transactions_in_block}")
         print("Transactions in Winning Block:")
@@ -222,6 +221,9 @@ def plot_ranked_profit_distribution(builder_profits, validator_profits):
     
     builder_ids, builder_profits = zip(*sorted_builder_profits)
     validator_ids, validator_profits = zip(*sorted_validator_profits)
+    
+    print("Builder Profits:", builder_profits)
+    print("Validator Profits:", validator_profits)
     
     index = np.arange(len(builder_profits))
     bar_width = 0.35
@@ -256,35 +258,33 @@ def plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_
     plt.legend()
     plt.show()
 
-users = [NormalUser(i) if random.random() > 0.1 else AttackUser(i) for i in range(NUM_USERS)]
-builders = [Builder(i, random.random() > 0.5) for i in range(NUM_BUILDERS)]
-validators = [Validator(i) for i in range(NUM_VALIDATORS)]
+if __name__ == "__main__":
+    users = [NormalUser(i) if random.random() > 0.1 else AttackUser(i) for i in range(NUM_USERS)]
+    builders = [Builder(i, random.random() > 0.5) for i in range(NUM_BUILDERS)]
+    validators = [Validator(i) for i in range(NUM_VALIDATORS)]
 
-for user in users:
-    for _ in range(NUM_TRANSACTIONS // NUM_USERS):
-        if isinstance(user, AttackUser):
-            # Find a target transaction with MEV potential
-            target_tx = next((tx for tx in user.transactions if tx.is_mev), None)
-            user.create_transaction(target_tx)
-        else:
-            user.create_transaction()
+    for user in users:
+        for _ in range(NUM_TRANSACTIONS // NUM_USERS):
+            if isinstance(user, AttackUser):
+                target_tx = next((tx for tx in user.transactions if tx.is_mev), None)
+                user.create_transaction(target_tx)
+            else:
+                user.create_transaction()
 
-total_mev_created = sum(1 for user in users for tx in user.transactions if tx.is_mev)
-cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
-cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
+    total_mev_created = sum(1 for user in users for tx in user.transactions if tx.is_mev)
+    cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
+    cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
-plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
-plot_ranked_profit_distribution(builder_profits, validator_profits)
-plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos)
+    plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
+    plot_ranked_profit_distribution(builder_profits, validator_profits)
+    plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos)
 
-# Convert block data and transaction data to dataframes for further analysis
-block_data_pbs_df = pd.DataFrame(block_data_pbs)
-block_data_pos_df = pd.DataFrame(block_data_pos)
-transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
-transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
+    block_data_pbs_df = pd.DataFrame(block_data_pbs)
+    block_data_pos_df = pd.DataFrame(block_data_pos)
+    transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
+    transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
 
-# Save data to CSV for further analysis
-block_data_pbs_df.to_csv('block_data_pbs.csv', index=False)
-block_data_pos_df.to_csv('block_data_pos.csv', index=False)
-transaction_data_pbs_df.to_csv('transaction_data_pbs.csv', index=False)
-transaction_data_pos_df.to_csv('transaction_data_pos.csv', index=False)
+    block_data_pbs_df.to_csv('block_data_pbs.csv', index=False)
+    block_data_pos_df.to_csv('block_data_pos.csv', index=False)
+    transaction_data_pbs_df.to_csv('transaction_data_pbs.csv', index=False)
+    transaction_data_pos_df.to_csv('transaction_data_pos.csv', index=False)
