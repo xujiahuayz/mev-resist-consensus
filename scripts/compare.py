@@ -14,10 +14,8 @@ BLOCK_CAPACITY = 50
 NUM_TRANSACTIONS = 100
 NUM_BLOCKS = 100
 
-MEV_FEE_MIN = 0.05
-MEV_FEE_MAX = 0.2
-NON_MEV_FEE_MIN = 0.01
-NON_MEV_FEE_MAX = 0.15
+FIXED_GAS_FEES = [0.05, 0.1]
+MEV_POTENTIALS = [0.15, 0.2]
 
 class Transaction:
     def __init__(self, fee, is_mev, creator_id=None, targeted=False):
@@ -34,17 +32,16 @@ class Participant:
         self.transactions = []
 
     def create_transaction(self, is_mev=False):
-        fee = random.uniform(NON_MEV_FEE_MIN, NON_MEV_FEE_MAX)
+        fee = random.choice(FIXED_GAS_FEES)
         if is_mev:
-            fee = random.uniform(MEV_FEE_MIN, MEV_FEE_MAX)
+            fee = random.choice(MEV_POTENTIALS)
         tx = Transaction(fee, is_mev, self.id)
         self.transactions.append(tx)
         return tx
 
 class NormalUser(Participant):
     def create_transaction(self):
-        fee = np.random.normal(loc=0.1, scale=0.05)
-        fee = max(min(fee, NON_MEV_FEE_MAX), NON_MEV_FEE_MIN)
+        fee = random.choice(FIXED_GAS_FEES)
         tx = Transaction(fee, False, self.id)
         self.transactions.append(tx)
         return tx
@@ -52,13 +49,12 @@ class NormalUser(Participant):
 class AttackUser(Participant):
     def create_transaction(self, target_tx=None):
         if target_tx and target_tx.is_mev:
-            fee = target_tx.fee + 0.01  # front-running strategy
+            fee = target_tx.fee + 0.01
             tx = Transaction(fee, False, self.id, targeted=True)
             self.transactions.append(tx)
             return tx
         else:
-            fee = np.random.normal(loc=0.1, scale=0.05)
-            fee = max(min(fee, NON_MEV_FEE_MAX), NON_MEV_FEE_MIN)
+            fee = random.choice(FIXED_GAS_FEES)
             tx = Transaction(fee, False, self.id)
             self.transactions.append(tx)
             return tx
@@ -113,7 +109,7 @@ def run_pbs(builders, num_blocks):
     for block_num in range(num_blocks):
         block_bid_his = []
 
-        for counter in range(24): 
+        for counter in range(24):
             counter_bids = {}
             for builder in builders:
                 bid = builder.bid(block_bid_his)
@@ -135,7 +131,7 @@ def run_pbs(builders, num_blocks):
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': block_value,
-            'total_mev_captured': mev_transactions_in_block * MEV_FEE_MAX,
+            'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
             'block_bid': highest_bid,
             'builder_type': 'attack' if winning_builder.is_attack else 'normal'
         })
@@ -144,7 +140,7 @@ def run_pbs(builders, num_blocks):
             transaction_data.append({
                 'transaction_id': tx.id,
                 'fee': tx.fee,
-                'mev_potential': MEV_FEE_MAX if tx.is_mev else 0,
+                'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
                 'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.id if tx.targeted else None,
@@ -158,7 +154,7 @@ def run_pbs(builders, num_blocks):
 
 def run_pos(validators, num_blocks):
     cumulative_mev_transactions = []
-    validator_profits = {validator.id: 0 for validator in validators} 
+    validator_profits = {validator.id: 0 for validator in validators}
     total_mev_transactions = 0
     block_data = []
     transaction_data = []
@@ -176,7 +172,7 @@ def run_pos(validators, num_blocks):
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': profit_from_block,
-            'total_mev_captured': mev_transactions_in_block * MEV_FEE_MAX,
+            'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
             'block_bid': None,
             'builder_type': 'validator'
         })
@@ -185,7 +181,7 @@ def run_pos(validators, num_blocks):
             transaction_data.append({
                 'transaction_id': tx.id,
                 'fee': tx.fee,
-                'mev_potential': MEV_FEE_MAX if tx.is_mev else 0,
+                'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
                 'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.id if tx.targeted else None,
@@ -222,10 +218,12 @@ def plot_ranked_profit_distribution(builder_profits, validator_profits):
     builder_ids, builder_profits = zip(*sorted_builder_profits)
     validator_ids, validator_profits = zip(*sorted_validator_profits)
     
-    print("Builder Profits:", builder_profits)
-    print("Validator Profits:", validator_profits)
+    # Adjust lengths to be the same by padding with zeros
+    max_length = max(len(builder_profits), len(validator_profits))
+    builder_profits = list(builder_profits) + [0] * (max_length - len(builder_profits))
+    validator_profits = list(validator_profits) + [0] * (max_length - len(validator_profits))
     
-    index = np.arange(len(builder_profits))
+    index = np.arange(max_length)
     bar_width = 0.35
     
     plt.figure(figsize=(12, 8))
@@ -236,7 +234,7 @@ def plot_ranked_profit_distribution(builder_profits, validator_profits):
     plt.xlabel('Rank')
     plt.ylabel('Cumulative Profit')
     plt.title('Ranked Cumulative Profit of Builders and Validators')
-    plt.xticks(index + bar_width / 2, [f'B{b_id}/V{v_id}' for b_id, v_id in zip(builder_ids, validator_ids)])
+    plt.xticks(index + bar_width / 2, index)
     plt.legend()
     
     plt.tight_layout()
