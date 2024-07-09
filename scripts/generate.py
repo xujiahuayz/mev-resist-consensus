@@ -4,7 +4,6 @@ import uuid
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from blockchain_env.account import Account
 from blockchain_env.chain import Chain
