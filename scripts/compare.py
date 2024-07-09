@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import uuid
 import seaborn as sns
 import pandas as pd
+import os
 
 random.seed(42)
 
@@ -277,12 +278,14 @@ if __name__ == "__main__":
     plot_ranked_profit_distribution(builder_profits, validator_profits)
     plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos)
 
+    os.makedirs('data', exist_ok=True)
+    
     block_data_pbs_df = pd.DataFrame(block_data_pbs)
     block_data_pos_df = pd.DataFrame(block_data_pos)
     transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
     transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
 
-    block_data_pbs_df.to_csv('block_data_pbs.csv', index=False)
-    block_data_pos_df.to_csv('block_data_pos.csv', index=False)
-    transaction_data_pbs_df.to_csv('transaction_data_pbs.csv', index=False)
-    transaction_data_pos_df.to_csv('transaction_data_pos.csv', index=False)
+    block_data_pbs_df.to_csv('data/block_data_pbs.csv', index=False)
+    block_data_pos_df.to_csv('data/block_data_pos.csv', index=False)
+    transaction_data_pbs_df.to_csv('data/transaction_data_pbs.csv', index=False)
+    transaction_data_pos_df.to_csv('data/transaction_data_pos.csv', index=False)
