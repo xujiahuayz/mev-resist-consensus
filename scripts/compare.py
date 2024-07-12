@@ -108,6 +108,7 @@ def run_pbs(builders, num_blocks):
     transaction_data = []
     
     for block_num in range(num_blocks):
+        print(f"Running PBS for Block {block_num + 1}")
         block_bid_his = []
 
         for counter in range(24):
@@ -161,6 +162,7 @@ def run_pos(validators, num_blocks):
     transaction_data = []
     
     for block_num in range(num_blocks):
+        print(f"Running PoS for Block {block_num + 1}")
         validator = random.choice(validators)
         selected_transactions = validator.select_transactions()
         mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
@@ -270,7 +272,13 @@ if __name__ == "__main__":
             else:
                 user.create_transaction()
 
+    # Debugging to check the number of transactions created by each user 
+    for user in users:
+        print(f"User {user.id} created {len(user.transactions)} transactions")
+
     total_mev_created = sum(1 for user in users for tx in user.transactions if tx.is_mev)
+    print(f"Total MEV Created: {total_mev_created}")
+
     cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
