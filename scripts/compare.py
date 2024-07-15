@@ -1,8 +1,6 @@
 import random
 import numpy as np
-import matplotlib.pyplot as plt
 import uuid
-import seaborn as sns
 import pandas as pd
 import os
 
@@ -20,7 +18,7 @@ MEV_POTENTIALS = [0.15, 0.2]
 
 class Transaction:
     def __init__(self, fee, is_mev, creator_id=None, targeted=False):
-        # all transactions should have a unique id, a potential mev, a gas fee, a creator, and when created. Indicator should be set for included or not in a block, targeted or not.
+        # all transactions should have a unique id, a potential mev, a gas fee, a creator, when created. Indicator should be set for included or not in a block, targeted or not.
         self.id = str(uuid.uuid4())
         self.fee = fee
         self.is_mev = is_mev
@@ -204,65 +202,6 @@ def run_pos(validators, num_blocks):
 
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
-def plot_cumulative_mev(cumulative_mev_pbs, cumulative_mev_pos):
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(x=range(NUM_BLOCKS), y=cumulative_mev_pbs, label='PBS')
-    sns.lineplot(x=range(NUM_BLOCKS), y=cumulative_mev_pos, label='PoS')
-    plt.title('Cumulative MEV Transactions Included Over Blocks')
-    plt.xlabel('Block Number')
-    plt.ylabel('Cumulative Number of MEV Transactions Included')
-    plt.legend()
-    plt.show()
-
-def plot_ranked_profit_distribution(builder_profits, validator_profits):
-    if not builder_profits or not validator_profits:
-        print("No transactions to plot.")
-        return
-    
-    sorted_builder_profits = sorted(builder_profits.items(), key=lambda x: x[1], reverse=True)
-    sorted_validator_profits = sorted(validator_profits.items(), key=lambda x: x[1], reverse=True)
-    
-    builder_ids, builder_profits = zip(*sorted_builder_profits)
-    validator_ids, validator_profits = zip(*sorted_validator_profits)
-    
-    # Adjust lengths to be the same by padding with zeros
-    max_length = max(len(builder_profits), len(validator_profits))
-    builder_profits = list(builder_profits) + [0] * (max_length - len(builder_profits))
-    validator_profits = list(validator_profits) + [0] * (max_length - len(validator_profits))
-    
-    index = np.arange(max_length)
-    bar_width = 0.35
-    
-    plt.figure(figsize=(12, 8))
-    
-    sns.barplot(x=index, y=builder_profits, color='b', alpha=0.6, label='Builders')
-    sns.barplot(x=index + bar_width, y=validator_profits, color='g', alpha=0.6, label='Validators')
-    
-    plt.xlabel('Rank')
-    plt.ylabel('Cumulative Profit')
-    plt.title('Ranked Cumulative Profit of Builders and Validators')
-    plt.xticks(index + bar_width / 2, index)
-    plt.legend()
-    
-    plt.tight_layout()
-    plt.show()
-
-def plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos):
-    plt.figure(figsize=(10, 6))
-    
-    x_axis = list(range(1, NUM_BLOCKS + 1))
-    y_mev_created = [total_mev_created] * NUM_BLOCKS  
-    
-    sns.lineplot(x=x_axis, y=y_mev_created, label='Total MEV Created', linestyle='--', color='blue')
-    sns.lineplot(x=x_axis, y=cumulative_mev_included_pbs, label='MEV Included in PBS', color='red')
-    sns.lineplot(x=x_axis, y=cumulative_mev_included_pos, label='MEV Included in PoS', color='green')
-    
-    plt.title('MEV Transactions: Created vs Included')
-    plt.xlabel('Block Number')
-    plt.ylabel('Number of MEV Transactions')
-    plt.legend()
-    plt.show()
-
 if __name__ == "__main__":
     users = [NormalUser(i) if random.random() > 0.1 else AttackUser(i) for i in range(NUM_USERS)]
     builders = [Builder(i, random.random() > 0.5) for i in range(NUM_BUILDERS)]
@@ -288,10 +227,6 @@ if __name__ == "__main__":
 
     cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
-
-    plot_cumulative_mev(cumulative_mev_included_pbs, cumulative_mev_included_pos)
-    plot_ranked_profit_distribution(builder_profits, validator_profits)
-    plot_mev_transactions_comparison(total_mev_created, cumulative_mev_included_pbs, cumulative_mev_included_pos)
 
     os.makedirs('data', exist_ok=True)
     
