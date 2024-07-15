@@ -17,28 +17,26 @@ FIXED_GAS_FEES = [0.05, 0.1]
 MEV_POTENTIALS = [0.15, 0.2]
 
 class Transaction:
-    def __init__(self, fee, is_mev, creator_id=None, targeted=False):
-        # all transactions should have a unique id, a potential mev, a gas fee, a creator, when created. Indicator should be set for included or not in a block, targeted or not.
+    def __init__(self, fee, is_mev, creator_id=None, targeting=False, target_tx_id=None, block_created=None):
         self.id = str(uuid.uuid4())
         self.fee = fee
         self.is_mev = is_mev
         self.creator_id = creator_id
         self.included = False
-        self.targeted = targeted
+        self.targeting = targeting
+        self.target_tx_id = target_tx_id
+        self.block_created = block_created  # Record the block number when the transaction was created
 
 class Participant:
     def __init__(self, id):
-        # all participants should have a unique id and a pool of mempool with transactions
         self.id = id
         self.mempool = []
 
-    def create_transaction(self, is_mev=False):
-        # each participant can create a transaction with a gas fee of their choice and a mev potential that fits into some distribution
-        # this transaction is broadcasted to the network to participants' mempool
+    def create_transaction(self, is_mev=False, block_number=None):
         fee = random.choice(FIXED_GAS_FEES)
         if is_mev:
             fee = random.choice(MEV_POTENTIALS)
-        tx = Transaction(fee, is_mev, self.id)
+        tx = Transaction(fee, is_mev, self.id, block_created=block_number)
         self.broadcast_transaction(tx)
         return tx
 
@@ -47,18 +45,18 @@ class Participant:
             participant.mempool.append(tx)
 
 class NormalUser(Participant):
-    pass  # No need to redefine create_transaction as it inherits from Participant
+    pass  # Inherits create_transaction from Participant
 
 class AttackUser(Participant):
-    def create_transaction(self, target_tx=None):
+    def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.is_mev:
             fee = target_tx.fee + 0.01
-            tx = Transaction(fee, False, self.id, targeted=True)
+            tx = Transaction(fee, False, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number)
             self.broadcast_transaction(tx)
             return tx
         else:
             fee = random.choice(FIXED_GAS_FEES)
-            tx = Transaction(fee, False, self.id)
+            tx = Transaction(fee, False, self.id, block_created=block_number)
             self.broadcast_transaction(tx)
             return tx
 
@@ -68,7 +66,7 @@ class Builder(Participant):
         self.is_attack = is_attack
 
     def bid(self, block_bid_his):
-        block_value = sum(tx.fee for tx in self.mempool if not tx.included)
+        block_value = sum(tx.fee for tx in self.mempool if not tx.included and tx.block_created <= block_number)
         if block_bid_his:
             last_bid = max(block_bid_his[-1].values())
             new_bid = np.random.normal(last_bid, last_bid * 0.5)
@@ -77,12 +75,12 @@ class Builder(Participant):
             return block_value * 0.5
 
     def select_transactions(self):
-        available_transactions = [tx for tx in self.mempool if not tx.included]
+        available_transactions = [tx for tx in self.mempool if not tx.included and tx.block_created <= block_number]
         if self.is_attack:
             mev_transactions = [tx for tx in available_transactions if tx.is_mev]
             for tx in mev_transactions:
-                front_run_tx = Transaction(tx.fee + 0.01, False, self.id, targeted=True)
-                available_transactions.append(front_run_tx)
+                front_run_tx = Transaction(tx.fee + 0.01, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
+                self.broadcast_transaction(front_run_tx)
 
         available_transactions.sort(key=lambda x: x.fee, reverse=True)
         selected_transactions = available_transactions[:BLOCK_CAPACITY]
@@ -98,7 +96,7 @@ class Validator(Participant):
         self.is_attack = is_attack
 
     def select_transactions(self):
-        available_transactions = [tx for tx in self.mempool if not tx.included]
+        available_transactions = [tx for tx in self.mempool if not tx.included and tx.block_created <= block_number]
         available_transactions.sort(key=lambda x: x.fee, reverse=True)
         selected_transactions = available_transactions[:BLOCK_CAPACITY]
 
@@ -149,11 +147,12 @@ def run_pbs(builders, num_blocks):
                 'transaction_id': tx.id,
                 'fee': tx.fee,
                 'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
-                'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
+                'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
                 'creator_id': tx.creator_id,
-                'target_tx_id': tx.id if tx.targeted else None,
+                'target_tx_id': tx.target_tx_id,
                 'type_of_user': 'attack' if isinstance(users[tx.creator_id], AttackUser) else 'normal',
-                'block_number': block_num + 1
+                'block_number': block_num + 1,
+                'block_created': tx.block_created
             })
 
     builder_final_profits = {k: v[-1] for k, v in builder_profits.items() if v}
@@ -183,7 +182,7 @@ def run_pos(validators, num_blocks):
             'total_gas': profit_from_block,
             'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
             'block_bid': None,
-            'builder_type': 'attack' if validator.is_attack else 'normal'
+            'builder_type': 'validator'
         })
 
         for tx in selected_transactions:
@@ -191,11 +190,12 @@ def run_pos(validators, num_blocks):
                 'transaction_id': tx.id,
                 'fee': tx.fee,
                 'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
-                'mev_captured': tx.fee if tx.is_mev and tx.targeted else 0,
+                'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
                 'creator_id': tx.creator_id,
-                'target_tx_id': tx.id if tx.targeted else None,
+                'target_tx_id': tx.target_tx_id,
                 'type_of_user': 'attack' if isinstance(users[tx.creator_id], AttackUser) else 'normal',
-                'block_number': block_num + 1
+                'block_number': block_num + 1,
+                'block_created': tx.block_created
             })
 
         print(f"Block {block_num + 1}:")
@@ -207,21 +207,21 @@ def run_pos(validators, num_blocks):
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
 if __name__ == "__main__":
-    users = [NormalUser(i) if i % 2 == 0 else AttackUser(i) for i in range(NUM_USERS)]
-    builders = [Builder(i, i % 2 != 0) for i in range(NUM_BUILDERS)]
-    validators = [Validator(i, i % 2 != 0) for i in range(NUM_VALIDATORS)]
+    users = [NormalUser(i) if i < NUM_USERS // 2 else AttackUser(i) for i in range(NUM_USERS)]
+    builders = [Builder(i, i >= NUM_BUILDERS // 2) for i in range(NUM_BUILDERS)]
+    validators = [Validator(i, i >= NUM_VALIDATORS // 2) for i in range(NUM_VALIDATORS)]
 
-    # Collect all participants in a global list
     all_participants = users + builders + validators
 
-    for _ in range(NUM_BLOCKS):
+    for block_number in range(NUM_BLOCKS):
         # Generate transactions per block
-        for user in users:
+        for _ in range(NUM_TRANSACTIONS_PER_BLOCK):
+            user = random.choice(users)
             if isinstance(user, AttackUser):
                 target_tx = next((tx for tx in user.mempool if tx.is_mev), None)
-                user.create_transaction(target_tx)
+                user.create_transaction(target_tx, block_number=block_number + 1)
             else:
-                user.create_transaction(is_mev=random.choice([True, False]))  # Randomly create some MEV transactions
+                user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
 
     # Debugging to check the number of transactions created by each user 
     for user in users:
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
     os.makedirs('data', exist_ok=True)
-    
+
     block_data_pbs_df = pd.DataFrame(block_data_pbs)
     block_data_pos_df = pd.DataFrame(block_data_pos)
     transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
