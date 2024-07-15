@@ -6,12 +6,12 @@ import os
 
 random.seed(42)
 
-NUM_USERS = 100
-NUM_BUILDERS = 20
-NUM_VALIDATORS = 20
-BLOCK_CAPACITY = 50
-NUM_TRANSACTIONS = 100
-NUM_BLOCKS = 100
+NUM_USERS = 20  # 10 normal + 10 attack
+NUM_BUILDERS = 10  # 5 normal + 5 attack
+NUM_VALIDATORS = 10  # 5 normal + 5 attack
+BLOCK_CAPACITY = 10
+NUM_TRANSACTIONS_PER_BLOCK = 20  # 10 normal + 10 attack
+NUM_BLOCKS = 10
 
 FIXED_GAS_FEES = [0.05, 0.1]
 MEV_POTENTIALS = [0.15, 0.2]
@@ -82,25 +82,29 @@ class Builder(Participant):
             mev_transactions = [tx for tx in available_transactions if tx.is_mev]
             for tx in mev_transactions:
                 front_run_tx = Transaction(tx.fee + 0.01, False, self.id, targeted=True)
-                self.broadcast_transaction(front_run_tx)
-        
+                available_transactions.append(front_run_tx)
+
         available_transactions.sort(key=lambda x: x.fee, reverse=True)
         selected_transactions = available_transactions[:BLOCK_CAPACITY]
-        
+
         for tx in selected_transactions:
             tx.included = True
-        
+
         return selected_transactions
 
 class Validator(Participant):
+    def __init__(self, id, is_attack):
+        super().__init__(id)
+        self.is_attack = is_attack
+
     def select_transactions(self):
         available_transactions = [tx for tx in self.mempool if not tx.included]
         available_transactions.sort(key=lambda x: x.fee, reverse=True)
         selected_transactions = available_transactions[:BLOCK_CAPACITY]
-        
+
         for tx in selected_transactions:
             tx.included = True
-        
+
         return selected_transactions
 
 def run_pbs(builders, num_blocks):
@@ -108,7 +112,7 @@ def run_pbs(builders, num_blocks):
     builder_profits = {builder.id: [] for builder in builders}
     block_data = []
     transaction_data = []
-    
+
     for block_num in range(num_blocks):
         print(f"Running PBS for Block {block_num + 1}")
         block_bid_his = []
@@ -119,19 +123,19 @@ def run_pbs(builders, num_blocks):
                 bid = builder.bid(block_bid_his)
                 counter_bids[builder.id] = bid
             block_bid_his.append(counter_bids)
-        
+
         highest_bid = max(block_bid_his[-1].values())
         winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
         winning_builder = builders[winning_builder_id]
-        
+
         selected_transactions = winning_builder.select_transactions()
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = block_value - highest_bid
         builder_profits[winning_builder_id].append(builder_profits[winning_builder_id][-1] + profit if builder_profits[winning_builder_id] else profit)
-        
+
         mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.is_mev)
         cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
-        
+
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': block_value,
@@ -153,7 +157,7 @@ def run_pbs(builders, num_blocks):
             })
 
     builder_final_profits = {k: v[-1] for k, v in builder_profits.items() if v}
-    
+
     return cumulative_mev_transactions, builder_final_profits, block_data, transaction_data
 
 def run_pos(validators, num_blocks):
@@ -162,7 +166,7 @@ def run_pos(validators, num_blocks):
     total_mev_transactions = 0
     block_data = []
     transaction_data = []
-    
+
     for block_num in range(num_blocks):
         print(f"Running PoS for Block {block_num + 1}")
         validator = random.choice(validators)
@@ -170,7 +174,7 @@ def run_pos(validators, num_blocks):
         mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
         profit_from_block = sum(tx.fee for tx in selected_transactions)
         validator_profits[validator.id] += profit_from_block
-        
+
         total_mev_transactions += mev_transactions_in_block
         cumulative_mev_transactions.append(total_mev_transactions)
 
@@ -179,9 +183,9 @@ def run_pos(validators, num_blocks):
             'total_gas': profit_from_block,
             'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
             'block_bid': None,
-            'builder_type': 'validator'
+            'builder_type': 'attack' if validator.is_attack else 'normal'
         })
-    
+
         for tx in selected_transactions:
             transaction_data.append({
                 'transaction_id': tx.id,
@@ -193,7 +197,7 @@ def run_pos(validators, num_blocks):
                 'type_of_user': 'attack' if isinstance(users[tx.creator_id], AttackUser) else 'normal',
                 'block_number': block_num + 1
             })
-    
+
         print(f"Block {block_num + 1}:")
         print(f"Total MEV Transactions in Block: {mev_transactions_in_block}")
         print("Transactions in Winning Block:")
@@ -203,20 +207,21 @@ def run_pos(validators, num_blocks):
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
 if __name__ == "__main__":
-    users = [NormalUser(i) if random.random() > 0.1 else AttackUser(i) for i in range(NUM_USERS)]
-    builders = [Builder(i, random.random() > 0.5) for i in range(NUM_BUILDERS)]
-    validators = [Validator(i) for i in range(NUM_VALIDATORS)]
+    users = [NormalUser(i) if i % 2 == 0 else AttackUser(i) for i in range(NUM_USERS)]
+    builders = [Builder(i, i % 2 != 0) for i in range(NUM_BUILDERS)]
+    validators = [Validator(i, i % 2 != 0) for i in range(NUM_VALIDATORS)]
 
     # Collect all participants in a global list
     all_participants = users + builders + validators
 
-    for user in users:
-        for _ in range(NUM_TRANSACTIONS // NUM_USERS):
+    for _ in range(NUM_BLOCKS):
+        # Generate transactions per block
+        for user in users:
             if isinstance(user, AttackUser):
                 target_tx = next((tx for tx in user.mempool if tx.is_mev), None)
                 user.create_transaction(target_tx)
             else:
-                user.create_transaction()
+                user.create_transaction(is_mev=random.choice([True, False]))  # Randomly create some MEV transactions
 
     # Debugging to check the number of transactions created by each user 
     for user in users:
