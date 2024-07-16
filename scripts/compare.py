@@ -1,4 +1,5 @@
 import random
+import uuid
 import pandas as pd
 import os
 import numpy as np
@@ -30,6 +31,10 @@ class Transaction:
         self.target_tx_id = target_tx_id
         self.block_created = block_created
 
+user_counter = 1
+builder_counter = 1
+validator_counter = 1
+
 class Participant:
     def __init__(self, id):
         self.id = id
@@ -50,9 +55,17 @@ class Participant:
             participant.mempool_pos.append(tx)
 
 class NormalUser(Participant):
-    pass
+    def __init__(self):
+        global user_counter
+        super().__init__(user_counter)
+        user_counter += 1
 
 class AttackUser(Participant):
+    def __init__(self):
+        global user_counter
+        super().__init__(user_counter)
+        user_counter += 1
+
     def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.is_mev:
             fee = target_tx.fee + 0.01
@@ -66,9 +79,11 @@ class AttackUser(Participant):
             return tx
 
 class Builder(Participant):
-    def __init__(self, id, is_attack):
-        super().__init__(id)
+    def __init__(self, is_attack):
+        global builder_counter
+        super().__init__(builder_counter)
         self.is_attack = is_attack
+        builder_counter += 1
 
     def bid(self, block_bid_his, block_number):
         block_value = sum(tx.fee for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
@@ -96,9 +111,11 @@ class Builder(Participant):
         return selected_transactions
 
 class Validator(Participant):
-    def __init__(self, id, is_attack):
-        super().__init__(id)
+    def __init__(self, is_attack):
+        global validator_counter
+        super().__init__(validator_counter)
         self.is_attack = is_attack
+        validator_counter += 1
 
     def select_transactions(self, block_number):
         available_transactions = [tx for tx in self.mempool_pos if not tx.included and tx.block_created <= block_number]
@@ -110,6 +127,12 @@ class Validator(Participant):
 
         return selected_transactions
 
+log_file = open('simulation_log.txt', 'w')
+
+def log(msg):
+    print(msg)
+    log_file.write(msg + '\n')
+
 def run_pbs(builders, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
     builder_profits = {builder.id: [] for builder in builders}
@@ -118,75 +141,70 @@ def run_pbs(builders, num_blocks):
 
     targeting_tracker = {}
 
-    with open('pbs_log.txt', 'w') as log_file:
-        for block_num in range(num_blocks):
-            log_file.write(f"Running PBS for Block {block_num + 1}\n")
-            block_bid_his = []
+    for block_num in range(num_blocks):
+        log(f"\n--- PBS Block {block_num + 1} ---")
+        block_bid_his = []
 
-            # Log transactions in the mempool before the block inclusion
-            log_file.write("\nMempool before block inclusion (PBS):\n")
-            for tx in all_participants[0].mempool_pbs:
-                log_file.write(f"Transaction ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Block Created: {tx.block_created}\n")
+        for counter in range(24):
+            counter_bids = {}
+            for builder in builders:
+                bid = builder.bid(block_bid_his, block_num + 1)
+                counter_bids[builder.id] = bid
+                log(f"Builder {builder.id} ({'attack' if builder.is_attack else 'normal'}) bid: {bid:.2f}")
+            block_bid_his.append(counter_bids)
 
-            for counter in range(24):
-                counter_bids = {}
-                for builder in builders:
-                    bid = builder.bid(block_bid_his, block_num + 1)
-                    counter_bids[builder.id] = bid
-                block_bid_his.append(counter_bids)
+        highest_bid = max(block_bid_his[-1].values())
+        winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
+        winning_builder = next(b for b in builders if b.id == winning_builder_id)
+        log(f"Winning builder: {winning_builder_id} with bid: {highest_bid:.2f}")
 
-            highest_bid = max(block_bid_his[-1].values())
-            winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
-            winning_builder = next(b for b in builders if b.id == winning_builder_id)
+        selected_transactions = winning_builder.select_transactions(block_num + 1)
+        log(f"Transactions selected by builder {winning_builder.id}:")
+        for tx in selected_transactions:
+            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
 
-            selected_transactions = winning_builder.select_transactions(block_num + 1)
-            block_value = sum(tx.fee for tx in selected_transactions)
-            profit = block_value - highest_bid
-            builder_profits[winning_builder_id].append(builder_profits[winning_builder_id][-1] + profit if builder_profits[winning_builder_id] else profit)
+        block_value = sum(tx.fee for tx in selected_transactions)
+        profit = block_value - highest_bid
+        builder_profits[winning_builder_id].append(builder_profits[winning_builder_id][-1] + profit if builder_profits[winning_builder_id] else profit)
 
-            mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.is_mev)
-            cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
+        mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.is_mev)
+        cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
 
-            block_data.append({
-                'block_id': block_num + 1,
-                'total_gas': block_value,
-                'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
-                'block_bid': highest_bid,
-                'builder_type': 'attack' if winning_builder.is_attack else 'normal'
+        block_data.append({
+            'block_id': block_num + 1,
+            'total_gas': block_value,
+            'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
+            'block_bid': highest_bid,
+            'builder_type': 'attack' if winning_builder.is_attack else 'normal'
+        })
+
+        for tx in selected_transactions:
+            if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
+                tx.fee = 0  # Mark as failed attack
+            else:
+                targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
+
+            transaction_data.append({
+                'transaction_id': tx.id,
+                'fee': tx.fee,
+                'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
+                'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
+                'creator_id': tx.creator_id,
+                'target_tx_id': tx.target_tx_id,
+                'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
+                'block_number': block_num + 1,
+                'block_created': tx.block_created
             })
 
-            for tx in selected_transactions:
-                if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
-                    tx.fee = 0  # Mark as failed attack
-                else:
-                    targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
+        # Remove included transactions from mempool
+        for builder in builders:
+            builder.mempool_pbs = [tx for tx in builder.mempool_pbs if not tx.included]
 
-                transaction_data.append({
-                    'transaction_id': tx.id,
-                    'fee': tx.fee,
-                    'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
-                    'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
-                    'creator_id': tx.creator_id,
-                    'target_tx_id': tx.target_tx_id,
-                    'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
-                    'block_number': block_num + 1,
-                    'block_created': tx.block_created
-                })
-
-            # Log details of the winning builder's block
-            log_file.write(f"\nWinning Builder ID: {winning_builder_id}, Builder Type: {'attack' if winning_builder.is_attack else 'normal'}, Highest Bid: {highest_bid}\n")
-            log_file.write("Transactions in Winning Block (PBS):\n")
-            for tx in selected_transactions:
-                log_file.write(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Targeting: {tx.targeting}\n")
-
-            # Remove included transactions from mempool
-            for builder in builders:
-                builder.mempool_pbs = [tx for tx in builder.mempool_pbs if not tx.included]
-
-            # Log the remaining transactions in the mempool after inclusion
-            log_file.write("\nMempool after block inclusion (PBS):\n")
-            for tx in all_participants[0].mempool_pbs:
-                log_file.write(f"Transaction ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Block Created: {tx.block_created}\n")
+        # Log remaining mempool
+        log("Remaining mempool for PBS after block inclusion:")
+        for builder in builders:
+            for tx in builder.mempool_pbs:
+                log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
 
     builder_final_profits = {k: v[-1] for k, v in builder_profits.items() if v}
 
@@ -201,75 +219,67 @@ def run_pos(validators, num_blocks):
 
     targeting_tracker = {}
 
-    with open('pos_log.txt', 'w') as log_file:
-        for block_num in range(num_blocks):
-            log_file.write(f"Running PoS for Block {block_num + 1}\n")
+    for block_num in range(num_blocks):
+        log(f"\n--- PoS Block {block_num + 1} ---")
+        validator = random.choice(validators)
+        selected_transactions = validator.select_transactions(block_num + 1)
+        mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
+        profit_from_block = sum(tx.fee for tx in selected_transactions)
+        validator_profits[validator.id] += profit_from_block
 
-            # Log transactions in the mempool before the block inclusion
-            log_file.write("\nMempool before block inclusion (PoS):\n")
-            for tx in all_participants[0].mempool_pos:
-                log_file.write(f"Transaction ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Block Created: {tx.block_created}\n")
+        total_mev_transactions += mev_transactions_in_block
+        cumulative_mev_transactions.append(total_mev_transactions)
 
-            validator = random.choice(validators)
-            selected_transactions = validator.select_transactions(block_num + 1)
-            mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
-            profit_from_block = sum(tx.fee for tx in selected_transactions)
-            validator_profits[validator.id] += profit_from_block
+        block_data.append({
+            'block_id': block_num + 1,
+            'total_gas': profit_from_block,
+            'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
+            'block_bid': None,
+            'builder_type': 'validator'
+        })
 
-            total_mev_transactions += mev_transactions_in_block
-            cumulative_mev_transactions.append(total_mev_transactions)
+        log(f"Validator {validator.id} selected transactions:")
+        for tx in selected_transactions:
+            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
 
-            block_data.append({
-                'block_id': block_num + 1,
-                'total_gas': profit_from_block,
-                'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
-                'block_bid': None,
-                'builder_type': 'validator'
+        for tx in selected_transactions:
+            if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
+                tx.fee = 0  # Mark as failed attack
+            else:
+                targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
+
+            transaction_data.append({
+                'transaction_id': tx.id,
+                'fee': tx.fee,
+                'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
+                'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
+                'creator_id': tx.creator_id,
+                'target_tx_id': tx.target_tx_id,
+                'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
+                'block_number': block_num + 1,
+                'block_created': tx.block_created
             })
 
-            for tx in selected_transactions:
-                if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
-                    tx.fee = 0  # Mark as failed attack
-                else:
-                    targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
+        # Remove included transactions from mempool
+        for validator in validators:
+            validator.mempool_pos = [tx for tx in validator.mempool_pos if not tx.included]
 
-                transaction_data.append({
-                    'transaction_id': tx.id,
-                    'fee': tx.fee,
-                    'mev_potential': max(MEV_POTENTIALS) if tx.is_mev else 0,
-                    'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
-                    'creator_id': tx.creator_id,
-                    'target_tx_id': tx.target_tx_id,
-                    'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
-                    'block_number': block_num + 1,
-                    'block_created': tx.block_created
-                })
-
-            # Log details of the selected validator's block
-            log_file.write(f"\nSelected Validator ID: {validator.id}, Validator Type: {'attack' if validator.is_attack else 'normal'}\n")
-            log_file.write("Transactions in Winning Block (PoS):\n")
-            for tx in selected_transactions:
-                log_file.write(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Targeting: {tx.targeting}\n")
-
-            # Remove included transactions from mempool
-            for validator in validators:
-                validator.mempool_pos = [tx for tx in validator.mempool_pos if not tx.included]
-
-            # Log the remaining transactions in the mempool after inclusion
-            log_file.write("\nMempool after block inclusion (PoS):\n")
-            for tx in all_participants[0].mempool_pos:
-                log_file.write(f"Transaction ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Block Created: {tx.block_created}\n")
+        log("Remaining mempool for PoS after block inclusion:")
+        for validator in validators:
+            for tx in validator.mempool_pos:
+                log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
 
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
 if __name__ == "__main__":
-    users = [NormalUser(i+1) if i < NUM_USERS // 2 else AttackUser(i+1) for i in range(NUM_USERS)]
-    builders = [Builder(i+1, i >= NUM_BUILDERS // 2) for i in range(NUM_BUILDERS)]
-    validators = [Validator(i+1, i >= NUM_VALIDATORS // 2) for i in range(NUM_VALIDATORS)]
+    users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
+    builders = [Builder(i >= NUM_BUILDERS // 2) for i in range(NUM_BUILDERS)]
+    validators = [Validator(i >= NUM_VALIDATORS // 2) for i in range(NUM_VALIDATORS)]
 
     all_participants = users + builders + validators
 
     for block_number in range(NUM_BLOCKS):
+        log(f"\n--- Transaction Generation for Block {block_number + 1} ---")
         for _ in range(NUM_TRANSACTIONS_PER_BLOCK // 2):
             attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
             normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
@@ -277,18 +287,16 @@ if __name__ == "__main__":
             # Attack user creates transaction
             target_tx_pbs = next((tx for tx in attack_user.mempool_pbs if tx.is_mev and not tx.included), None)
             target_tx_pos = next((tx for tx in attack_user.mempool_pos if tx.is_mev and not tx.included), None)
-            attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
-            attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
+            attack_tx_pbs = attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
+            attack_tx_pos = attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
+            log(f"Attack User {attack_user.id} created transactions PBS TX ID: {attack_tx_pbs.id} POS TX ID: {attack_tx_pos.id}")
 
             # Normal user creates transaction
-            normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
-
-    # Debugging to check the number of transactions created by each user 
-    for user in users:
-        print(f"User {user.id} created {len(user.mempool_pbs)} transactions")
+            normal_tx = normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
+            log(f"Normal User {normal_user.id} created transaction TX ID: {normal_tx.id}")
 
     total_mev_created = sum(1 for user in users for tx in user.mempool_pbs if tx.is_mev)
-    print(f"Total MEV Created: {total_mev_created}")
+    log(f"Total MEV Created: {total_mev_created}")
 
     cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
@@ -304,3 +312,5 @@ if __name__ == "__main__":
     block_data_pos_df.to_csv('data/block_data_pos.csv', index=False)
     transaction_data_pbs_df.to_csv('data/transaction_data_pbs.csv', index=False)
     transaction_data_pos_df.to_csv('data/transaction_data_pos.csv', index=False)
+
+    log_file.close()
