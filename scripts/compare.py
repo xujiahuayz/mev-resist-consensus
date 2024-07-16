@@ -46,6 +46,7 @@ class Participant:
 
 class NormalUser(Participant):
     pass 
+
 class AttackUser(Participant):
     def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.is_mev:
@@ -58,7 +59,7 @@ class AttackUser(Participant):
             tx = Transaction(fee, False, self.id, block_created=block_number)
             self.broadcast_transaction(tx)
             return tx
-
+        
 class Builder(Participant):
     def __init__(self, id, is_attack):
         super().__init__(id)
