@@ -7,11 +7,11 @@ import numpy as np
 random.seed(42)
 
 NUM_USERS = 20
-NUM_BUILDERS = 10
-NUM_VALIDATORS = 10
+NUM_BUILDERS = 20
+NUM_VALIDATORS = 20
 BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
-NUM_BLOCKS = 10
+NUM_BLOCKS = 50
 
 FIXED_GAS_FEES = [0.05, 0.1]
 MEV_POTENTIALS = [0.15, 0.2]
@@ -127,11 +127,11 @@ class Validator(Participant):
 
         return selected_transactions
 
-log_file = open('simulation_log.txt', 'w')
+# log_file = open('simulation_log.txt', 'w')
 
-def log(msg):
-    print(msg)
-    log_file.write(msg + '\n')
+# def log(msg):
+#     print(msg)
+#     log_file.write(msg + '\n')
 
 def run_pbs(builders, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
@@ -142,7 +142,7 @@ def run_pbs(builders, num_blocks):
     targeting_tracker = {}
 
     for block_num in range(num_blocks):
-        log(f"\n--- PBS Block {block_num + 1} ---")
+        # log(f"\n--- PBS Block {block_num + 1} ---")
         block_bid_his = []
 
         for counter in range(24):
@@ -150,18 +150,18 @@ def run_pbs(builders, num_blocks):
             for builder in builders:
                 bid = builder.bid(block_bid_his, block_num + 1)
                 counter_bids[builder.id] = bid
-                log(f"Builder {builder.id} ({'attack' if builder.is_attack else 'normal'}) bid: {bid:.2f}")
+                # log(f"Builder {builder.id} ({'attack' if builder.is_attack else 'normal'}) bid: {bid:.2f}")
             block_bid_his.append(counter_bids)
 
         highest_bid = max(block_bid_his[-1].values())
         winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
         winning_builder = next(b for b in builders if b.id == winning_builder_id)
-        log(f"Winning builder: {winning_builder_id} with bid: {highest_bid:.2f}")
+        # log(f"Winning builder: {winning_builder_id} with bid: {highest_bid:.2f}")
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
-        log(f"Transactions selected by builder {winning_builder.id}:")
-        for tx in selected_transactions:
-            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
+        # log(f"Transactions selected by builder {winning_builder.id}:")
+        # for tx in selected_transactions:
+        #     log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
 
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = block_value - highest_bid
@@ -201,10 +201,10 @@ def run_pbs(builders, num_blocks):
             builder.mempool_pbs = [tx for tx in builder.mempool_pbs if not tx.included]
 
         # Log remaining mempool
-        log("Remaining mempool for PBS after block inclusion:")
-        for builder in builders:
-            for tx in builder.mempool_pbs:
-                log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
+        # log("Remaining mempool for PBS after block inclusion:")
+        # for builder in builders:
+        #     for tx in builder.mempool_pbs:
+        #         log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
 
     builder_final_profits = {k: v[-1] for k, v in builder_profits.items() if v}
 
@@ -220,12 +220,12 @@ def run_pos(validators, num_blocks):
     targeting_tracker = {}
 
     for block_num in range(num_blocks):
-        log(f"\n--- PoS Block {block_num + 1} ---")
+        # log(f"\n--- PoS Block {block_num + 1} ---")
         validator = random.choice(validators)
         selected_transactions = validator.select_transactions(block_num + 1)
-        log(f"Transactions selected by validator {validator.id}:")
-        for tx in selected_transactions:
-            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
+        # log(f"Transactions selected by validator {validator.id}:")
+        # for tx in selected_transactions:
+        #     log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
 
         mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
         profit_from_block = sum(tx.fee for tx in selected_transactions)
@@ -265,10 +265,10 @@ def run_pos(validators, num_blocks):
             validator.mempool_pos = [tx for tx in validator.mempool_pos if not tx.included]
 
         # Log remaining mempool
-        log("Remaining mempool for PoS after block inclusion:")
-        for validator in validators:
-            for tx in validator.mempool_pos:
-                log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
+        # log("Remaining mempool for PoS after block inclusion:")
+        # for validator in validators:
+        #     for tx in validator.mempool_pos:
+        #         log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, Included: {tx.included}")
 
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
@@ -294,11 +294,11 @@ if __name__ == "__main__":
             normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
 
     # Debugging to check the number of transactions created by each user 
-    for user in users:
-        log(f"User {user.id} created {len(user.mempool_pbs)} transactions")
+    # for user in users:
+    #     log(f"User {user.id} created {len(user.mempool_pbs)} transactions")
 
-    total_mev_created = sum(1 for user in users for tx in user.mempool_pbs if tx.is_mev)
-    log(f"Total MEV Created: {total_mev_created}")
+    # total_mev_created = sum(1 for user in users for tx in user.mempool_pbs if tx.is_mev)
+    # log(f"Total MEV Created: {total_mev_created}")
 
     cumulative_mev_included_pbs, builder_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
@@ -315,4 +315,4 @@ if __name__ == "__main__":
     transaction_data_pbs_df.to_csv('data/transaction_data_pbs.csv', index=False)
     transaction_data_pos_df.to_csv('data/transaction_data_pos.csv', index=False)
 
-log_file.close()
+# log_file.close()
