@@ -6,11 +6,11 @@ import os
 
 random.seed(42)
 
-NUM_USERS = 20  # 10 normal + 10 attack
-NUM_BUILDERS = 10  # 5 normal + 5 attack
-NUM_VALIDATORS = 10  # 5 normal + 5 attack
+NUM_USERS = 20
+NUM_BUILDERS = 10
+NUM_VALIDATORS = 10
 BLOCK_CAPACITY = 10
-NUM_TRANSACTIONS_PER_BLOCK = 20  # 10 normal + 10 attack
+NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 10
 
 FIXED_GAS_FEES = [0.05, 0.1]
@@ -25,7 +25,7 @@ class Transaction:
         self.included = False
         self.targeting = targeting
         self.target_tx_id = target_tx_id
-        self.block_created = block_created  # Record the block number when the transaction was created
+        self.block_created = block_created
 
 class Participant:
     def __init__(self, id):
@@ -45,8 +45,7 @@ class Participant:
             participant.mempool.append(tx)
 
 class NormalUser(Participant):
-    pass  # Inherits create_transaction from Participant
-
+    pass 
 class AttackUser(Participant):
     def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.is_mev:
