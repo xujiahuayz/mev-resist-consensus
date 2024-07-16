@@ -223,6 +223,10 @@ def run_pos(validators, num_blocks):
         log(f"\n--- PoS Block {block_num + 1} ---")
         validator = random.choice(validators)
         selected_transactions = validator.select_transactions(block_num + 1)
+        log(f"Transactions selected by validator {validator.id}:")
+        for tx in selected_transactions:
+            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
+
         mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
         profit_from_block = sum(tx.fee for tx in selected_transactions)
         validator_profits[validator.id] += profit_from_block
@@ -235,12 +239,8 @@ def run_pos(validators, num_blocks):
             'total_gas': profit_from_block,
             'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
             'block_bid': None,
-            'builder_type': 'validator'
+            'validator_type': 'attack' if validator.is_attack else 'normal'
         })
-
-        log(f"Validator {validator.id} selected transactions:")
-        for tx in selected_transactions:
-            log(f"  - TX ID: {tx.id}, Fee: {tx.fee}, MEV: {tx.is_mev}, Creator: {tx.creator_id}")
 
         for tx in selected_transactions:
             if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
@@ -264,6 +264,7 @@ def run_pos(validators, num_blocks):
         for validator in validators:
             validator.mempool_pos = [tx for tx in validator.mempool_pos if not tx.included]
 
+        # Log remaining mempool
         log("Remaining mempool for PoS after block inclusion:")
         for validator in validators:
             for tx in validator.mempool_pos:
@@ -279,21 +280,22 @@ if __name__ == "__main__":
     all_participants = users + builders + validators
 
     for block_number in range(NUM_BLOCKS):
-        log(f"\n--- Transaction Generation for Block {block_number + 1} ---")
-        for _ in range(NUM_TRANSACTIONS_PER_BLOCK // 2):
+        for counter in range(24):
             attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
             normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
 
             # Attack user creates transaction
-            target_tx_pbs = next((tx for tx in attack_user.mempool_pbs if tx.is_mev and not tx.included), None)
-            target_tx_pos = next((tx for tx in attack_user.mempool_pos if tx.is_mev and not tx.included), None)
-            attack_tx_pbs = attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
-            attack_tx_pos = attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
-            log(f"Attack User {attack_user.id} created transactions PBS TX ID: {attack_tx_pbs.id} POS TX ID: {attack_tx_pos.id}")
+            target_tx_pbs = next((tx for tx in attack_user.mempool_pbs if tx.is_mev and not tx.included and tx.id not in [t.target_tx_id for t in attack_user.mempool_pbs if t.targeting]), None)
+            target_tx_pos = next((tx for tx in attack_user.mempool_pos if tx.is_mev and not tx.included and tx.id not in [t.target_tx_id for t in attack_user.mempool_pos if t.targeting]), None)
+            attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
+            attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
 
             # Normal user creates transaction
-            normal_tx = normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
-            log(f"Normal User {normal_user.id} created transaction TX ID: {normal_tx.id}")
+            normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
+
+    # Debugging to check the number of transactions created by each user 
+    for user in users:
+        log(f"User {user.id} created {len(user.mempool_pbs)} transactions")
 
     total_mev_created = sum(1 for user in users for tx in user.mempool_pbs if tx.is_mev)
     log(f"Total MEV Created: {total_mev_created}")
@@ -313,4 +315,4 @@ if __name__ == "__main__":
     transaction_data_pbs_df.to_csv('data/transaction_data_pbs.csv', index=False)
     transaction_data_pos_df.to_csv('data/transaction_data_pos.csv', index=False)
 
-    log_file.close()
+log_file.close()
