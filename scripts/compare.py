@@ -214,14 +214,16 @@ if __name__ == "__main__":
     all_participants = users + builders + validators
 
     for block_number in range(NUM_BLOCKS):
-        # Generate transactions per block
-        for _ in range(NUM_TRANSACTIONS_PER_BLOCK):
-            user = random.choice(users)
-            if isinstance(user, AttackUser):
-                target_tx = next((tx for tx in user.mempool if tx.is_mev), None)
-                user.create_transaction(target_tx, block_number=block_number + 1)
-            else:
-                user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
+        for _ in range(NUM_TRANSACTIONS_PER_BLOCK // 2):
+            attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
+            normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
+
+            # Attack user creates transaction
+            target_tx = next((tx for tx in attack_user.mempool if tx.is_mev), None)
+            attack_user.create_transaction(target_tx, block_number=block_number + 1)
+
+            # Normal user creates transaction
+            normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
 
     # Debugging to check the number of transactions created by each user 
     for user in users:
