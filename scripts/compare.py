@@ -2,6 +2,8 @@ import random
 import pandas as pd
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 random.seed(42)
 
@@ -87,7 +89,7 @@ class Builder(Participant):
         self.average_bid_percentage = 0.5  # Initial average bid percentage set to 50%
 
     def bid(self, block_bid_his, block_number):
-        block_value = sum(tx.fee + (max(MEV_POTENTIALS) if tx.is_mev else 0) for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
+        block_value = sum(tx.fee + (tx.fee if tx.is_mev else 0) for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
         
         if block_bid_his:
             # Calculate the average bid percentage from the last block bids
@@ -105,28 +107,7 @@ class Builder(Participant):
         return bid
 
     def select_transactions(self, block_number):
-        available_transactions = [tx for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number]
-        selected_transactions = []
-
-        if self.is_attack:
-            available_transactions.sort(key=lambda x: x.fee, reverse=True)
-            for tx in available_transactions:
-                if len(selected_transactions) >= BLOCK_CAPACITY:
-                    break
-                selected_transactions.append(tx)
-                if tx.is_mev:
-                    if tx.id not in targeting_tracker:
-                        targeting_tracker[tx.id] = True
-                        ba_tx = Transaction(0, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
-                        selected_transactions.append(ba_tx)
-        else:
-            available_transactions.sort(key=lambda x: x.fee, reverse=True)
-            selected_transactions = available_transactions[:BLOCK_CAPACITY]
-
-        for tx in selected_transactions:
-            tx.included = True
-
-        return selected_transactions
+        return select_transactions_common(self, block_number, self.mempool_pbs)
 
 class Validator(Participant):
     def __init__(self, is_attack):
@@ -136,28 +117,35 @@ class Validator(Participant):
         validator_counter += 1
 
     def select_transactions(self, block_number):
-        available_transactions = [tx for tx in self.mempool_pos if not tx.included and tx.block_created <= block_number]
-        selected_transactions = []
+        return select_transactions_common(self, block_number, self.mempool_pos)
 
-        if self.is_attack:
-            available_transactions.sort(key=lambda x: x.fee, reverse=True)
-            for tx in available_transactions:
-                if len(selected_transactions) >= BLOCK_CAPACITY:
-                    break
-                selected_transactions.append(tx)
-                if tx.is_mev:
-                    if tx.id not in targeting_tracker:
-                        targeting_tracker[tx.id] = True
-                        va_tx = Transaction(0, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
-                        selected_transactions.append(va_tx)
-        else:
-            available_transactions.sort(key=lambda x: x.fee, reverse=True)
-            selected_transactions = available_transactions[:BLOCK_CAPACITY]
+def select_transactions_common(participant, block_number, mempool):
+    available_transactions = [tx for tx in mempool if not tx.included and tx.block_created <= block_number]
+    selected_transactions = []
 
-        for tx in selected_transactions:
-            tx.included = True
+    if participant.is_attack:
+        available_transactions.sort(key=lambda x: x.fee, reverse=True)
+        targeted_tx_ids = set()  # To keep track of already targeted transactions
+        for tx in available_transactions:
+            if len(selected_transactions) >= BLOCK_CAPACITY:
+                break
+            if tx.id in targeted_tx_ids:
+                continue  # Skip if this transaction has already been targeted
+            selected_transactions.append(tx)
+            if tx.is_mev:
+                if tx.id not in targeting_tracker:
+                    targeting_tracker[tx.id] = True
+                    targeted_tx_ids.add(tx.id)
+                    attack_tx = Transaction(0, False, participant.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
+                    selected_transactions.append(attack_tx)
+    else:
+        available_transactions.sort(key=lambda x: x.fee, reverse=True)
+        selected_transactions = available_transactions[:BLOCK_CAPACITY]
 
-        return selected_transactions
+    for tx in selected_transactions:
+        tx.included = True
+
+    return selected_transactions
 
 def run_pbs(builders, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
@@ -195,7 +183,7 @@ def run_pbs(builders, num_blocks):
             'block_id': block_num + 1,
             'total_gas': block_value,
             'total_mev_captured': mev_transactions_in_block * max(MEV_POTENTIALS),
-            'block_bid': min(highest_bid, block_value + mev_transactions_in_block * max(MEV_POTENTIALS)),
+            'block_bid': highest_bid,
             'builder_type': 'attack' if winning_builder.is_attack else 'normal'
         })
 
