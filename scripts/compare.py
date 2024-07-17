@@ -109,6 +109,8 @@ class Builder(Participant):
         selected_transactions = []
 
         if self.is_attack:
+            # Remove other attack transactions and add own attack transactions
+            available_transactions = [tx for tx in available_transactions if not (tx.targeting and tx.target_tx_id in targeting_tracker)]
             available_transactions.sort(key=lambda x: x.fee, reverse=True)
             for tx in available_transactions:
                 if len(selected_transactions) >= BLOCK_CAPACITY:
@@ -137,8 +139,24 @@ class Validator(Participant):
 
     def select_transactions(self, block_number):
         available_transactions = [tx for tx in self.mempool_pos if not tx.included and tx.block_created <= block_number]
-        available_transactions.sort(key=lambda x: x.fee, reverse=True)
-        selected_transactions = available_transactions[:BLOCK_CAPACITY]
+        selected_transactions = []
+
+        if self.is_attack:
+            # Remove other attack transactions and add own attack transactions
+            available_transactions = [tx for tx in available_transactions if not (tx.targeting and tx.target_tx_id in targeting_tracker)]
+            available_transactions.sort(key=lambda x: x.fee, reverse=True)
+            for tx in available_transactions:
+                if len(selected_transactions) >= BLOCK_CAPACITY:
+                    break
+                selected_transactions.append(tx)
+                if tx.is_mev:
+                    if tx.id not in targeting_tracker:
+                        targeting_tracker[tx.id] = True
+                        va_tx = Transaction(0, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
+                        selected_transactions.append(va_tx)
+        else:
+            available_transactions.sort(key=lambda x: x.fee, reverse=True)
+            selected_transactions = available_transactions[:BLOCK_CAPACITY]
 
         for tx in selected_transactions:
             tx.included = True
@@ -169,6 +187,16 @@ def run_pbs(builders, num_blocks):
         winning_builder = next(b for b in builders if b.id == winning_builder_id)
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
+
+        # Ensure only the first attack transaction targeting the same target transaction in the same block is considered successful
+        target_tracker = {}
+        for tx in selected_transactions:
+            if tx.targeting and tx.target_tx_id:
+                if tx.target_tx_id in target_tracker:
+                    tx.fee = 0  # Mark as failed attack
+                    tx.is_mev = False
+                else:
+                    target_tracker[tx.target_tx_id] = tx.id
 
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = highest_bid  # Proposer's profit is the winning bid
@@ -224,6 +252,16 @@ def run_pos(validators, num_blocks):
     for block_num in range(num_blocks):
         validator = random.choice(validators)
         selected_transactions = validator.select_transactions(block_num + 1)
+
+        # Ensure only the first attack transaction targeting the same target transaction in the same block is considered successful
+        target_tracker = {}
+        for tx in selected_transactions:
+            if tx.targeting and tx.target_tx_id:
+                if tx.target_tx_id in target_tracker:
+                    tx.fee = 0  # Mark as failed attack
+                    tx.is_mev = False
+                else:
+                    target_tracker[tx.target_tx_id] = tx.id
 
         mev_transactions_in_block = sum(tx.is_mev for tx in selected_transactions)
         profit_from_block = sum(tx.fee for tx in selected_transactions)

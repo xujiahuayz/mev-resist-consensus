@@ -15,34 +15,58 @@ def gini(arr):
     sorted_arr = np.sort(arr)
     n = arr.shape[0]
     cumulative_values = np.cumsum(sorted_arr)
-    gini_coefficient = (2.0 / n) * (np.arange(1, n + 1) * sorted_arr).sum() - (n + 1) / n
+    relative_mean = cumulative_values[-1] / n
+    gini_coefficient = (2 * (np.arange(1, n + 1) * sorted_arr).sum() / cumulative_values[-1] - (n + 1)) / n
     return gini_coefficient
 
-# Profit distribution for builders and validators
-builder_profits = block_data_pbs.groupby('builder_type')['total_gas'].sum()
-validator_profits = block_data_pos.groupby('validator_type')['total_gas'].sum()
+# Calculate the number of blocks built by type
+blocks_built_pbs = block_data_pbs.groupby(['builder_type']).size().reset_index(name='blocks_built')
+blocks_built_pos = block_data_pos.groupby(['validator_type']).size().reset_index(name='blocks_built')
+
+blocks_built_pbs['type'] = 'PBS'
+blocks_built_pos['type'] = 'PoS'
+
+blocks_built = pd.concat([blocks_built_pbs.rename(columns={'builder_type': 'participant_type'}),
+                          blocks_built_pos.rename(columns={'validator_type': 'participant_type'})])
+
+# Calculate profits
+builder_profits_pbs = block_data_pbs.groupby('builder_type')['total_gas'].sum().reset_index(name='profit')
+validator_profits_pos = block_data_pos.groupby('validator_type')['total_gas'].sum().reset_index(name='profit')
+
+builder_profits_pbs['type'] = 'PBS'
+validator_profits_pos['type'] = 'PoS'
+
+profits = pd.concat([builder_profits_pbs.rename(columns={'builder_type': 'participant_type'}),
+                     validator_profits_pos.rename(columns={'validator_type': 'participant_type'})])
 
 # Create the directory for saving figures
 os.makedirs('figures/new', exist_ok=True)
 
-# Plot builder and validator distribution
+# Plot the number of blocks built
 plt.figure(figsize=(12, 6))
-sns.countplot(x='builder_type', data=block_data_pbs)
-plt.title('Builder Distribution under PBS')
-plt.savefig('figures/new/builder_distribution_pbs.png')
+sns.barplot(x='participant_type', y='blocks_built', hue='type', data=blocks_built)
+plt.title('Number of Blocks Built')
+plt.xlabel('Participant Type')
+plt.ylabel('Number of Blocks Built')
+plt.savefig('figures/new/number_of_blocks_built.png')
 plt.close()
 
+# Plot the profits
 plt.figure(figsize=(12, 6))
-sns.countplot(x='validator_type', data=block_data_pos)
-plt.title('Validator Distribution under PoS')
-plt.savefig('figures/new/validator_distribution_pos.png')
+sns.barplot(x='participant_type', y='profit', hue='type', data=profits)
+plt.title('Profits')
+plt.xlabel('Participant Type')
+plt.ylabel('Profit')
+plt.savefig('figures/new/profits.png')
 plt.close()
 
-# Gini coefficient heatmap for profit distribution
+# Print Gini coefficient comparison
+builder_profits = block_data_pbs.groupby('builder_type')['total_gas'].sum()
+validator_profits = block_data_pos.groupby('validator_type')['total_gas'].sum()
+
 builder_profits_gini = gini(builder_profits.values)
 validator_profits_gini = gini(validator_profits.values)
 
-# Print Gini coefficient comparison
 print(f"Gini Coefficient for PBS: {builder_profits_gini}")
 print(f"Gini Coefficient for PoS: {validator_profits_gini}")
 
@@ -51,38 +75,8 @@ if validator_profits_gini < builder_profits_gini:
 else:
     print("PBS distributes more equally than PoS")
 
-# Lorenz curve plot for profit distribution
-def lorenz_curve(arr):
-    sorted_arr = np.sort(arr)
-    n = arr.shape[0]
-    cumulative_values = np.cumsum(sorted_arr)
-    lorenz_curve = cumulative_values / cumulative_values[-1]
-    lorenz_curve = np.insert(lorenz_curve, 0, 0)
-    return lorenz_curve
-
-builder_lorenz = lorenz_curve(builder_profits.values)
-validator_lorenz = lorenz_curve(validator_profits.values)
-
-plt.figure(figsize=(12, 6))
-plt.plot(np.linspace(0, 1, builder_lorenz.size), builder_lorenz, label='PBS Builders')
-plt.plot(np.linspace(0, 1, validator_lorenz.size), validator_lorenz, label='PoS Validators')
-plt.plot([0, 1], [0, 1], linestyle='--', color='k', label='Equality Line')
-plt.xlabel('Cumulative Share of Builders/Validators')
-plt.ylabel('Cumulative Share of Profits')
-plt.title('Lorenz Curve for Profit Distribution')
-plt.legend()
-plt.savefig('figures/new/lorenz_curve.png')
-plt.close()
-
-# Profit distribution variations under different scenarios
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='block_id', y='total_gas', hue='builder_type', data=block_data_pbs)
-plt.title('Profit Distribution Variations under Different Scenarios within PBS')
-plt.savefig('figures/new/profit_distribution_pbs.png')
-plt.close()
-
-plt.figure(figsize=(12, 6))
-sns.boxplot(x='block_id', y='total_gas', hue='validator_type', data=block_data_pos)
-plt.title('Profit Distribution Variations under Different Scenarios within PoS')
-plt.savefig('figures/new/profit_distribution_pos.png')
-plt.close()
+# Profit distribution for builders and validators
+print("Builder Profits Distribution (PBS):")
+print(builder_profits)
+print("\nValidator Profits Distribution (PoS):")
+print(validator_profits)
