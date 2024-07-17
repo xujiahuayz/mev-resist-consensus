@@ -30,30 +30,26 @@ plt.figure(figsize=(12, 6))
 sns.countplot(x='builder_type', data=block_data_pbs)
 plt.title('Builder Distribution under PBS')
 plt.savefig('figures/new/builder_distribution_pbs.png')
-plt.show()
+plt.close()
 
 plt.figure(figsize=(12, 6))
 sns.countplot(x='validator_type', data=block_data_pos)
 plt.title('Validator Distribution under PoS')
 plt.savefig('figures/new/validator_distribution_pos.png')
-plt.show()
+plt.close()
 
 # Gini coefficient heatmap for profit distribution
 builder_profits_gini = gini(builder_profits.values)
 validator_profits_gini = gini(validator_profits.values)
 
-gini_data = {
-    'PBS': builder_profits_gini,
-    'PoS': validator_profits_gini
-}
+# Print Gini coefficient comparison
+print(f"Gini Coefficient for PBS: {builder_profits_gini}")
+print(f"Gini Coefficient for PoS: {validator_profits_gini}")
 
-gini_df = pd.DataFrame(list(gini_data.items()), columns=['System', 'Gini Coefficient'])
-
-plt.figure(figsize=(12, 6))
-sns.barplot(x='System', y='Gini Coefficient', data=gini_df)
-plt.title('Gini Coefficient for Profit Distribution')
-plt.savefig('figures/new/gini_coefficient.png')
-plt.show()
+if validator_profits_gini < builder_profits_gini:
+    print("PoS distributes more equally than PBS")
+else:
+    print("PBS distributes more equally than PoS")
 
 # Lorenz curve plot for profit distribution
 def lorenz_curve(arr):
@@ -76,17 +72,17 @@ plt.ylabel('Cumulative Share of Profits')
 plt.title('Lorenz Curve for Profit Distribution')
 plt.legend()
 plt.savefig('figures/new/lorenz_curve.png')
-plt.show()
+plt.close()
 
 # Profit distribution variations under different scenarios
 plt.figure(figsize=(12, 6))
 sns.boxplot(x='block_id', y='total_gas', hue='builder_type', data=block_data_pbs)
 plt.title('Profit Distribution Variations under Different Scenarios within PBS')
 plt.savefig('figures/new/profit_distribution_pbs.png')
-plt.show()
+plt.close()
 
 plt.figure(figsize=(12, 6))
 sns.boxplot(x='block_id', y='total_gas', hue='validator_type', data=block_data_pos)
 plt.title('Profit Distribution Variations under Different Scenarios within PoS')
 plt.savefig('figures/new/profit_distribution_pos.png')
-plt.show()
+plt.close()
