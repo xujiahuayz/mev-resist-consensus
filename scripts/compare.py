@@ -97,15 +97,23 @@ class Builder(Participant):
 
     def select_transactions(self, block_number):
         available_transactions = [tx for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number]
-        if self.is_attack:
-            mev_transactions = [tx for tx in available_transactions if tx.is_mev]
-            for tx in mev_transactions:
-                if tx.id not in targeting_tracker:
-                    front_run_tx = Transaction(tx.fee + 0.01, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
-                    self.broadcast_transaction(front_run_tx)
+        selected_transactions = []
 
-        available_transactions.sort(key=lambda x: x.fee, reverse=True)
-        selected_transactions = available_transactions[:BLOCK_CAPACITY]
+        if self.is_attack:
+            # First, prioritize by gas fee
+            available_transactions.sort(key=lambda x: x.fee, reverse=True)
+            for tx in available_transactions:
+                if len(selected_transactions) >= BLOCK_CAPACITY:
+                    break
+                selected_transactions.append(tx)
+                if tx.is_mev:
+                    if tx.id not in targeting_tracker:
+                        targeting_tracker[tx.id] = True
+                        ba_tx = Transaction(0, False, self.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created)
+                        selected_transactions.append(ba_tx)
+        else:
+            available_transactions.sort(key=lambda x: x.fee, reverse=True)
+            selected_transactions = available_transactions[:BLOCK_CAPACITY]
 
         for tx in selected_transactions:
             tx.included = True
@@ -255,7 +263,6 @@ if __name__ == "__main__":
 
     all_participants = users + builders + validators
 
-    global targeting_tracker
     targeting_tracker = {}
 
     for block_number in range(NUM_BLOCKS):
