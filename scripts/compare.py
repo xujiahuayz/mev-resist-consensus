@@ -1,5 +1,4 @@
 import random
-import uuid
 import pandas as pd
 import os
 import numpy as np
@@ -13,8 +12,8 @@ BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
 
-FIXED_GAS_FEES = [0.05, 0.1]
-MEV_POTENTIALS = [0.15, 0.2]
+FIXED_GAS_FEES = [5, 15]
+MEV_POTENTIALS = [10, 20]
 
 transaction_counter = 1
 
@@ -69,7 +68,7 @@ class AttackUser(Participant):
     def create_transaction(self, target_tx=None, block_number=None):
         global targeting_tracker
         if target_tx and target_tx.is_mev and target_tx.id not in targeting_tracker:
-            fee = target_tx.fee + 0.01
+            fee = target_tx.fee + 1
             tx = Transaction(fee, False, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number)
             self.broadcast_transaction(tx)
             return tx
@@ -85,22 +84,31 @@ class Builder(Participant):
         super().__init__(builder_counter)
         self.is_attack = is_attack
         builder_counter += 1
+        self.average_bid_percentage = 0.5  # Initial average bid percentage set to 50%
 
     def bid(self, block_bid_his, block_number):
-        block_value = sum(tx.fee for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
+        block_value = sum(tx.fee + (max(MEV_POTENTIALS) if tx.is_mev else 0) for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
+        
         if block_bid_his:
-            last_highest_bid = max(block_bid_his[-1].values())
-            new_bid = min(last_highest_bid * 1.1, block_value)
-            return new_bid
+            # Calculate the average bid percentage from the last block bids
+            avg_percentage = np.mean([bid / block_value for round_bids in block_bid_his for bid in round_bids.values() if bid <= block_value])
+            self.average_bid_percentage = avg_percentage
+        
+        initial_bid = self.average_bid_percentage * block_value
+        
+        # Attack builders bid slightly more aggressively
+        if self.is_attack:
+            bid = min(max(0, initial_bid * 1.1), block_value)
         else:
-            return block_value * 0.5
+            bid = min(max(0, initial_bid), block_value)
+        
+        return bid
 
     def select_transactions(self, block_number):
         available_transactions = [tx for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number]
         selected_transactions = []
 
         if self.is_attack:
-            # First, prioritize by gas fee
             available_transactions.sort(key=lambda x: x.fee, reverse=True)
             for tx in available_transactions:
                 if len(selected_transactions) >= BLOCK_CAPACITY:
@@ -263,6 +271,7 @@ if __name__ == "__main__":
 
     all_participants = users + builders + validators
 
+    global targeting_tracker
     targeting_tracker = {}
 
     for block_number in range(NUM_BLOCKS):
