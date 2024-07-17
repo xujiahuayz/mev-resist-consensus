@@ -1,8 +1,8 @@
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
 import os
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Load the data
 block_data_pbs = pd.read_csv('data/block_data_pbs.csv')
@@ -44,7 +44,7 @@ os.makedirs('figures/new', exist_ok=True)
 
 # Plot the number of blocks built
 plt.figure(figsize=(12, 6))
-sns.barplot(x='participant_type', y='blocks_built', hue='type', data=blocks_built)
+sns.barplot(x='participant_type', y='blocks_built', hue='type', data=blocks_built, palette='muted')
 plt.title('Number of Blocks Built')
 plt.xlabel('Participant Type')
 plt.ylabel('Number of Blocks Built')
@@ -53,10 +53,10 @@ plt.close()
 
 # Plot the profits
 plt.figure(figsize=(12, 6))
-sns.barplot(x='participant_type', y='profit', hue='type', data=profits)
-plt.title('Profits')
+sns.barplot(x='participant_type', y='profit', hue='type', data=profits, palette='muted')
+plt.title('Total profit of different participant types')
 plt.xlabel('Participant Type')
-plt.ylabel('Profit')
+plt.ylabel('Profits')
 plt.savefig('figures/new/profits.png')
 plt.close()
 
@@ -80,3 +80,31 @@ print("Builder Profits Distribution (PBS):")
 print(builder_profits)
 print("\nValidator Profits Distribution (PoS):")
 print(validator_profits)
+
+# Violin plot for reward distribution
+def plot_reward_distribution(data_pbs, data_pos):
+    data_pbs['total_block_value'] = data_pbs['total_gas'] + data_pbs['total_mev_captured']
+    data_pbs['reward'] = data_pbs['total_block_value'] - data_pbs['block_bid']
+
+    data_pos['total_block_value'] = data_pos['total_gas'] + data_pos['total_mev_captured']
+    data_pos['reward'] = data_pos['total_block_value']
+
+    data_pbs['type'] = 'PBS'
+    data_pos['type'] = 'PoS'
+
+    data_pbs = data_pbs.rename(columns={'builder_type': 'participant_type'})
+    data_pos = data_pos.rename(columns={'validator_type': 'participant_type'})
+
+    reward_data = pd.concat([data_pbs, data_pos])
+    reward_data['log_reward'] = np.log1p(reward_data['reward'])
+
+    plt.figure(figsize=(12, 6))
+    sns.violinplot(x='participant_type', y='log_reward', hue='type', data=reward_data, palette='pastel', split=True)
+    plt.title('Total profit of different participant types')
+    plt.xlabel('Participant Type')
+    plt.ylabel('Log Reward')
+    plt.legend(title='Type')
+    plt.savefig('figures/new/total_profit_distribution.png')
+    plt.close()
+
+plot_reward_distribution(block_data_pbs, block_data_pos)
