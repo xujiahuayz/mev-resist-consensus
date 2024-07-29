@@ -76,8 +76,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
-    ax.xaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
-    ax.yaxis.grid(False) 
+    ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
+    ax.xaxis.grid(False) 
 
     plt.savefig('figures/new/smooth_gini_coefficient.png')
     plt.close()
@@ -92,7 +92,9 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
     for i, mev_count in enumerate(mev_counts_to_plot):
         for system, color in zip(systems, colors):
             if mev_count in profits[system]:
-                sns.kdeplot(profits[system][mev_count], ax=axes[i], label=f'{system.upper()} MEV {mev_count}', color=color)
+                valid_profits = profits[system][mev_count][profits[system][mev_count] >= 0]
+                if len(valid_profits) > 0:
+                    sns.kdeplot(valid_profits, ax=axes[i], label=f'{system.upper()} MEV {mev_count}', color=color)
         
         axes[i].set_title(f'MEV Builders/Validators = {mev_count}')
         axes[i].set_xlabel('Profit')
@@ -103,12 +105,12 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
     plt.savefig('figures/new/profit_distribution_comparison.png')
     plt.close()
 
+
 if __name__ == "__main__":
-
     data_dir = 'data/vary_mev'
-
     mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    # plot_gini_coefficient(data_dir, mev_counts)
-
+    
+    plot_gini_coefficient(data_dir, mev_counts)
+    
     mev_counts_to_plot = [1, 25, 50]
     plot_profit_distribution(data_dir, mev_counts_to_plot)
