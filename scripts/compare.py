@@ -9,8 +9,6 @@ from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 import random
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 random.seed(42)
 
@@ -322,14 +320,20 @@ if __name__ == "__main__":
         cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
         cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
-        os.makedirs('data', exist_ok=True)
+        # Create directory for current MEV builder count
+        pbs_output_dir = f'data/vary_mev/pbs/mev{mev_count}'
+        pos_output_dir = f'data/vary_mev/pos/mev{mev_count}'
+        os.makedirs(pbs_output_dir, exist_ok=True)
+        os.makedirs(pos_output_dir, exist_ok=True)
 
+        # Save PBS results
         block_data_pbs_df = pd.DataFrame(block_data_pbs)
-        block_data_pos_df = pd.DataFrame(block_data_pos)
         transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
-        transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
+        block_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'block_data_pbs.csv'), index=False)
+        transaction_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'transaction_data_pbs.csv'), index=False)
 
-        block_data_pbs_df.to_csv(f'data/block_data_pbs_mev_{mev_count}.csv', index=False)
-        block_data_pos_df.to_csv(f'data/block_data_pos_mev_{mev_count}.csv', index=False)
-        transaction_data_pbs_df.to_csv(f'data/transaction_data_pbs_mev_{mev_count}.csv', index=False)
-        transaction_data_pos_df.to_csv(f'data/transaction_data_pos_mev_{mev_count}.csv', index=False)
+        # Save PoS results
+        block_data_pos_df = pd.DataFrame(block_data_pos)
+        transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
+        block_data_pos_df.to_csv(os.path.join(pos_output_dir, 'block_data_pos.csv'), index=False)
+        transaction_data_pos_df.to_csv(os.path.join(pos_output_dir, 'transaction_data_pos.csv'), index=False)
