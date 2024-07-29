@@ -1,6 +1,7 @@
 import sys
 import os
 
+# Add project root to PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
@@ -13,13 +14,13 @@ import seaborn as sns
 
 random.seed(42)
 
-
 NUM_USERS = 20
-NUM_BUILDERS = 20
-NUM_VALIDATORS = 20
+NUM_BUILDERS = 50
+NUM_VALIDATORS = 50
 BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
+MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]  # Vary the number of MEV builders
 
 transaction_counter = 1
 
@@ -94,6 +95,9 @@ class Builder(Participant):
 
     def bid(self, block_bid_his, block_number):
         block_value = sum(tx.fee + (tx.fee if tx.is_mev else 0) for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
+        
+        if block_value == 0:
+            return 0
         
         if block_bid_his:
             # Calculate the average bid percentage from the last block bids
@@ -197,6 +201,12 @@ def run_pbs(builders, num_blocks):
             else:
                 targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
 
+            # Ensure creator_id is within the range of the users list
+            if 0 <= tx.creator_id - 1 < len(users):
+                user_type = 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal'
+            else:
+                user_type = 'unknown'
+
             transaction_data.append({
                 'transaction_id': tx.id,
                 'fee': tx.fee,
@@ -204,7 +214,7 @@ def run_pbs(builders, num_blocks):
                 'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.target_tx_id,
-                'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
+                'type_of_user': user_type,
                 'block_number': block_num + 1,
                 'block_created': tx.block_created
             })
@@ -252,6 +262,12 @@ def run_pos(validators, num_blocks):
             else:
                 targeting_tracker[tx.target_tx_id] = tx.id if tx.target_tx_id else None
 
+            # Ensure creator_id is within the range of the users list
+            if 0 <= tx.creator_id - 1 < len(users):
+                user_type = 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal'
+            else:
+                user_type = 'unknown'
+
             transaction_data.append({
                 'transaction_id': tx.id,
                 'fee': tx.fee,
@@ -259,7 +275,7 @@ def run_pos(validators, num_blocks):
                 'mev_captured': tx.fee if tx.is_mev and tx.targeting else 0,
                 'creator_id': tx.creator_id,
                 'target_tx_id': tx.target_tx_id,
-                'type_of_user': 'attack' if isinstance(users[tx.creator_id - 1], AttackUser) else 'normal',
+                'type_of_user': user_type,
                 'block_number': block_num + 1,
                 'block_created': tx.block_created
             })
@@ -271,48 +287,49 @@ def run_pos(validators, num_blocks):
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
 
 if __name__ == "__main__":
-    users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
-    builders = [Builder(i >= NUM_BUILDERS // 2) for i in range(NUM_BUILDERS)]
-    validators = [Validator(i >= NUM_VALIDATORS // 2) for i in range(NUM_VALIDATORS)]
+    for mev_count in MEV_BUILDER_COUNTS:
+        users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
+        builders = [Builder(i < mev_count) for i in range(NUM_BUILDERS)]
+        validators = [Validator(i < mev_count) for i in range(NUM_VALIDATORS)]
 
-    all_participants = users + builders + validators
+        all_participants = users + builders + validators
 
-    global targeting_tracker
-    targeting_tracker = {}
+        global targeting_tracker
+        targeting_tracker = {}
 
-    for block_number in range(NUM_BLOCKS):
-        for counter in range(24):
-            attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
-            normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
+        for block_number in range(NUM_BLOCKS):
+            for counter in range(24):
+                attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
+                normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
 
-            # Attack user creates transaction
-            target_tx_pbs = max(
-                (tx for tx in attack_user.mempool_pbs if tx.is_mev and not tx.included and tx.id not in targeting_tracker),
-                default=None,
-                key=lambda tx: tx.fee
-            )
-            target_tx_pos = max(
-                (tx for tx in attack_user.mempool_pos if tx.is_mev and not tx.included and tx.id not in targeting_tracker),
-                default=None,
-                key=lambda tx: tx.fee
-            )
-            attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
-            attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
+                # Attack user creates transaction
+                target_tx_pbs = max(
+                    (tx for tx in attack_user.mempool_pbs if tx.is_mev and not tx.included and tx.id not in targeting_tracker),
+                    default=None,
+                    key=lambda tx: tx.fee
+                )
+                target_tx_pos = max(
+                    (tx for tx in attack_user.mempool_pos if tx.is_mev and not tx.included and tx.id not in targeting_tracker),
+                    default=None,
+                    key=lambda tx: tx.fee
+                )
+                attack_user.create_transaction(target_tx_pbs, block_number=block_number + 1)
+                attack_user.create_transaction(target_tx_pos, block_number=block_number + 1)
 
-            # Normal user creates transaction
-            normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
+                # Normal user creates transaction
+                normal_user.create_transaction(is_mev=random.choice([True, False]), block_number=block_number + 1)
 
-    cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
-    cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
+        cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs = run_pbs(builders, NUM_BLOCKS)
+        cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
-    os.makedirs('data', exist_ok=True)
+        os.makedirs('data', exist_ok=True)
 
-    block_data_pbs_df = pd.DataFrame(block_data_pbs)
-    block_data_pos_df = pd.DataFrame(block_data_pos)
-    transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
-    transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
+        block_data_pbs_df = pd.DataFrame(block_data_pbs)
+        block_data_pos_df = pd.DataFrame(block_data_pos)
+        transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
+        transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
 
-    block_data_pbs_df.to_csv('data/block_data_pbs.csv', index=False)
-    block_data_pos_df.to_csv('data/block_data_pos.csv', index=False)
-    transaction_data_pbs_df.to_csv('data/transaction_data_pbs.csv', index=False)
-    transaction_data_pos_df.to_csv('data/transaction_data_pos.csv', index=False)
+        block_data_pbs_df.to_csv(f'data/block_data_pbs_mev_{mev_count}.csv', index=False)
+        block_data_pos_df.to_csv(f'data/block_data_pos_mev_{mev_count}.csv', index=False)
+        transaction_data_pbs_df.to_csv(f'data/transaction_data_pbs_mev_{mev_count}.csv', index=False)
+        transaction_data_pos_df.to_csv(f'data/transaction_data_pos_mev_{mev_count}.csv', index=False)
