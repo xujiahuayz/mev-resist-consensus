@@ -1,12 +1,18 @@
+import sys
+import os
+
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
+from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 import random
 import pandas as pd
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 
 random.seed(42)
+
 
 NUM_USERS = 20
 NUM_BUILDERS = 20
@@ -14,7 +20,6 @@ NUM_VALIDATORS = 20
 BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
-
 
 transaction_counter = 1
 

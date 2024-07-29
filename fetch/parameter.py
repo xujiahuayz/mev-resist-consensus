@@ -51,7 +51,9 @@ rounded_gas_fees = np.array([round_to_sig_figs(fee, 2) for fee in gas_fees_np])
 sample_size = min(100, len(rounded_gas_fees))
 sample_gas_fees = np.random.choice(rounded_gas_fees, sample_size, replace=False)
 
-print(f"Sample Gas Fees (rounded to 2 significant figures): {sample_gas_fees.tolist()}")
+# Print sample gas fees
+sample_gas_fees_3sig = [round_to_sig_figs(fee, 3) for fee in sample_gas_fees]
+print(f"Sample Gas Fees (rounded to 3 significant figures): {sample_gas_fees_3sig}")
 
 # Calculate potential MEV values based on the sample gas fees using a normal distribution
 mean_percentage = 0.1  # Mean is 10% of the gas fee
@@ -60,24 +62,6 @@ std_dev_percentage = 0.07  # Standard deviation is 7% of the gas fee
 # Generate MEV potentials
 sample_mev_potentials = np.maximum(0, np.random.normal(sample_gas_fees * mean_percentage, sample_gas_fees * std_dev_percentage))
 
-print(f"Sample MEV Potentials: {sample_mev_potentials.tolist()}")
-
-# Plot the distribution of sample gas fees and MEV potentials
-plt.figure(figsize=(14, 7))
-
-# # Plot gas fees
-# plt.subplot(1, 2, 1)
-# sns.histplot(sample_gas_fees, bins=30, kde=True, color='blue', alpha=0.6)
-# plt.title('Distribution of Sample Gas Fees')
-# plt.xlabel('Gas Fee (Gwei)')
-# plt.ylabel('Frequency')
-
-# # Plot MEV potentials
-# plt.subplot(1, 2, 2)
-# sns.histplot(sample_mev_potentials, bins=30, kde=True, color='green', alpha=0.6)
-# plt.title('Distribution of Sample MEV Potentials')
-# plt.xlabel('MEV Potential (Gwei)')
-# plt.ylabel('Frequency')
-
-plt.tight_layout()
-plt.show()
+# Print MEV potentials
+sample_mev_potentials_3sig = [round_to_sig_figs(mev, 3) for mev in sample_mev_potentials]
+print(f"Sample MEV Potentials (rounded to 3 significant figures): {sample_mev_potentials_3sig}")
