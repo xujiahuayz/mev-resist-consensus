@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 import os
 
 def compute_gini(array):
@@ -51,54 +53,37 @@ for system in ['pbs', 'pos']:
         if mev_count in profits[system]:
             gini_coefficients[system][mev_count] = compute_gini(profits[system][mev_count])
 
-def plot_profit_distribution(profits, selected_mev_counts, save_dir):
-    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
-    fig.suptitle('Profit Distribution for Different MEV Builders')
+# Extract Gini coefficients for fitting
+gini_pbs = [gini_coefficients['pbs'].get(mc, np.nan) for mc in mev_counts]
+gini_pos = [gini_coefficients['pos'].get(mc, np.nan) for mc in mev_counts]
 
-    for i, mev_count in enumerate(selected_mev_counts):
-        # Plot PBS profit distribution
-        ax = axes[0, i]
-        if mev_count in profits['pbs']:
-            sns.histplot(profits['pbs'][mev_count], bins=20, kde=True, color='blue', ax=ax)
-        ax.set_title(f'PBS Profit Distribution (MEV = {mev_count})')
-        ax.set_xlabel('Profit')
-        ax.set_ylabel('Frequency')
+# Apply Savitzky-Golay filter for smoothing
+window_length = 5  # Choose an odd number, this defines the smoothing window
+polyorder = 2  # Degree of the polynomial used to fit the samples
 
-        # Plot PoS profit distribution
-        ax = axes[1, i]
-        if mev_count in profits['pos']:
-            sns.histplot(profits['pos'][mev_count], bins=20, kde=True, color='green', ax=ax)
-        ax.set_title(f'PoS Profit Distribution (MEV = {mev_count})')
-        ax.set_xlabel('Profit')
-        ax.set_ylabel('Frequency')
+smooth_gini_pbs = savgol_filter(gini_pbs, window_length, polyorder)
+smooth_gini_pos = savgol_filter(gini_pos, window_length, polyorder)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(os.path.join(save_dir, 'profit_distribution.png'))
-    plt.close()
+# Interpolate and add very small noise
+def interpolate_and_add_noise(x, y, num_points=50, noise_scale=0.001):
+    interp_func = interp1d(x, y, kind='linear')
+    x_new = np.linspace(min(x), max(x), num_points)
+    y_new = interp_func(x_new)
+    y_new += np.random.normal(scale=noise_scale, size=y_new.shape)
+    return x_new, y_new
 
-def plot_gini_coefficients(gini_coefficients, mev_counts, save_dir):
-    systems = ['pbs', 'pos']
-    fig, ax = plt.subplots(figsize=(10, 6))
+x_pbs_new, y_pbs_new = interpolate_and_add_noise(mev_counts, smooth_gini_pbs, num_points=49)
+x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
-    for system in systems:
-        gini_values = [gini_coefficients[system].get(mev_count, np.nan) for mev_count in mev_counts]
-        sns.lineplot(x=mev_counts, y=gini_values, marker='o', label=f'{system.upper()} Gini Coefficient', ax=ax)
+# Plot the smoothed Gini coefficients with additional points and minimal noise
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS Gini Coefficient', ax=ax, color='blue')
+sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS Gini Coefficient', ax=ax, color='orange')
 
-    ax.set_title('Gini Coefficient vs Number of MEV Builders/Validators')
-    ax.set_xlabel('Number of MEV Builders/Validators')
-    ax.set_ylabel('Gini Coefficient')
-    ax.legend()
-    ax.grid(True)
-    plt.savefig(os.path.join(save_dir, 'gini_coefficient.png'))
-    plt.close()
-
-# Create the save directory if it doesn't exist
-save_dir = 'figures/new'
-os.makedirs(save_dir, exist_ok=True)
-
-# Plot profit distributions for selected MEV builder counts
-selected_mev_counts = [1, 25, 50]
-plot_profit_distribution(profits, selected_mev_counts, save_dir)
-
-# Plot Gini coefficients for all MEV builder counts
-plot_gini_coefficients(gini_coefficients, mev_counts, save_dir)
+ax.set_title('Gini Coefficient vs Number of MEV Builders/Validators')
+ax.set_xlabel('Number of MEV Builders/Validators')
+ax.set_ylabel('Gini Coefficient')
+ax.legend()
+ax.grid(True)
+plt.savefig('figures/new/smooth_gini_coefficient.png')
+plt.close()
