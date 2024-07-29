@@ -3,6 +3,7 @@ import numpy as np
 import os
 import json
 import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy.stats import norm
 
 # Load the collected data
@@ -50,16 +51,33 @@ rounded_gas_fees = np.array([round_to_sig_figs(fee, 2) for fee in gas_fees_np])
 sample_size = min(100, len(rounded_gas_fees))
 sample_gas_fees = np.random.choice(rounded_gas_fees, sample_size, replace=False)
 
-print(f"Sample Gas Fees (rounded to 2 significant figures): {sample_gas_fees}")
+print(f"Sample Gas Fees (rounded to 2 significant figures): {sample_gas_fees.tolist()}")
 
-# Plot the real gas fee distribution
-plt.figure(figsize=(12, 6))
-plt.hist(gas_fees_np, bins=50, density=True, alpha=0.6, color='blue', edgecolor='black', label='Real Gas Fees')
-# Plot the sample gas fee distribution
-plt.hist(sample_gas_fees, bins=50, density=True, alpha=0.6, color='red', edgecolor='black', label='Sample Gas Fees (2 sig figs)')
-plt.title('Comparison of Real Gas Fees and Sample Gas Fees (2 significant figures)')
-plt.xlabel('Gas Fee (Gwei)')
-plt.ylabel('Density')
-plt.legend()
-plt.grid(True)
+# Calculate potential MEV values based on the sample gas fees using a normal distribution
+mean_percentage = 0.1  # Mean is 10% of the gas fee
+std_dev_percentage = 0.07  # Standard deviation is 7% of the gas fee
+
+# Generate MEV potentials
+sample_mev_potentials = np.maximum(0, np.random.normal(sample_gas_fees * mean_percentage, sample_gas_fees * std_dev_percentage))
+
+print(f"Sample MEV Potentials: {sample_mev_potentials.tolist()}")
+
+# Plot the distribution of sample gas fees and MEV potentials
+plt.figure(figsize=(14, 7))
+
+# # Plot gas fees
+# plt.subplot(1, 2, 1)
+# sns.histplot(sample_gas_fees, bins=30, kde=True, color='blue', alpha=0.6)
+# plt.title('Distribution of Sample Gas Fees')
+# plt.xlabel('Gas Fee (Gwei)')
+# plt.ylabel('Frequency')
+
+# # Plot MEV potentials
+# plt.subplot(1, 2, 2)
+# sns.histplot(sample_mev_potentials, bins=30, kde=True, color='green', alpha=0.6)
+# plt.title('Distribution of Sample MEV Potentials')
+# plt.xlabel('MEV Potential (Gwei)')
+# plt.ylabel('Frequency')
+
+plt.tight_layout()
 plt.show()
