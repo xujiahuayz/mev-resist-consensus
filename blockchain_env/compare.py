@@ -14,9 +14,23 @@ BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
 
-FIXED_GAS_FEES = [5, 15]
-MEV_POTENTIALS = [10, 20]
+# Provided sample gas fees
+SAMPLE_GAS_FEES = [
+    190000, 1000000, 2300000, 170000, 1000000, 77000, 470000, 1500000, 4500000, 
+    310000, 970000, 660000, 1300000, 6100000, 1500000, 130000, 120000, 2400000, 
+    160000, 460000, 87000, 110000, 98000, 870000, 1900000, 120000, 530000, 
+    150000, 150000, 120000, 340000, 30000000, 1200000, 120000, 670000, 82000, 
+    310000, 160000, 170000, 84000, 600000, 420000, 220000, 1500000, 2600000, 
+    120000, 370000, 110000, 43000000, 5200000, 110000, 79000, 110000, 2100000, 
+    300000, 85000, 1400000, 2500000, 1600000, 100000, 3200000, 3600000, 19000000, 
+    1100000, 260000, 1400000, 170000, 650000, 2000000, 220000, 1600000, 160000, 
+    4200000, 27000000, 3500000, 2000000, 150000, 260000, 1100000, 240000, 
+    630000, 5000000, 460000, 83000, 220000, 70000, 6300000, 360000, 2000000, 
+    350000, 73000, 320000, 1800000, 150000, 1700000, 5000000, 80000, 420000, 
+    910000, 1000000
+]
 
+MEV_POTENTIALS = [10, 20]
 transaction_counter = 1
 
 class Transaction:
@@ -43,7 +57,7 @@ class Participant:
         self.mempool_pos = []
 
     def create_transaction(self, is_mev=False, block_number=None):
-        fee = random.choice(FIXED_GAS_FEES)
+        fee = random.choice(SAMPLE_GAS_FEES)
         if is_mev:
             fee = random.choice(MEV_POTENTIALS)
         tx = Transaction(fee, is_mev, self.id, block_created=block_number)
@@ -75,7 +89,7 @@ class AttackUser(Participant):
             self.broadcast_transaction(tx)
             return tx
         else:
-            fee = random.choice(FIXED_GAS_FEES)
+            fee = random.choice(SAMPLE_GAS_FEES)
             tx = Transaction(fee, False, self.id, block_created=block_number)
             self.broadcast_transaction(tx)
             return tx
