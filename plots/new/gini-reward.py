@@ -65,7 +65,7 @@ smooth_gini_pbs = savgol_filter(gini_pbs, window_length, polyorder)
 smooth_gini_pos = savgol_filter(gini_pos, window_length, polyorder)
 
 # Interpolate and add very small noise
-def interpolate_and_add_noise(x, y, num_points=50, noise_scale=0.001):
+def interpolate_and_add_noise(x, y, num_points=49, noise_scale=0.001):
     interp_func = interp1d(x, y, kind='linear')
     x_new = np.linspace(min(x), max(x), num_points)
     y_new = interp_func(x_new)
@@ -85,5 +85,10 @@ ax.set_xlabel('Number of MEV Builders/Validators')
 ax.set_ylabel('Gini Coefficient')
 ax.legend()
 ax.grid(True)
+ax.xaxis.grid(True)
+ax.yaxis.grid(True)
+ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
+ax.xaxis.grid(False)  # Turn off vertical grid lines
+
 plt.savefig('figures/new/smooth_gini_coefficient.png')
 plt.close()
