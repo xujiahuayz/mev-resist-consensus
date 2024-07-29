@@ -21,14 +21,17 @@ def load_profits(data_dir, mev_counts):
         pbs_dir = os.path.join(data_dir, f'pbs/mev{mev_count}/transaction_data_pbs.csv')
         pos_dir = os.path.join(data_dir, f'pos/mev{mev_count}/transaction_data_pos.csv')
 
-        pbs_df = pd.read_csv(pbs_dir)
-        pos_df = pd.read_csv(pos_dir)
+        if os.path.exists(pbs_dir) and os.path.exists(pos_dir):
+            pbs_df = pd.read_csv(pbs_dir)
+            pos_df = pd.read_csv(pos_dir)
 
-        pbs_profits = pbs_df.groupby('creator_id')['fee'].sum().values
-        pos_profits = pos_df.groupby('creator_id')['fee'].sum().values
+            pbs_profits = pbs_df.groupby('creator_id')['fee'].sum().values
+            pos_profits = pos_df.groupby('creator_id')['fee'].sum().values
 
-        profits['pbs'][mev_count] = pbs_profits
-        profits['pos'][mev_count] = pos_profits
+            profits['pbs'][mev_count] = pbs_profits
+            profits['pos'][mev_count] = pos_profits
+        else:
+            print(f"Files for MEV count {mev_count} not found. Skipping...")
 
     return profits
 
@@ -36,7 +39,7 @@ def load_profits(data_dir, mev_counts):
 data_dir = 'data/vary_mev'
 
 # Set the MEV builder counts to analyze
-mev_counts = [1, 25, 50]
+mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
 # Load the profits data
 profits = load_profits(data_dir, mev_counts)
@@ -45,22 +48,26 @@ profits = load_profits(data_dir, mev_counts)
 gini_coefficients = {'pbs': {}, 'pos': {}}
 for system in ['pbs', 'pos']:
     for mev_count in mev_counts:
-        gini_coefficients[system][mev_count] = compute_gini(profits[system][mev_count])
-def plot_profit_distribution(profits, mev_counts, save_dir):
+        if mev_count in profits[system]:
+            gini_coefficients[system][mev_count] = compute_gini(profits[system][mev_count])
+
+def plot_profit_distribution(profits, selected_mev_counts, save_dir):
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     fig.suptitle('Profit Distribution for Different MEV Builders')
 
-    for i, mev_count in enumerate(mev_counts):
+    for i, mev_count in enumerate(selected_mev_counts):
         # Plot PBS profit distribution
         ax = axes[0, i]
-        sns.histplot(profits['pbs'][mev_count], bins=20, kde=True, color='blue', ax=ax)
+        if mev_count in profits['pbs']:
+            sns.histplot(profits['pbs'][mev_count], bins=20, kde=True, color='blue', ax=ax)
         ax.set_title(f'PBS Profit Distribution (MEV = {mev_count})')
         ax.set_xlabel('Profit')
         ax.set_ylabel('Frequency')
 
         # Plot PoS profit distribution
         ax = axes[1, i]
-        sns.histplot(profits['pos'][mev_count], bins=20, kde=True, color='green', ax=ax)
+        if mev_count in profits['pos']:
+            sns.histplot(profits['pos'][mev_count], bins=20, kde=True, color='green', ax=ax)
         ax.set_title(f'PoS Profit Distribution (MEV = {mev_count})')
         ax.set_xlabel('Profit')
         ax.set_ylabel('Frequency')
@@ -74,7 +81,7 @@ def plot_gini_coefficients(gini_coefficients, mev_counts, save_dir):
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for system in systems:
-        gini_values = [gini_coefficients[system][mev_count] for mev_count in mev_counts]
+        gini_values = [gini_coefficients[system].get(mev_count, np.nan) for mev_count in mev_counts]
         sns.lineplot(x=mev_counts, y=gini_values, marker='o', label=f'{system.upper()} Gini Coefficient', ax=ax)
 
     ax.set_title('Gini Coefficient vs Number of MEV Builders/Validators')
@@ -89,8 +96,9 @@ def plot_gini_coefficients(gini_coefficients, mev_counts, save_dir):
 save_dir = 'figures/new'
 os.makedirs(save_dir, exist_ok=True)
 
-# Plot profit distributions
-plot_profit_distribution(profits, mev_counts, save_dir)
+# Plot profit distributions for selected MEV builder counts
+selected_mev_counts = [1, 25, 50]
+plot_profit_distribution(profits, selected_mev_counts, save_dir)
 
-# Plot Gini coefficients
+# Plot Gini coefficients for all MEV builder counts
 plot_gini_coefficients(gini_coefficients, mev_counts, save_dir)
