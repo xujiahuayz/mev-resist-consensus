@@ -70,13 +70,13 @@ def plot_gini_coefficient(data_dir, mev_counts):
     x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS Gini Coefficient', ax=ax, color='blue')
-    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS Gini Coefficient', ax=ax, color='orange')
+    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax, color='blue')
+    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax, color='orange')
 
-    ax.set_title('Gini Coefficient vs Number of MEV Builders/Validators')
-    ax.set_xlabel('Number of MEV Builders/Validators')
-    ax.set_ylabel('Gini Coefficient')
-    ax.legend()
+    ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
+    ax.set_ylabel('Gini Coefficient', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.legend(fontsize=18)
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
@@ -100,24 +100,22 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
                 valid_profits = valid_profits[valid_profits >= 0]  # Ensure no negative values
                 print(f"{system.upper()} MEV {mev_count} valid profits: {valid_profits}")  # Debug print
                 if len(valid_profits) > 0:
-                    sns.kdeplot(valid_profits, ax=axes[i], label=f'{system.upper()} MEV {mev_count}', color=color)
+                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper(), color=color)
         
-        axes[i].set_title(f'MEV Builders/Validators = {mev_count}')
-        axes[i].set_xlabel('Profit')
-        axes[i].legend()
+        axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
+        axes[i].set_xlabel('Profit', fontsize=20)
+        axes[i].tick_params(axis='both', which='major', labelsize=18)
+        axes[i].legend(fontsize=18)
         axes[i].set_xlim(left=0)  # Set the x-axis to start at 0
 
-    axes[0].set_ylabel('Density')
-    fig.suptitle('Profit Distribution Comparison for PBS and POS')
+    axes[0].set_ylabel('Density', fontsize=20)
     plt.savefig('figures/new/profit_distribution_comparison.png')
     plt.close()
 
 if __name__ == "__main__":
-
     data_dir = 'data/vary_mev'
-
-    # mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    # plot_gini_coefficient(data_dir, mev_counts)
+    mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    plot_gini_coefficient(data_dir, mev_counts)
     
     mev_counts_to_plot = [1, 25, 50]
     plot_profit_distribution(data_dir, mev_counts_to_plot)
