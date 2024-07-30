@@ -70,8 +70,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax, color=sns.color_palette("tab10")[0])
-    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax, color=sns.color_palette("tab10")[1])
+    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax)
+    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax)
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -93,13 +93,13 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
     systems = ['pbs', 'pos']
 
     for i, mev_count in enumerate(mev_counts_to_plot):
-        for system, color in zip(systems, sns.color_palette("tab10")):
+        for system in systems:
             if mev_count in profits[system]:
                 valid_profits = profits[system][mev_count][profits[system][mev_count] >= 0]
                 valid_profits = valid_profits[valid_profits >= 0]  # Ensure no negative values
                 print(f"{system.upper()} MEV {mev_count} valid profits: {valid_profits}")  # Debug print
                 if len(valid_profits) > 0:
-                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper(), color=color)
+                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper())
 
         axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
         axes[i].set_xlabel('Profit', fontsize=20)
@@ -115,7 +115,6 @@ def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
     profits = load_profits(data_dir, mev_counts_to_plot)
     
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    palette = sns.color_palette("tab10")  # Use a consistent color palette
 
     for i, mev_count in enumerate(mev_counts_to_plot):
         if mev_count in profits['pbs'] and mev_count in profits['pos']:
@@ -131,7 +130,7 @@ def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
             combined_profits = pd.concat([pbs_profits, pos_profits], ignore_index=True)
             combined_profits['log_fee'] = np.log1p(combined_profits['fee'])  # Log-transform the fee
 
-            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i], palette=palette)
+            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i])
             axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
             axes[i].set_xlabel('Participant Type', fontsize=18)
             axes[i].set_ylabel('Log Profit', fontsize=18 if i == 0 else 0)
