@@ -98,7 +98,7 @@ def plot_last_1000_bid_percentage(data, save_dir):
 
 if __name__ == '__main__':
     csv_path = "/Users/tammy/Downloads/vary_mev_and_characteristic"
-    save_dir = "./figures"
+    save_dir = "./figures/3d"
     
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
