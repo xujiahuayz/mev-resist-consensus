@@ -8,13 +8,13 @@ import os
 
 def compute_gini(array):
     """Compute the Gini coefficient of a numpy array."""
-    array = array.flatten() 
+    array = array.flatten()
     if np.amin(array) < 0:
-        array -= np.amin(array)  
-    array += 0.0000001 
-    array = np.sort(array) 
-    index = np.arange(1, array.shape[0] + 1) 
-    n = array.shape[0] 
+        array -= np.amin(array)
+    array += 0.0000001
+    array = np.sort(array)
+    index = np.arange(1, array.shape[0] + 1)
+    n = array.shape[0]
     return ((np.sum((2 * index - n - 1) * array)) / (n * np.sum(array)))
 
 def load_profits(data_dir, mev_counts):
@@ -60,8 +60,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     gini_pbs = [gini_coefficients['pbs'].get(mc, np.nan) for mc in mev_counts]
     gini_pos = [gini_coefficients['pos'].get(mc, np.nan) for mc in mev_counts]
 
-    window_length = 5 
-    polyorder = 2  
+    window_length = 5
+    polyorder = 2
 
     smooth_gini_pbs = savgol_filter(gini_pbs, window_length, polyorder)
     smooth_gini_pos = savgol_filter(gini_pos, window_length, polyorder)
@@ -70,8 +70,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax, color='blue')
-    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax, color='orange')
+    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax)
+    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax)
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -80,7 +80,7 @@ def plot_gini_coefficient(data_dir, mev_counts):
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
-    ax.xaxis.grid(False) 
+    ax.xaxis.grid(False)
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
     plt.savefig('figures/new/smooth_gini_coefficient.png')
@@ -90,18 +90,17 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
     profits = load_profits(data_dir, mev_counts_to_plot)
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
-    colors = ['blue', 'orange']
     systems = ['pbs', 'pos']
 
     for i, mev_count in enumerate(mev_counts_to_plot):
-        for system, color in zip(systems, colors):
+        for system in systems:
             if mev_count in profits[system]:
                 valid_profits = profits[system][mev_count][profits[system][mev_count] >= 0]
                 valid_profits = valid_profits[valid_profits >= 0]  # Ensure no negative values
                 print(f"{system.upper()} MEV {mev_count} valid profits: {valid_profits}")  # Debug print
                 if len(valid_profits) > 0:
-                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper(), color=color)
-        
+                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper())
+
         axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
         axes[i].set_xlabel('Profit', fontsize=20)
         axes[i].tick_params(axis='both', which='major', labelsize=18)
@@ -116,6 +115,6 @@ if __name__ == "__main__":
     data_dir = 'data/vary_mev'
     mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
     plot_gini_coefficient(data_dir, mev_counts)
-    
+
     mev_counts_to_plot = [1, 25, 50]
     plot_profit_distribution(data_dir, mev_counts_to_plot)

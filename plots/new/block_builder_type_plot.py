@@ -4,18 +4,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-def compute_gini(array):
-    """Compute the Gini coefficient of a numpy array."""
-    if array.size == 0:
-        return np.nan
-    array = array.flatten().astype(float)  # Ensure the array is float
-    if np.amin(array) < 0:
-        array -= np.amin(array)
-    array += 0.0000001  # Prevent division by zero
-    array = np.sort(array)
-    index = np.arange(1, array.shape[0] + 1)
-    n = array.shape[0]
-    return ((np.sum((2 * index - n - 1) * array)) / (n * np.sum(array)))
+def inspect_columns(data_dir, mev_counts):
+    for mev_count in mev_counts:
+        pbs_dir = os.path.join(data_dir, f'pbs/mev{mev_count}/transaction_data_pbs.csv')
+        pos_dir = os.path.join(data_dir, f'pos/mev{mev_count}/transaction_data_pos.csv')
+
+        if os.path.exists(pbs_dir):
+            pbs_df = pd.read_csv(pbs_dir)
+            print(f"MEV Count {mev_count} PBS Columns: {pbs_df.columns.tolist()}")
+
+        if os.path.exists(pos_dir):
+            pos_df = pd.read_csv(pos_dir)
+            print(f"MEV Count {mev_count} POS Columns: {pos_df.columns.tolist()}")
 
 def load_data(data_dir, mev_counts):
     data = {'pbs': {}, 'pos': {}}
@@ -28,7 +28,7 @@ def load_data(data_dir, mev_counts):
             pos_df = pd.read_csv(pos_dir)
 
             if 'builder_type' not in pbs_df.columns or 'builder_type' not in pos_df.columns:
-                print(f"builder_type column not found in MEV count {mev_count} files. Skipping...")
+                print(f"builder_type column not found in MEV count {mev_count} files. Available PBS columns: {pbs_df.columns.tolist()}, POS columns: {pos_df.columns.tolist()}. Skipping...")
                 continue
 
             pbs_builders = pbs_df['builder_type'].value_counts()
@@ -41,74 +41,34 @@ def load_data(data_dir, mev_counts):
 
     return data
 
-def plot_gini_coefficient_mev_non_mev(data_dir, mev_counts):
-    data = load_data(data_dir, mev_counts)
+def plot_bar_chart_for_mev(data_dir, mev_counts_to_plot):
+    data = load_data(data_dir, mev_counts_to_plot)
 
-    gini_coefficients = {'pbs_mev': [], 'pbs_non_mev': [], 'pos_mev': [], 'pos_non_mev': []}
-    for system in ['pbs', 'pos']:
-        for mev_count in mev_counts:
-            if mev_count in data[system]:
-                builder_blocks = data[system][mev_count]
-                mev_blocks = builder_blocks.get('mev', 0)
-                non_mev_blocks = builder_blocks.sum() - mev_blocks
+    for mev_count in mev_counts_to_plot:
+        if mev_count in data['pbs'] and mev_count in data['pos']:
+            pbs_builders = data['pbs'][mev_count]
+            pos_builders = data['pos'][mev_count]
 
-                print(f"{system.upper()} MEV Count {mev_count} - MEV Blocks: {mev_blocks}, Non-MEV Blocks: {non_mev_blocks}")
+            combined_data = pd.DataFrame({
+                'type': ['PBS'] * len(pbs_builders) + ['POS'] * len(pos_builders),
+                'Participant Type': list(pbs_builders.index) + list(pos_builders.index),
+                'Number of Blocks Built': list(pbs_builders.values) + list(pos_builders.values)
+            })
 
-                if system == 'pbs':
-                    gini_coefficients['pbs_mev'].append(compute_gini(np.array([mev_blocks])))
-                    gini_coefficients['pbs_non_mev'].append(compute_gini(np.array([non_mev_blocks])))
-                else:
-                    gini_coefficients['pos_mev'].append(compute_gini(np.array([mev_blocks])))
-                    gini_coefficients['pos_non_mev'].append(compute_gini(np.array([non_mev_blocks])))
+            plt.figure(figsize=(12, 6))
+            sns.barplot(x='Participant Type', y='Number of Blocks Built', hue='type', data=combined_data)
+            plt.title(f'Number of Blocks Built for MEV Count = {mev_count}', fontsize=20)
+            plt.xlabel('Participant Type', fontsize=18)
+            plt.ylabel('Number of Blocks Built', fontsize=18)
+            plt.legend(title='Type', fontsize=16)
+            plt.tick_params(axis='both', which='major', labelsize=14)
+            plt.grid(True, axis='y')
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(mev_counts, gini_coefficients['pbs_mev'], marker='o', label='PBS MEV', color='blue')
-    ax.plot(mev_counts, gini_coefficients['pbs_non_mev'], marker='o', label='PBS Non-MEV', color='cyan')
-    ax.plot(mev_counts, gini_coefficients['pos_mev'], marker='o', label='POS MEV', color='orange')
-    ax.plot(mev_counts, gini_coefficients['pos_non_mev'], marker='o', label='POS Non-MEV', color='yellow')
-
-    ax.set_title('Gini Coefficient of Block Creation Likelihood', fontsize=20)
-    ax.set_xlabel('Number of MEV Builders/Validators', fontsize=18)
-    ax.set_ylabel('Gini Coefficient', fontsize=18)
-    ax.legend(fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.grid(True)
-
-    plt.savefig('figures/new/gini_coefficient_mev_non_mev.png')
-    plt.close()
-
-def plot_percentage_blocks_by_mev(data_dir, mev_counts):
-    data = load_data(data_dir, mev_counts)
-
-    percentages = {'pbs': [], 'pos': []}
-    for system in ['pbs', 'pos']:
-        for mev_count in mev_counts:
-            if mev_count in data[system]:
-                builder_blocks = data[system][mev_count]
-                total_blocks = builder_blocks.sum()
-                if total_blocks == 0:
-                    percentages[system].append(0)
-                else:
-                    mev_blocks = builder_blocks.get('mev', 0)
-                    percentages[system].append((mev_blocks / total_blocks) * 100)
-                print(f"{system.upper()} MEV Count {mev_count} - Total Blocks: {total_blocks}, MEV Blocks: {mev_blocks}")
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(mev_counts, percentages['pbs'], marker='o', label='PBS', color='blue')
-    ax.plot(mev_counts, percentages['pos'], marker='o', label='POS', color='orange')
-
-    ax.set_title('Percentage of Blocks Built by MEV Builders/Validators', fontsize=20)
-    ax.set_xlabel('Number of MEV Builders/Validators', fontsize=18)
-    ax.set_ylabel('Percentage of Blocks Built (%)', fontsize=18)
-    ax.legend(fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.grid(True)
-
-    plt.savefig('figures/new/percentage_blocks_by_mev.png')
-    plt.close()
+            plt.savefig(f'figures/new/bar_chart_mev_{mev_count}.png')
+            plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/vary_mev'
-    mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    plot_gini_coefficient_mev_non_mev(data_dir, mev_counts)
-    plot_percentage_blocks_by_mev(data_dir, mev_counts)
+    mev_counts_to_plot = [1, 25, 50]
+    inspect_columns(data_dir, mev_counts_to_plot)
+    plot_bar_chart_for_mev(data_dir, mev_counts_to_plot)
