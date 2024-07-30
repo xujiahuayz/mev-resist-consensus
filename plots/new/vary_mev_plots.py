@@ -6,6 +6,8 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import interp1d
 import os
 
+sns.set_theme(style="whitegrid")
+
 def compute_gini(array):
     """Compute the Gini coefficient of a numpy array."""
     array = array.flatten()
@@ -70,8 +72,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax)
-    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax)
+    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax, palette="Set3")
+    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax, palette="Set3")
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -99,7 +101,7 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
                 valid_profits = valid_profits[valid_profits >= 0]  # Ensure no negative values
                 print(f"{system.upper()} MEV {mev_count} valid profits: {valid_profits}")  # Debug print
                 if len(valid_profits) > 0:
-                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper())
+                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper(), palette="Set3")
 
         axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
         axes[i].set_xlabel('Profit', fontsize=20)
@@ -130,7 +132,7 @@ def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
             combined_profits = pd.concat([pbs_profits, pos_profits], ignore_index=True)
             combined_profits['log_fee'] = np.log1p(combined_profits['fee'])  # Log-transform the fee
 
-            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i])
+            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i], palette="Set3")
             axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
             axes[i].set_xlabel('Participant Type', fontsize=18)
             axes[i].set_ylabel('Log Profit', fontsize=18 if i == 0 else 0)
