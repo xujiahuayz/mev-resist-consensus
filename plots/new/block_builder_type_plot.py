@@ -27,8 +27,12 @@ def load_data(data_dir, mev_counts):
             pbs_df = pd.read_csv(pbs_dir)
             pos_df = pd.read_csv(pos_dir)
 
-            pbs_builders = pbs_df['creator_id'].astype(str).value_counts()
-            pos_builders = pos_df['creator_id'].astype(str).value_counts()
+            if 'builder_type' not in pbs_df.columns or 'builder_type' not in pos_df.columns:
+                print(f"builder_type column not found in MEV count {mev_count} files. Skipping...")
+                continue
+
+            pbs_builders = pbs_df['builder_type'].value_counts()
+            pos_builders = pos_df['builder_type'].value_counts()
 
             data['pbs'][mev_count] = pbs_builders
             data['pos'][mev_count] = pos_builders
@@ -45,15 +49,17 @@ def plot_gini_coefficient_mev_non_mev(data_dir, mev_counts):
         for mev_count in mev_counts:
             if mev_count in data[system]:
                 builder_blocks = data[system][mev_count]
-                mev_blocks = builder_blocks[builder_blocks.index.str.contains('mev', case=False)].values
-                non_mev_blocks = builder_blocks[~builder_blocks.index.str.contains('mev', case=False)].values
+                mev_blocks = builder_blocks.get('mev', 0)
+                non_mev_blocks = builder_blocks.sum() - mev_blocks
+
+                print(f"{system.upper()} MEV Count {mev_count} - MEV Blocks: {mev_blocks}, Non-MEV Blocks: {non_mev_blocks}")
 
                 if system == 'pbs':
-                    gini_coefficients['pbs_mev'].append(compute_gini(mev_blocks))
-                    gini_coefficients['pbs_non_mev'].append(compute_gini(non_mev_blocks))
+                    gini_coefficients['pbs_mev'].append(compute_gini(np.array([mev_blocks])))
+                    gini_coefficients['pbs_non_mev'].append(compute_gini(np.array([non_mev_blocks])))
                 else:
-                    gini_coefficients['pos_mev'].append(compute_gini(mev_blocks))
-                    gini_coefficients['pos_non_mev'].append(compute_gini(non_mev_blocks))
+                    gini_coefficients['pos_mev'].append(compute_gini(np.array([mev_blocks])))
+                    gini_coefficients['pos_non_mev'].append(compute_gini(np.array([non_mev_blocks])))
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(mev_counts, gini_coefficients['pbs_mev'], marker='o', label='PBS MEV', color='blue')
@@ -83,8 +89,9 @@ def plot_percentage_blocks_by_mev(data_dir, mev_counts):
                 if total_blocks == 0:
                     percentages[system].append(0)
                 else:
-                    mev_blocks = builder_blocks[builder_blocks.index.str.contains('mev', case=False)].sum()
+                    mev_blocks = builder_blocks.get('mev', 0)
                     percentages[system].append((mev_blocks / total_blocks) * 100)
+                print(f"{system.upper()} MEV Count {mev_count} - Total Blocks: {total_blocks}, MEV Blocks: {mev_blocks}")
 
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(mev_counts, percentages['pbs'], marker='o', label='PBS', color='blue')
