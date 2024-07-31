@@ -19,7 +19,6 @@ BLOCK_CAPACITY = 10
 NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
 MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-# MEV_BUILDER_COUNTS = [2] # For testing purposes
 
 transaction_counter = 1
 
@@ -73,7 +72,8 @@ class AttackUser(Participant):
 
     def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
-            fee = int(target_tx.fee * 1.1)
+            higher_fees = [x for x in SAMPLE_GAS_FEES if x > target_tx.fee]
+            fee = random.choice(higher_fees) if higher_fees else target_tx.fee + 1  # Use a default value if no higher fees are found
             mev_potential = target_tx.mev_potential
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
             self.broadcast_transaction(tx)
@@ -145,7 +145,9 @@ def select_transactions_common(participant, block_number, mempool):
                 if tx.id not in targeting_tracker:
                     targeting_tracker[tx.id] = True
                     targeted_tx_ids.add(tx.id)
-                    attack_tx = Transaction(int(tx.fee * 1.1), tx.mev_potential, participant.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created, transaction_type="b_attack")
+                    higher_fees = [x for x in SAMPLE_GAS_FEES if x > tx.fee]
+                    fee = random.choice(higher_fees) if higher_fees else tx.fee + 1  # Use a default value if no higher fees are found
+                    attack_tx = Transaction(fee, tx.mev_potential, participant.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created, transaction_type="b_attack")
                     selected_transactions.append(attack_tx)
                     attack_count += 1
     else:
@@ -182,28 +184,11 @@ def run_pbs(builders, num_blocks):
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
 
-        # First include transactions based on gas fee
-        selected_transactions.sort(key=lambda x: x.fee, reverse=True)
-        included_transactions = selected_transactions[:BLOCK_CAPACITY]
-        
-        # Check for MEV potential and include MEV transactions if beneficial
-        remaining_mempool = [tx for tx in selected_transactions if tx not in included_transactions]
-        remaining_mempool.sort(key=lambda x: x.mev_potential, reverse=True)
-        for mev_tx in remaining_mempool:
-            if len(included_transactions) >= BLOCK_CAPACITY:
-                lowest_tx = min(included_transactions, key=lambda x: x.fee)
-                if mev_tx.mev_potential > lowest_tx.fee:
-                    included_transactions.remove(lowest_tx)
-                    included_transactions.append(mev_tx)
-                    if mev_tx.id in targeting_tracker:
-                        del targeting_tracker[mev_tx.id]
-                        included_transactions = [tx for tx in included_transactions if tx.target_tx_id != mev_tx.id]
-
-        block_value = sum(tx.fee for tx in included_transactions)
+        block_value = sum(tx.fee for tx in selected_transactions)
         profit = highest_bid  # Proposer's profit is the winning bid
         proposer_profits[winning_builder_id].append(proposer_profits[winning_builder_id][-1] + profit if proposer_profits[winning_builder_id] else profit)
 
-        mev_transactions_in_block = sum(1 for tx in included_transactions if tx.mev_potential > 0)
+        mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.mev_potential > 0)
         cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
 
         builder_type = 'attack' if winning_builder.is_attack else 'normal'
@@ -211,13 +196,13 @@ def run_pbs(builders, num_blocks):
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': block_value,
-            'total_mev_captured': sum(tx.mev_potential for tx in included_transactions if tx.mev_potential > 0),
+            'total_mev_captured': sum(tx.mev_potential for tx in selected_transactions if tx.mev_potential > 0),
             'block_bid': highest_bid,
             'builder_type': builder_type
         })
 
         included_tx_ids = set()
-        for tx in included_transactions:
+        for tx in selected_transactions:
             if tx.target_tx_id and tx.target_tx_id in targeting_tracker:
                 tx.fee = 0  # Mark as failed attack
                 tx.mev_potential = 0  # Mark as failed attack

@@ -29,12 +29,15 @@ def load_profits(data_dir, mev_counts):
             pbs_df = pd.read_csv(pbs_dir)
             pos_df = pd.read_csv(pos_dir)
 
+            pbs_df['fee'] = pd.to_numeric(pbs_df['fee'], errors='coerce')
+            pos_df['fee'] = pd.to_numeric(pos_df['fee'], errors='coerce')
+
             pbs_profits = pbs_df.groupby('creator_id')['fee'].sum().values
             pos_profits = pos_df.groupby('creator_id')['fee'].sum().values
 
-            # Remove negative profits
-            pbs_profits = pbs_profits[pbs_profits >= 0]
-            pos_profits = pos_profits[pos_profits >= 0]
+            # Remove negative profits and NaNs
+            pbs_profits = pbs_profits[np.isfinite(pbs_profits) & (pbs_profits >= 0)]
+            pos_profits = pos_profits[np.isfinite(pos_profits) & (pos_profits >= 0)]
 
             profits['pbs'][mev_count] = pbs_profits
             profits['pos'][mev_count] = pos_profits
@@ -72,8 +75,8 @@ def plot_gini_coefficient(data_dir, mev_counts):
     x_pos_new, y_pos_new = interpolate_and_add_noise(mev_counts, smooth_gini_pos, num_points=49)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax, palette="Set3")
-    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax, palette="Set3")
+    sns.lineplot(x=x_pbs_new, y=y_pbs_new, marker='o', label='PBS', ax=ax)
+    sns.lineplot(x=x_pos_new, y=y_pos_new, marker='o', label='POS', ax=ax)
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -86,6 +89,29 @@ def plot_gini_coefficient(data_dir, mev_counts):
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
     plt.savefig('figures/new/smooth_gini_coefficient.png')
+    plt.close()
+
+def plot_lorenz_curve(data_dir, mev_counts):
+    profits = load_profits(data_dir, mev_counts)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for system in ['pbs', 'pos']:
+        for mev_count in [1, 25, 50]:  # Only plot for MEV counts 1, 25, and 50
+            if mev_count in profits[system]:
+                sorted_profits = np.sort(profits[system][mev_count])
+                cum_profits = np.cumsum(sorted_profits)
+                total_profits = cum_profits[-1]
+                lorenz_curve = np.insert(cum_profits / total_profits, 0, 0)
+                ax.plot(np.linspace(0, 1, len(lorenz_curve)), lorenz_curve, label=f'{system.upper()} MEV {mev_count}')
+
+    ax.plot([0, 1], [0, 1], color='black', linestyle='--')
+    ax.set_xlabel('Cumulative Share of Validators', fontsize=20)
+    ax.set_ylabel('Cumulative Share of Profits', fontsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.legend(fontsize=14)
+    ax.grid(True)
+
+    plt.savefig('figures/new/lorenz_curve.png')
     plt.close()
 
 def plot_profit_distribution(data_dir, mev_counts_to_plot):
@@ -101,7 +127,7 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
                 valid_profits = valid_profits[valid_profits >= 0]  # Ensure no negative values
                 print(f"{system.upper()} MEV {mev_count} valid profits: {valid_profits}")  # Debug print
                 if len(valid_profits) > 0:
-                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper(), palette="Set3")
+                    sns.kdeplot(valid_profits, ax=axes[i], label=system.upper())
 
         axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
         axes[i].set_xlabel('Profit', fontsize=20)
@@ -152,11 +178,13 @@ def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
     plt.tight_layout()
     plt.savefig('figures/new/violin_plot_profit_distribution.png')
     plt.close()
+
 if __name__ == "__main__":
     data_dir = 'data/vary_mev'
     mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    # plot_gini_coefficient(data_dir, mev_counts)
+    plot_gini_coefficient(data_dir, mev_counts)
+    plot_lorenz_curve(data_dir, mev_counts)
 
     mev_counts_to_plot = [1, 25, 50]
-    # plot_profit_distribution(data_dir, mev_counts_to_plot)
+    plot_profit_distribution(data_dir, mev_counts_to_plot)
     plot_profit_distribution_violin(data_dir, mev_counts_to_plot)
