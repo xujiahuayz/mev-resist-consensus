@@ -10,7 +10,7 @@ sns.set_theme(style="whitegrid")
 
 def compute_gini(array):
     """Compute the Gini coefficient of a numpy array."""
-    array = array.flatten()
+    array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
     array += 0.0000001
@@ -167,7 +167,7 @@ def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
             combined_profits = combined_profits[combined_profits['log_fee'] > 0]
 
             # Create half violins for MEV and non-MEV participants
-            sns.violinplot(data=combined_profits, x='type', y='log_fee', hue='type', split=True, inner='quart', ax=axes[i], palette=palette)
+            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i], palette=palette)
             axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
             axes[i].set_xlabel('Participant Type', fontsize=18)
             axes[i].set_ylabel('Log Profit', fontsize=18 if i == 0 else 0)
