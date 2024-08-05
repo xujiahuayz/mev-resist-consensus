@@ -58,8 +58,8 @@ def calculate_gini_statistics(profits):
             gini_values = [compute_gini(run) for run in runs if len(run) > 0]
             if gini_values:
                 mean_gini = np.mean(gini_values)
-                lower_ci = np.percentile(gini_values, 2.5)
-                upper_ci = np.percentile(gini_values, 97.5)
+                lower_ci = np.percentile(gini_values, 16)
+                upper_ci = np.percentile(gini_values, 84)
                 gini_stats[system][mev_count] = (mean_gini, lower_ci, upper_ci)
             else:
                 gini_stats[system][mev_count] = (np.nan, np.nan, np.nan)
@@ -96,8 +96,8 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax)
     sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax)
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI')
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='68% CI')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='68% CI')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -109,10 +109,69 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     ax.xaxis.grid(False)
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
+    plt.title('Gini Coefficient with 68% Confidence Intervals', fontsize=22)
     plt.savefig('figures/new/gini_coefficient_with_confidence_bands.png')
+    plt.close()
+
+def plot_total_profits(data_dir, mev_counts):
+    total_profits = {'pbs': {'mev': [], 'non_mev': []}, 'pos': {'mev': [], 'non_mev': []}}
+    
+    for mev_count in mev_counts:
+        for system in ['pbs', 'pos']:
+            mev_profits = []
+            non_mev_profits = []
+            
+            for run_id in range(1, 51):
+                file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'transaction_data_{system}.csv')
+                if os.path.exists(file_path):
+                    df = pd.read_csv(file_path)
+                    df['fee'] = pd.to_numeric(df['fee'], errors='coerce')
+                    df['mev_captured'] = pd.to_numeric(df['mev_captured'], errors='coerce')
+                    if 'block_bid' in df.columns:
+                        df['block_bid'] = pd.to_numeric(df['block_bid'], errors='coerce', downcast='float')
+                    else:
+                        df['block_bid'] = 0
+
+                    if system == 'pbs':
+                        df['profit'] = df['fee'] + df['mev_captured'] - df['block_bid']
+                    elif system == 'pos':
+                        df['profit'] = df['fee'] + df['mev_captured']
+
+                    for creator_id, profit in df.groupby('creator_id')['profit'].sum().items():
+                        if creator_id <= mev_count:
+                            mev_profits.append(profit)
+                        else:
+                            non_mev_profits.append(profit)
+            
+            total_profits[system]['mev'].append(np.sum(mev_profits))
+            total_profits[system]['non_mev'].append(np.sum(non_mev_profits))
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    width = 0.35
+    indices = np.arange(len(mev_counts))
+
+    bars1 = ax.bar(indices - width/2, total_profits['pbs']['mev'], width, label='PBS MEV')
+    bars2 = ax.bar(indices + width/2, total_profits['pbs']['non_mev'], width, label='PBS Non-MEV')
+    bars3 = ax.bar(indices - width/2, total_profits['pos']['mev'], width, bottom=total_profits['pbs']['mev'], label='POS MEV')
+    bars4 = ax.bar(indices + width/2, total_profits['pos']['non_mev'], width, bottom=total_profits['pbs']['non_mev'], label='POS Non-MEV')
+
+    ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
+    ax.set_ylabel('Total Profits', fontsize=20)
+    ax.set_xticks(indices)
+    ax.set_xticklabels(mev_counts, fontsize=18)
+    ax.legend(fontsize=18)
+    ax.grid(True)
+    ax.xaxis.grid(True)
+    ax.yaxis.grid(True)
+    ax.xaxis.grid(False)
+    ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
+
+    plt.title('Total Profits of MEV and Non-MEV Builders/Validators', fontsize=22)
+    plt.savefig('figures/new/total_profits_bar_chart.png')
     plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/100_runs'
     mev_counts = list(range(1, 51))
     plot_gini_with_confidence(data_dir, mev_counts)
+    plot_total_profits(data_dir, mev_counts)
