@@ -58,8 +58,8 @@ def calculate_gini_statistics(profits):
             gini_values = [compute_gini(run) for run in runs if len(run) > 0]
             if gini_values:
                 mean_gini = np.mean(gini_values)
-                lower_ci = np.percentile(gini_values, 16)
-                upper_ci = np.percentile(gini_values, 84)
+                lower_ci = np.percentile(gini_values, 2.5)
+                upper_ci = np.percentile(gini_values, 97.5)
                 gini_stats[system][mev_count] = (mean_gini, lower_ci, upper_ci)
             else:
                 gini_stats[system][mev_count] = (np.nan, np.nan, np.nan)
@@ -96,8 +96,8 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax)
     sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax)
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='68% CI')
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='68% CI')
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
@@ -109,7 +109,7 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     ax.xaxis.grid(False)
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
-    plt.title('Gini Coefficient with 68% Confidence Intervals', fontsize=22)
+    plt.title('Gini Coefficient with 95% Confidence Intervals', fontsize=22)
     plt.savefig('figures/new/gini_coefficient_with_confidence_bands.png')
     plt.close()
 
@@ -150,15 +150,15 @@ def plot_total_profits(data_dir, mev_counts):
     width = 0.35
     indices = np.arange(len(mev_counts))
 
-    bars1 = ax.bar(indices - width/2, total_profits['pbs']['mev'], width, label='PBS MEV')
-    bars2 = ax.bar(indices + width/2, total_profits['pbs']['non_mev'], width, label='PBS Non-MEV')
-    bars3 = ax.bar(indices - width/2, total_profits['pos']['mev'], width, bottom=total_profits['pbs']['mev'], label='POS MEV')
-    bars4 = ax.bar(indices + width/2, total_profits['pos']['non_mev'], width, bottom=total_profits['pbs']['non_mev'], label='POS Non-MEV')
+    bars_pbs_mev = ax.bar(indices - width/2, total_profits['pbs']['mev'], width, label='PBS MEV', color='blue')
+    bars_pos_mev = ax.bar(indices + width/2, total_profits['pos']['mev'], width, label='POS MEV', color='orange')
+    bars_pbs_non_mev = ax.bar(indices - width/2, total_profits['pbs']['non_mev'], width, bottom=total_profits['pbs']['mev'], color='lightblue', label='PBS Non-MEV')
+    bars_pos_non_mev = ax.bar(indices + width/2, total_profits['pos']['non_mev'], width, bottom=total_profits['pos']['mev'], color='lightcoral', label='POS Non-MEV')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Total Profits', fontsize=20)
     ax.set_xticks(indices)
-    ax.set_xticklabels(mev_counts, fontsize=18)
+    ax.set_xticklabels([1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], fontsize=18)
     ax.legend(fontsize=18)
     ax.grid(True)
     ax.xaxis.grid(True)
