@@ -13,7 +13,7 @@ def compute_gini(array):
     array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
-    array += 0.0000001
+    array += 0.0000001  # To avoid division by zero
     array = np.sort(array)
     index = np.arange(1, array.shape[0] + 1)
     n = array.shape[0]
@@ -29,19 +29,33 @@ def load_profits(data_dir, mev_counts):
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
                     df['fee'] = pd.to_numeric(df['fee'], errors='coerce')
-                    run_profits.append(df.groupby('creator_id')['fee'].sum().values)
-                else:
-                    print(f"File {file_path} not found. Skipping...")
-            
-            run_profits = [profits[np.isfinite(profits) & (profits >= 0)] for profits in run_profits if len(profits) > 0]
-            profits[system][mev_count] = run_profits
+                    df['mev_captured'] = pd.to_numeric(df['mev_captured'], errors='coerce')
+                    if 'block_bid' in df.columns:
+                        df['block_bid'] = pd.to_numeric(df['block_bid'], errors='coerce', downcast='float')
+                    else:
+                        df['block_bid'] = 0
+
+                    if system == 'pbs':
+                        df['profit'] = df['fee'] + df['mev_captured'] - df['block_bid']
+                    elif system == 'pos':
+                        df['profit'] = df['fee'] + df['mev_captured']
+
+                    proposer_profits = df.groupby('creator_id')['profit'].sum().values
+                    run_profits.append(proposer_profits)
+
+            if len(run_profits) > 0:
+                run_profits = [profits[np.isfinite(profits) & (profits >= 0)] for profits in run_profits if len(profits) > 0]
+                profits[system][mev_count] = run_profits
+            else:
+                profits[system][mev_count] = np.array([])
+
     return profits
 
 def calculate_gini_statistics(profits):
     gini_stats = {'pbs': {}, 'pos': {}}
     for system in ['pbs', 'pos']:
         for mev_count, runs in profits[system].items():
-            gini_values = [compute_gini(profits) for profits in runs if len(profits) > 0]
+            gini_values = [compute_gini(run) for run in runs if len(run) > 0]
             if gini_values:
                 mean_gini = np.mean(gini_values)
                 lower_ci = np.percentile(gini_values, 2.5)
@@ -80,10 +94,10 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     _, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs, y=y_pbs, marker='o', label='PBS', ax=ax)
-    sns.lineplot(x=x_pos, y=y_pos, marker='o', label='POS', ax=ax)
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2)
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2)
+    sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax)
+    sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax)
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
