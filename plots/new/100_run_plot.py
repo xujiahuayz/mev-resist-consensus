@@ -112,65 +112,39 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     plt.savefig('figures/new/smooth_gini_coefficient.png')
     plt.close()
 
-def plot_total_profits(data_dir, mev_counts):
-    total_profits = {'pbs': {'mev': [], 'non_mev': []}, 'pos': {'mev': [], 'non_mev': []}}
-    
-    for mev_count in mev_counts:
-        for system in ['pbs', 'pos']:
-            mev_profits = []
-            non_mev_profits = []
-            
-            for run_id in range(1, 51):
-                file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'transaction_data_{system}.csv')
-                if os.path.exists(file_path):
-                    df = pd.read_csv(file_path)
-                    df['fee'] = pd.to_numeric(df['fee'], errors='coerce')
-                    df['mev_captured'] = pd.to_numeric(df['mev_captured'], errors='coerce')
-                    if 'block_bid' in df.columns:
-                        df['block_bid'] = pd.to_numeric(df['block_bid'], errors='coerce', downcast='float')
-                    else:
-                        df['block_bid'] = 0
 
-                    if system == 'pbs':
-                        df['profit'] = df['fee'] + df['mev_captured'] - df['block_bid']
-                    elif system == 'pos':
-                        df['profit'] = df['fee'] + df['mev_captured']
+def plot_profit_distribution(data_dir, mev_counts_to_plot):
+    profits = load_profits(data_dir, mev_counts_to_plot)
 
-                    for creator_id, profit in df.groupby('creator_id')['profit'].sum().items():
-                        if creator_id <= mev_count:
-                            mev_profits.append(profit)
-                        else:
-                            non_mev_profits.append(profit)
-            
-            total_profits[system]['mev'].append(np.sum(mev_profits))
-            total_profits[system]['non_mev'].append(np.sum(non_mev_profits))
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    width = 0.35
-    indices = np.arange(len(mev_counts))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+    systems = ['pbs', 'pos']
 
-    bars_pbs_mev = ax.bar(indices - width/2, total_profits['pbs']['mev'], width, label='PBS MEV', color='blue')
-    bars_pos_mev = ax.bar(indices + width/2, total_profits['pos']['mev'], width, label='POS MEV', color='orange')
-    bars_pbs_non_mev = ax.bar(indices - width/2, total_profits['pbs']['non_mev'], width, bottom=total_profits['pbs']['mev'], color='lightblue', label='PBS Non-MEV')
-    bars_pos_non_mev = ax.bar(indices + width/2, total_profits['pos']['non_mev'], width, bottom=total_profits['pos']['mev'], color='lightcoral', label='POS Non-MEV')
+    for i, mev_count in enumerate(mev_counts_to_plot):
+        for system in systems:
+            if mev_count in profits[system]:
+                all_valid_profits = []
+                for run_profits in profits[system][mev_count]:
+                    valid_profits = run_profits[run_profits >= 0]  # Ensure no negative values
+                    all_valid_profits.extend(valid_profits)
+                
+                all_valid_profits = np.array(all_valid_profits)
+                print(f"{system.upper()} MEV {mev_count} valid profits: {all_valid_profits}")  # Debug print
+                if len(all_valid_profits) > 0:
+                    sns.kdeplot(np.log10(all_valid_profits + 1), ax=axes[i], label=system.upper())  # Apply log scale to profits
 
-    ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
-    ax.set_ylabel('Total Profits', fontsize=20)
-    ax.set_xticks(indices)
-    ax.set_xticklabels([1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], fontsize=18)
-    ax.legend(fontsize=18)
-    ax.grid(True)
-    ax.xaxis.grid(True)
-    ax.yaxis.grid(True)
-    ax.xaxis.grid(False)
-    ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
+        axes[i].set_title(f'MEV Builders/Validators = {mev_count}', fontsize=20)
+        axes[i].set_xlabel('Log(Profit)', fontsize=20)
+        axes[i].tick_params(axis='both', which='major', labelsize=18)
+        axes[i].legend(fontsize=18)
+        axes[i].set_xlim(left=0)  # Set the x-axis to start at 0
 
-    plt.title('Total Profits of MEV and Non-MEV Builders/Validators', fontsize=22)
-    plt.savefig('figures/new/total_profits_bar_chart.png')
+    axes[0].set_ylabel('Density', fontsize=20)
+    plt.savefig('figures/new/profit_distribution_comparison.png')
     plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/100_runs'
     mev_counts = list(range(1, 51))
-    plot_gini_with_confidence(data_dir, mev_counts)
-    plot_total_profits(data_dir, mev_counts)
+    mev_counts_to_plot = [1, 25, 50]  # Example values to plot
+    # plot_gini_with_confidence(data_dir, mev_counts)
+    plot_profit_distribution(data_dir, mev_counts_to_plot)
