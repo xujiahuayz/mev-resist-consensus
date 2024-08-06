@@ -145,6 +145,6 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
 if __name__ == "__main__":
     data_dir = 'data/100_runs'
     mev_counts = list(range(1, 51))
-    mev_counts_to_plot = [1, 25, 50]  # Example values to plot
+    mev_counts_to_plot = [5, 25, 50]  # Example values to plot
     # plot_gini_with_confidence(data_dir, mev_counts)
     plot_profit_distribution(data_dir, mev_counts_to_plot)
