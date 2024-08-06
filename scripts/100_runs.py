@@ -180,7 +180,10 @@ def run_pbs(builders, num_blocks, users):
             block_bid_his.append(counter_bids)
 
         highest_bid = max(block_bid_his[-1].values())
-        winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
+        # Collect all builders with the highest bid
+        winning_builders = [builder_id for builder_id, bid in block_bid_his[-1].items() if bid == highest_bid]
+        # Randomly select one of the winning builders
+        winning_builder_id = random.choice(winning_builders)
         winning_builder = next(b for b in builders if b.id == winning_builder_id)
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
@@ -199,7 +202,8 @@ def run_pbs(builders, num_blocks, users):
             'total_gas': block_value,
             'total_mev_captured': sum(tx.mev_potential for tx in selected_transactions if tx.mev_potential > 0),
             'block_bid': highest_bid,
-            'builder_type': builder_type
+            'builder_type': builder_type,
+            'builder_id': winning_builder_id  # Correctly record the winning builder's ID
         })
 
         included_tx_ids = set()
