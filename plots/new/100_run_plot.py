@@ -109,8 +109,7 @@ def plot_gini_with_confidence(data_dir, mev_counts):
     ax.xaxis.grid(False)
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
-    plt.title('Gini Coefficient with 95% Confidence Intervals', fontsize=22)
-    plt.savefig('figures/new/gini_coefficient_with_confidence_bands.png')
+    plt.savefig('figures/new/smooth_gini_coefficient.png')
     plt.close()
 
 def plot_total_profits(data_dir, mev_counts):
