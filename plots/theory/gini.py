@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from scipy.signal import savgol_filter
 import os
 
 # Ensure the output directory exists
-os.makedirs('figure', exist_ok=True)
+os.makedirs('figures/theory', exist_ok=True)
 
 # Function to calculate Gini coefficient
 def gini_coefficient(profits):
@@ -17,7 +18,7 @@ def gini_coefficient(profits):
 
 # Parameters
 num_builders = 50
-num_simulations = 1000
+num_simulations = 10000  # Increased number of simulations for smoother results
 mu_mev = 10
 sigma_mev = 2
 mu_gas = 5
@@ -40,9 +41,12 @@ for mev_builders in mev_builders_range:
         gini_coeffs.append(gini_coefficient(total_profits))
     gini_values.append(np.mean(gini_coeffs))
 
-# Plot Gini coefficient vs. number of MEV builders/validators
+# Apply Savitzky-Golay filter for smoothing
+gini_values_smooth = savgol_filter(gini_values, window_length=7, polyorder=2)
+
+# Plot smoothed Gini coefficient vs. number of MEV builders/validators
 plt.figure(figsize=(10, 6))
-plt.plot(mev_builders_range, gini_values)
+plt.plot(mev_builders_range, gini_values_smooth)
 plt.xlabel('Number of MEV Builders/Validators')
 plt.ylabel('Expected Gini Coefficient')
 plt.title('Expected Gini Coefficient vs. Number of MEV Builders/Validators')
