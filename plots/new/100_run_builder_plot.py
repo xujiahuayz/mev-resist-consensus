@@ -1,100 +1,75 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import norm, t
+import os
 
 # Function to calculate Gini coefficient
-def gini_coefficient(profits):
-    sorted_profits = np.sort(profits)
-    n = len(profits)
-    cumulative_profits = np.cumsum(sorted_profits, dtype=float)
-    cumulative_profits /= cumulative_profits[-1]
+def gini_coefficient(data):
+    sorted_data = np.sort(data)
+    n = len(data)
+    cumulative_data = np.cumsum(sorted_data, dtype=float)
+    cumulative_data /= cumulative_data[-1]
     index = np.arange(1, n + 1)
-    return (np.sum((2 * index - n - 1) * cumulative_profits)) / (n * np.sum(cumulative_profits))
+    return (np.sum((2 * index - n - 1) * cumulative_data)) / (n * np.sum(cumulative_data))
 
-def simulate_data(total_builders, num_builders_list, num_simulations, mu_mev, sigma_mev, mu_gas, sigma_gas):
-    results = {
-        'gini_pbs': [],
-        'gini_pos': [],
-        'selected_pbs': [],
-        'selected_pos': []
-    }
-
-    for num_mev_builders in num_builders_list:
-        num_non_mev_builders = total_builders - num_mev_builders
-        gini_pbs = []
-        gini_pos = []
-        selected_pbs = []
-        selected_pos = []
-        for _ in range(num_simulations):
-            mev_profits_pbs = norm.rvs(loc=mu_mev, scale=sigma_mev, size=num_mev_builders)
-            non_mev_profits_pbs = norm.rvs(loc=mu_gas, scale=sigma_gas, size=num_non_mev_builders)
-            total_profits_pbs = np.concatenate([mev_profits_pbs, non_mev_profits_pbs])
-            
-            mev_profits_pos = norm.rvs(loc=mu_mev, scale=sigma_mev, size=num_mev_builders)
-            non_mev_profits_pos = norm.rvs(loc=mu_gas, scale=sigma_gas, size=num_non_mev_builders)
-            total_profits_pos = np.concatenate([mev_profits_pos, non_mev_profits_pos])
-            
-            selected_pbs.append(np.argmax(total_profits_pbs))
-            selected_pos.append(np.argmax(total_profits_pos))
-            
-            gini_pbs.append(gini_coefficient(total_profits_pbs))
-            gini_pos.append(gini_coefficient(total_profits_pos))
+# Function to load builder selection data from the 100 runs
+def load_selection_data(data_dir, mev_counts):
+    selection_data = {}
+    for mev_count in mev_counts:
+        all_selections = []
+        for run_id in range(1, 101):
+            file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', 'pbs', 'block_data_pbs.csv')
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path)
+                selected_ids = df['builder_id'].values
+                all_selections.append(selected_ids)
         
-        results['gini_pbs'].append(gini_pbs)
-        results['gini_pos'].append(gini_pos)
-        results['selected_pbs'].append(selected_pbs)
-        results['selected_pos'].append(selected_pos)
-    
-    return results
+        if all_selections:
+            selection_data[mev_count] = all_selections
+        else:
+            selection_data[mev_count] = []
+    return selection_data
 
-def plot_gini_coefficient(num_builders_list, results):
-    mean_gini_pbs = [np.mean(g) for g in results['gini_pbs']]
-    mean_gini_pos = [np.mean(g) for g in results['gini_pos']]
-    ci_gini_pbs = [t.interval(0.95, len(g)-1, loc=np.mean(g), scale=np.std(g)/np.sqrt(len(g))) for g in results['gini_pbs']]
-    ci_gini_pos = [t.interval(0.95, len(g)-1, loc=np.mean(g), scale=np.std(g)/np.sqrt(len(g))) for g in results['gini_pos']]
+# Function to calculate Gini statistics
+def calculate_gini_statistics(selection_data):
+    gini_stats = {}
+    for mev_count, runs in selection_data.items():
+        gini_values = []
+        for run in runs:
+            unique, counts = np.unique(run, return_counts=True)
+            gini = gini_coefficient(counts)
+            gini_values.append(gini)
+        
+        if gini_values:
+            mean_gini = np.mean(gini_values)
+            lower_ci = np.percentile(gini_values, 2.5)
+            upper_ci = np.percentile(gini_values, 97.5)
+            gini_stats[mev_count] = (mean_gini, lower_ci, upper_ci)
+        else:
+            gini_stats[mev_count] = (np.nan, np.nan, np.nan)
+    return gini_stats
+
+# Function to plot Gini coefficient
+def plot_gini_coefficient(gini_stats, mev_counts):
+    mean_gini = [gini_stats[mc][0] for mc in mev_counts]
+    lower_ci = [gini_stats[mc][1] for mc in mev_counts]
+    upper_ci = [gini_stats[mc][2] for mc in mev_counts]
 
     plt.figure(figsize=(10, 6))
-    plt.errorbar(num_builders_list, mean_gini_pbs, yerr=[(top-bot)/2 for bot, top in ci_gini_pbs], label='PBS', color='blue', fmt='-o')
-    plt.errorbar(num_builders_list, mean_gini_pos, yerr=[(top-bot)/2 for bot, top in ci_gini_pos], label='PoS', color='orange', fmt='-o')
-    plt.xlabel('Number of MEV Builders/Validators')
+    plt.errorbar(mev_counts, mean_gini, yerr=[(top-bot)/2 for bot, top in zip(lower_ci, upper_ci)], label='PBS', color='blue', fmt='-o')
+    plt.xlabel('Number of MEV Builders')
     plt.ylabel('Gini Coefficient')
-    plt.title('Gini Coefficient of Builder/Validator Selection')
+    plt.title('Gini Coefficient of Builder Selection in PBS')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig('figures/new/gini_coefficient_pbs.png')
+    plt.close()
 
-def plot_selected_distribution(num_builders_list, results, total_builders):
-    selected_indices = [num_builders_list.index(x) for x in [1, 25, 50]]
-    fig, axs = plt.subplots(1, len(selected_indices), figsize=(18, 6), sharey=True)
-
-    for idx, selected_index in enumerate(selected_indices):
-        num_builders = num_builders_list[selected_index]
-        selected_pbs_hist, bins_pbs = np.histogram(results['selected_pbs'][selected_index], bins=np.arange(total_builders+1)-0.5, density=True)
-        selected_pos_hist, bins_pos = np.histogram(results['selected_pos'][selected_index], bins=np.arange(total_builders+1)-0.5, density=True)
-        
-        axs[idx].plot(bins_pbs[:-1], selected_pbs_hist, label='PBS', color='blue')
-        axs[idx].fill_between(bins_pbs[:-1], selected_pbs_hist, alpha=0.2, color='blue')
-        
-        axs[idx].plot(bins_pos[:-1], selected_pos_hist, label='PoS', color='orange')
-        axs[idx].fill_between(bins_pos[:-1], selected_pos_hist, alpha=0.2, color='orange')
-        
-        axs[idx].set_title(f'MEV Builders/Validators = {num_builders}')
-        axs[idx].set_xlabel('Number of Blocks Built')
-        axs[idx].legend()
-
-    axs[0].set_ylabel('Density')
-    plt.tight_layout()
-    plt.show()
-
+# Main execution
 if __name__ == "__main__":
-    total_builders = 50
-    num_builders_list = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-    num_simulations = 1000
-    mu_mev = 10
-    sigma_mev = 2
-    mu_gas = 5
-    sigma_gas = 1
+    data_dir = 'data/100_runs'
+    mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
-    results = simulate_data(total_builders, num_builders_list, num_simulations, mu_mev, sigma_mev, mu_gas, sigma_gas)
-    plot_gini_coefficient(num_builders_list, results)
-    plot_selected_distribution(num_builders_list, results, total_builders)
+    selection_data_pbs = load_selection_data(data_dir, mev_counts)
+    gini_stats_pbs = calculate_gini_statistics(selection_data_pbs)
+    plot_gini_coefficient(gini_stats_pbs, mev_counts)
