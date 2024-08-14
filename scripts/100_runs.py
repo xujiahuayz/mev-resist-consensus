@@ -1,15 +1,15 @@
 import sys
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import random
+import pandas as pd
+import numpy as np
 
 # Add project root to PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
-import random
-import pandas as pd
-import numpy as np
 
 # Parameters
 NUM_USERS = 20
@@ -272,8 +272,8 @@ def run_pos(validators, num_blocks, users):
             'block_id': block_num + 1,
             'total_gas': profit_from_block,
             'total_mev_captured': sum(tx.mev_potential for tx in selected_transactions if tx.mev_potential > 0),
-            'block_bid': None,
-            'validator_type': validator_type
+            'validator_type': validator_type,
+            'validator_id': validator.id 
         })
 
         included_tx_ids = set()
