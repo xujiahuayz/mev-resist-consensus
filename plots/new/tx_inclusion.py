@@ -16,7 +16,9 @@ def load_transaction_types(data_dir, mev_counts):
             pbs_df = pd.read_csv(pbs_dir)
             pos_df = pd.read_csv(pos_dir)
 
-            # Assuming transaction type is stored in a column named 'transaction_type'
+            pbs_df['transaction_type'] = pbs_df['transaction_type'].replace('b_attack', 'attack')
+            pos_df['transaction_type'] = pos_df['transaction_type'].replace('b_attack', 'attack')
+
             pbs_transaction_types = pbs_df['transaction_type'].value_counts()
             pos_transaction_types = pos_df['transaction_type'].value_counts()
 
