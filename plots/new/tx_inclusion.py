@@ -43,11 +43,14 @@ def plot_transaction_type_distribution(data_dir, mev_counts_to_plot):
                 'Count': list(pbs_transactions.values) + list(pos_transactions.values)
             })
 
-            sns.barplot(x='Transaction Type', y='Count', hue='type', data=combined_data, ax=axes[i], palette="Set3")
+            # Apply log transformation to the counts for better visualization
+            combined_data['Log Count'] = np.log1p(combined_data['Count'])
+
+            sns.barplot(x='Transaction Type', y='Log Count', hue='type', data=combined_data, ax=axes[i], palette="Set3")
             axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
             axes[i].set_xlabel('Transaction Type', fontsize=18)
             axes[i].tick_params(axis='both', which='major', labelsize=14)
-            axes[i].set_ylabel('Count' if i == 0 else '', fontsize=18)
+            axes[i].set_ylabel('Log Count' if i == 0 else '', fontsize=18)
 
     plt.tight_layout()
     plt.savefig('figures/new/transaction_type_distribution.png')
