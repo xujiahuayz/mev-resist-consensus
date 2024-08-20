@@ -22,7 +22,7 @@ def gini_coefficient(profits):
 
 # Parameters
 num_builders = 50
-num_simulations = 100  # Number of simulation runs
+num_simulations = 50  # Number of simulation runs (adjusted to 50 based on your data)
 mu_mev = 10
 sigma_mev = 2
 mu_gas = 5
@@ -60,22 +60,32 @@ def compute_gini(array):
     return ((np.sum((2 * index - n - 1) * array)) / (n * np.sum(array)))
 
 def load_profits(data_dir, mev_counts):
-    profits = {'pbs': {}}
+    profits = {mev_count: [] for mev_count in mev_counts}
+    
     for mev_count in mev_counts:
-        pbs_dir = os.path.join(data_dir, f'pbs/mev{mev_count}/transaction_data_pbs.csv')
+        for run in range(1, 51):  # Loop through each run (adjusted to 50 runs)
+            run_dir = os.path.join(data_dir, f'run{run}/mev{mev_count}/pbs')
+            pbs_file = os.path.join(run_dir, 'transaction_data_pbs.csv')
 
-        if os.path.exists(pbs_dir):
-            pbs_df = pd.read_csv(pbs_dir)
-            pbs_df['fee'] = pd.to_numeric(pbs_df['fee'], errors='coerce')
+            if os.path.exists(pbs_file):
+                pbs_df = pd.read_csv(pbs_file)
+                pbs_df['fee'] = pd.to_numeric(pbs_df['fee'], errors='coerce')
 
-            pbs_profits = pbs_df.groupby('creator_id')['fee'].sum().values
-            # Remove negative profits and NaNs
-            pbs_profits = pbs_profits[np.isfinite(pbs_profits) & (pbs_profits >= 0)]
+                pbs_profits = pbs_df.groupby('creator_id')['fee'].sum().values
+                # Remove negative profits and NaNs
+                pbs_profits = pbs_profits[np.isfinite(pbs_profits) & (pbs_profits >= 0)]
 
-            profits['pbs'][mev_count] = pbs_profits
-        else:
-            print(f"Files for MEV count {mev_count} not found. Skipping...")
+                # Ensure only top 50 profits are selected if there are more than 50 builders
+                if len(pbs_profits) > num_builders:
+                    pbs_profits = np.sort(pbs_profits)[-num_builders:]  # Keep the largest 50 values
 
+                # Make sure we account for all 50 builders, including those with zero profits
+                full_profits = np.zeros(num_builders)
+                full_profits[:len(pbs_profits)] = pbs_profits
+                profits[mev_count].append(full_profits)
+            else:
+                print(f"File not found for run {run}, MEV count {mev_count}. Skipping...")
+    
     return profits
 
 def plot_gini_coefficient(data_dir, mev_counts, gini_values_smooth_theory, mev_builders_range):
@@ -84,19 +94,10 @@ def plot_gini_coefficient(data_dir, mev_counts, gini_values_smooth_theory, mev_b
     gini_coefficients_pbs = []
 
     for mev_count in mev_counts:
-        if mev_count in profits['pbs']:
+        if mev_count in profits:
             total_ginis = []
-            for _ in range(num_simulations):
-                selected_builders = np.zeros(num_builders)
-                profits_pbs = profits['pbs'][mev_count]
-
-                if len(profits_pbs) < num_builders:
-                    # If fewer builders are selected, the rest have zero profits
-                    full_profits = np.concatenate((profits_pbs, np.zeros(num_builders - len(profits_pbs))))
-                else:
-                    full_profits = profits_pbs
-
-                gini = gini_coefficient(full_profits)
+            for profit_distribution in profits[mev_count]:
+                gini = gini_coefficient(profit_distribution)
                 total_ginis.append(gini)
 
             gini_coefficients_pbs.append(np.mean(total_ginis))
@@ -121,7 +122,7 @@ if __name__ == "__main__":
     mev_builders_range = np.arange(1, num_builders + 1)
 
     # Simulated part
-    data_dir = 'data/vary_mev'
+    data_dir = 'data/100_runs'
     mev_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
     plot_gini_coefficient(data_dir, mev_counts, gini_values_smooth_theory, mev_builders_range)
