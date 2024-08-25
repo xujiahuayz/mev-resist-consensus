@@ -32,33 +32,40 @@ def load_transaction_types(data_dir, mev_counts):
 def plot_transaction_type_distribution(data_dir, mev_counts_to_plot):
     transactions = load_transaction_types(data_dir, mev_counts_to_plot)
 
-    fig, axes = plt.subplots(1, len(mev_counts_to_plot), figsize=(18, 6), sharey=True)
-
-    for i, mev_count in enumerate(mev_counts_to_plot):
+    all_data = []
+    
+    for mev_count in mev_counts_to_plot:
         if mev_count in transactions['pbs'] and mev_count in transactions['pos']:
-            pbs_transactions = transactions['pbs'][mev_count]
-            pos_transactions = transactions['pos'][mev_count]
+            for tx_type in transactions['pbs'][mev_count].index:
+                all_data.append({
+                    'MEV Count': mev_count,
+                    'Transaction Type': tx_type,
+                    'Log Count': np.log1p(transactions['pbs'][mev_count][tx_type]),
+                    'Type': 'PBS'
+                })
+                
+            for tx_type in transactions['pos'][mev_count].index:
+                all_data.append({
+                    'MEV Count': mev_count,
+                    'Transaction Type': tx_type,
+                    'Log Count': np.log1p(transactions['pos'][mev_count][tx_type]),
+                    'Type': 'POS'
+                })
 
-            combined_data = pd.DataFrame({
-                'type': ['PBS'] * len(pbs_transactions) + ['POS'] * len(pos_transactions),
-                'Transaction Type': list(pbs_transactions.index) + list(pos_transactions.index),
-                'Count': list(pbs_transactions.values) + list(pos_transactions.values)
-            })
+    df = pd.DataFrame(all_data)
 
-            # Apply log transformation to the counts for better visualization
-            combined_data['Log Count'] = np.log1p(combined_data['Count'])
+    plt.figure(figsize=(12, 8))
+    sns.lineplot(data=df, x='MEV Count', y='Log Count', hue='Transaction Type', style='Type', markers=True, dashes=False)
+    plt.title('Log-Transformed Transaction Type Distribution across MEV Counts', fontsize=20)
+    plt.xlabel('MEV Count', fontsize=18)
+    plt.ylabel('Log Count', fontsize=18)
+    plt.legend(title='Transaction Type & System', fontsize=12)
+    plt.grid(True)
 
-            sns.barplot(x='Transaction Type', y='Log Count', hue='type', data=combined_data, ax=axes[i], palette="Set3")
-            axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
-            axes[i].set_xlabel('Transaction Type', fontsize=18)
-            axes[i].tick_params(axis='both', which='major', labelsize=14)
-            axes[i].set_ylabel('Log Count' if i == 0 else '', fontsize=18)
-
-    plt.tight_layout()
-    plt.savefig('figures/new/transaction_type_distribution.png')
+    plt.savefig('figures/new/transaction_type_distribution_lineplot.png')
     plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/vary_mev'
-    mev_counts_to_plot = [1, 25, 50]  # You can adjust the MEV counts to plot here
+    mev_counts_to_plot = [1, 25, 50] 
     plot_transaction_type_distribution(data_dir, mev_counts_to_plot)
