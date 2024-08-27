@@ -139,45 +139,6 @@ def plot_profit_distribution(data_dir, mev_counts_to_plot):
     plt.savefig('figures/new/profit_distribution_comparison.png')
     plt.close()
 
-def plot_profit_distribution_violin(data_dir, mev_counts_to_plot):
-    profits = load_profits(data_dir, mev_counts_to_plot)
-    
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    palette = sns.color_palette("Set3")
-
-    for i, mev_count in enumerate(mev_counts_to_plot):
-        if mev_count in profits['pbs'] and mev_count in profits['pos']:
-            pbs_profits = profits['pbs'][mev_count].copy()
-            pos_profits = profits['pos'][mev_count].copy()
-
-            pbs_profits = pd.DataFrame(pbs_profits, columns=['fee'])
-            pos_profits = pd.DataFrame(pos_profits, columns=['fee'])
-
-            pbs_profits['type'] = 'PBS'
-            pos_profits['type'] = 'POS'
-
-            # Remove negative profits
-            pbs_profits = pbs_profits[pbs_profits['fee'] >= 0]
-            pos_profits = pos_profits[pos_profits['fee'] >= 0]
-
-            combined_profits = pd.concat([pbs_profits, pos_profits], ignore_index=True)
-            combined_profits['log_fee'] = np.log1p(combined_profits['fee'])  # Log-transform the fee
-
-            # Remove log profits less than or equal to zero
-            combined_profits = combined_profits[combined_profits['log_fee'] > 0]
-
-            # Create half violins for MEV and non-MEV participants
-            sns.violinplot(data=combined_profits, x='type', y='log_fee', split=True, inner='quart', ax=axes[i], palette=palette)
-            axes[i].set_title(f'MEV Count = {mev_count}', fontsize=20)
-            axes[i].set_xlabel('Participant Type', fontsize=18)
-            axes[i].set_ylabel('Log Profit', fontsize=18 if i == 0 else 0)
-            axes[i].legend(title='Type', fontsize=16, loc='upper left')
-            axes[i].tick_params(axis='both', which='major', labelsize=14)
-            axes[i].grid(True, axis='y')
-
-    plt.tight_layout()
-    plt.savefig('figures/new/violin_plot_profit_distribution.png')
-    plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/vary_mev'
@@ -187,4 +148,3 @@ if __name__ == "__main__":
 
     mev_counts_to_plot = [1, 25, 50]
     plot_profit_distribution(data_dir, mev_counts_to_plot)
-    plot_profit_distribution_violin(data_dir, mev_counts_to_plot)
