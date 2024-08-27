@@ -72,7 +72,7 @@ def interpolate_and_smooth(x, y, num_points=49, window_length=5, polyorder=2):
     y_smooth = savgol_filter(y_new, window_length, polyorder)
     return x_new, y_smooth
 
-def plot_gini_with_confidence(data_dir, mev_counts, output_file):
+def plot_gini_with_confidence(data_dir, mev_counts, output_file, ylim=None):
     profits = load_profits(data_dir, mev_counts)
     gini_stats = calculate_gini_statistics(profits)
 
@@ -102,21 +102,41 @@ def plot_gini_with_confidence(data_dir, mev_counts, output_file):
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient of Profit Distribution', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=18)
-    ax.legend(fontsize=18, loc='lower right')
+    ax.legend(fontsize=18, loc='lower right')  # Move legend to bottom-right corner
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
     ax.xaxis.grid(False)
     ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
+    if ylim:
+        ax.set_ylim(ylim)
+
     plt.savefig(output_file)
     plt.close()
 
+def get_y_axis_limits(data_dirs, mev_counts):
+    all_gini_values = []
+
+    for data_dir in data_dirs:
+        profits = load_profits(data_dir, mev_counts)
+        gini_stats = calculate_gini_statistics(profits)
+
+        for system in ['pbs', 'pos']:
+            all_gini_values.extend([gini_stats[system].get(mc, (np.nan, np.nan, np.nan))[0] for mc in mev_counts])
+
+    min_y = min(all_gini_values)
+    max_y = max(all_gini_values)
+    return min_y, max_y
+
 if __name__ == "__main__":
     mev_counts = list(range(1, 51))
-    data_dir = 'data/100_runs'
-    plot_gini_with_confidence(data_dir, mev_counts, 'figures/new/smooth_gini_coefficient.png')
+    data_dir_default = 'data/100_runs'
     data_dir_attackall = 'data/100run_attackall'
-    plot_gini_with_confidence(data_dir_attackall, mev_counts, 'figures/new/smooth_gini_coefficient_attackall.png')
     data_dir_attacknon = 'data/100run_attacknon'
-    plot_gini_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/smooth_gini_coefficient_attacknon.png')
+
+    ylim = get_y_axis_limits([data_dir_default, data_dir_attackall, data_dir_attacknon], mev_counts)
+
+    plot_gini_with_confidence(data_dir_default, mev_counts, 'figures/new/smooth_gini_coefficient.png', ylim)
+    plot_gini_with_confidence(data_dir_attackall, mev_counts, 'figures/new/smooth_gini_coefficient_attackall.png', ylim)
+    plot_gini_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/smooth_gini_coefficient_attacknon.png', ylim)
