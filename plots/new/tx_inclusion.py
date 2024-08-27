@@ -21,6 +21,7 @@ def load_and_aggregate_transaction_types(data_dir, mev_counts, num_runs):
                 pbs_df = pd.read_csv(pbs_dir)
                 pos_df = pd.read_csv(pos_dir)
 
+                # Ensure consistent ordering of categories
                 pbs_df['transaction_type'] = pbs_df['transaction_type'].replace({'b_attack': 'Attack', 'normal': 'Benign', 'failed': 'Failed Attack'})
                 pos_df['transaction_type'] = pos_df['transaction_type'].replace({'b_attack': 'Attack', 'normal': 'Benign', 'failed': 'Failed Attack'})
 
@@ -42,6 +43,9 @@ def load_and_aggregate_transaction_types(data_dir, mev_counts, num_runs):
 def plot_smooth_stacked_transaction_distribution(data_dir, mev_counts_to_plot, num_runs):
     transactions = load_and_aggregate_transaction_types(data_dir, mev_counts_to_plot, num_runs)
 
+    # Define the order of categories
+    category_order = ['Benign', 'Attack', 'Failed Attack']
+
     # Prepare the data for stacked area plots
     pbs_data = []
     pos_data = []
@@ -58,8 +62,8 @@ def plot_smooth_stacked_transaction_distribution(data_dir, mev_counts_to_plot, n
             })
 
     # Convert to DataFrames for easier plotting
-    pbs_df = pd.DataFrame(pbs_data).set_index('MEV Count').fillna(0)
-    pos_df = pd.DataFrame(pos_data).set_index('MEV Count').fillna(0)
+    pbs_df = pd.DataFrame(pbs_data).set_index('MEV Count').fillna(0).reindex(columns=category_order)
+    pos_df = pd.DataFrame(pos_data).set_index('MEV Count').fillna(0).reindex(columns=category_order)
 
     # Set larger font sizes
     plt.rc('axes', titlesize=24, labelsize=20)  # Titles and labels
