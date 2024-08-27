@@ -100,9 +100,9 @@ def plot_gini_with_confidence(data_dir, mev_counts, output_file):
     ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
-    ax.set_ylabel('Gini Coefficient', fontsize=20)
+    ax.set_ylabel('Gini Coefficient of Profit Distribution', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=18)
-    ax.legend(fontsize=18)
+    ax.legend(fontsize=18, loc='lower right')
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
