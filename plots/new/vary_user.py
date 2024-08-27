@@ -13,7 +13,7 @@ def compute_gini(array):
     array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
-    array += 0.0000001  # To avoid division by zero
+    array += 0.0000001
     array = np.sort(array)
     index = np.arange(1, array.shape[0] + 1)
     n = array.shape[0]
@@ -24,7 +24,7 @@ def load_profits(data_dir, mev_counts):
     for mev_count in mev_counts:
         for system in ['pbs', 'pos']:
             run_profits = []
-            for run_id in range(1, 51):  # Adjust based on number of runs
+            for run_id in range(1, 51):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'transaction_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
@@ -102,7 +102,7 @@ def plot_gini_with_confidence(data_dir, mev_counts, output_file, ylim=None):
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient of Profit Distribution', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=18)
-    ax.legend(fontsize=18, loc='lower right')  # Move legend to bottom-right corner
+    ax.legend(fontsize=18, loc='lower right')
     ax.grid(True)
     ax.xaxis.grid(True)
     ax.yaxis.grid(True)
