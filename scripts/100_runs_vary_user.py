@@ -30,17 +30,17 @@ class Transaction:
         self.fee = fee
         self.mev_potential = mev_potential
         self.creator_id = creator_id
-        self.included_pbs = False  # Separate inclusion flag for PBS
-        self.included_pos = False  # Separate inclusion flag for PoS
-        self.pbs_inclusion_time = None  # When it was included in PBS, if ever
-        self.pos_inclusion_time = None  # When it was included in PoS, if ever
-        self.successful_pbs = False  # Track if successfully attacked in PBS
-        self.successful_pos = False  # Track if successfully attacked in PoS
+        self.included_pbs = False
+        self.included_pos = False
+        self.pbs_inclusion_time = None
+        self.pos_inclusion_time = None
+        self.successful_pbs = False
+        self.successful_pos = False
         self.targeting = targeting
         self.target_tx_id = target_tx_id
         self.block_created = block_created
         self.transaction_type = transaction_type
-        self.inclusion_log = []  # Track all inclusion details
+        self.inclusion_log = []
 
     def log_inclusion(self, system, block_number, success=False):
         if system == 'pbs':
@@ -95,7 +95,7 @@ class AttackUser(Participant):
     def create_transaction(self, all_participants, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
             higher_fees = [x for x in SAMPLE_GAS_FEES if x > target_tx.fee]
-            fee = random.choice(higher_fees) if higher_fees else target_tx.fee + 1  # Use a default value if no higher fees are found
+            fee = random.choice(higher_fees) if higher_fees else target_tx.fee + 1
             mev_potential = target_tx.mev_potential
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
             self.broadcast_transaction(all_participants, tx)
@@ -113,7 +113,7 @@ class Builder(Participant):
         super().__init__(builder_counter)
         self.is_attack = is_attack
         builder_counter += 1
-        self.average_bid_percentage = 0.5  # Initial average bid percentage set to 50%
+        self.average_bid_percentage = 0.5
 
     def bid(self, block_bid_his, block_number):
         block_value = sum(tx.fee + tx.mev_potential for tx in self.mempool_pbs if not tx.included_pbs and tx.block_created <= block_number)
@@ -187,7 +187,7 @@ def run_pbs(builders, num_blocks, users):
     proposer_profits = {builder.id: [] for builder in builders}
     block_data = []
     transaction_data = []
-    all_transactions_log = []  # Log for all transactions
+    all_transactions_log = []
 
     global targeting_tracker
     targeting_tracker = {}
@@ -261,7 +261,7 @@ def run_pbs(builders, num_blocks, users):
                 'transaction_type': tx.transaction_type
             })
 
-            all_transactions_log.append(tx)  # Log the transaction details
+            all_transactions_log.append(tx)
 
         for builder in builders:
             builder.mempool_pbs = [tx for tx in builder.mempool_pbs if tx.id not in included_tx_ids]
@@ -276,7 +276,7 @@ def run_pos(validators, num_blocks, users):
     total_mev_transactions = 0
     block_data = []
     transaction_data = []
-    all_transactions_log = []  # Log for all transactions
+    all_transactions_log = []
 
     global targeting_tracker
     targeting_tracker = {}
@@ -336,20 +336,23 @@ def run_pos(validators, num_blocks, users):
                 'transaction_type': tx.transaction_type
             })
 
-            all_transactions_log.append(tx)  # Log the transaction details
+            all_transactions_log.append(tx)
 
         for validator in validators:
             validator.mempool_pos = [tx for tx in validator.mempool_pos if tx.id not in included_tx_ids]
 
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data, all_transactions_log
 
-def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False):
+def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False, is_attack_50_percent=False):
     if is_attack_all:
         users = [AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attackall'
     elif is_attack_none:
         users = [NormalUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attacknon'
+    elif is_attack_50_percent:
+        users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
+        output_dir = 'data/100_runs'
     else:
         return
 
@@ -363,14 +366,8 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False)
 
     for block_number in range(NUM_BLOCKS):
         for counter in range(24):
-            if is_attack_all:
-                user = random.choice(users)  # Only AttackUsers exist
-            elif is_attack_none:
-                user = random.choice(users)  # Only NormalUsers exist
-            else:
-                user = random.choice(users)  # Mixture of NormalUsers and AttackUsers
+            user = random.choice(users)
 
-            # Determine if this user should create a normal or attack transaction
             if isinstance(user, AttackUser):
                 target_tx_pbs = max(
                     (tx for tx in user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
@@ -386,24 +383,20 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False)
                 if target_tx_pbs:
                     user.create_transaction(all_participants, target_tx_pbs, block_number=block_number + 1)
                 else:
-                    user.create_transaction(all_participants, block_number=block_number + 1)  # Fallback to normal transaction
+                    user.create_transaction(all_participants, block_number=block_number + 1)
 
                 if target_tx_pos:
                     user.create_transaction(all_participants, target_tx_pos, block_number=block_number + 1)
                 else:
-                    user.create_transaction(all_participants, block_number=block_number + 1)  # Fallback to normal transaction
+                    user.create_transaction(all_participants, block_number=block_number + 1)
             else:
-                # If the user is a NormalUser, they always create a normal transaction
                 user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
 
-    # After the block transactions are created, process them for PBS and PoS systems
     cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs, all_transactions_pbs = run_pbs(builders, NUM_BLOCKS, users)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos, all_transactions_pos = run_pos(validators, NUM_BLOCKS, users)
 
-    # Combine all transactions logs for both systems
     all_transactions_log = all_transactions_pbs + all_transactions_pos
 
-    # Create directory for current MEV builder count
     run_output_dir = f'{output_dir}/run{run_id}/mev{mev_count}'
     pbs_output_dir = os.path.join(run_output_dir, 'pbs')
     pos_output_dir = os.path.join(run_output_dir, 'pos')
@@ -412,19 +405,16 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False)
     os.makedirs(pos_output_dir, exist_ok=True)
     os.makedirs(all_tx_output_dir, exist_ok=True)
 
-    # Save PBS results
     block_data_pbs_df = pd.DataFrame(block_data_pbs)
     transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
     block_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'block_data_pbs.csv'), index=False)
     transaction_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'transaction_data_pbs.csv'), index=False)
 
-    # Save PoS results
     block_data_pos_df = pd.DataFrame(block_data_pos)
     transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
     block_data_pos_df.to_csv(os.path.join(pos_output_dir, 'block_data_pos.csv'), index=False)
     transaction_data_pos_df.to_csv(os.path.join(pos_output_dir, 'transaction_data_pos.csv'), index=False)
 
-    # Save all transactions log
     all_transactions_df = pd.DataFrame([vars(tx) for tx in all_transactions_log])
     all_transactions_df.to_csv(os.path.join(all_tx_output_dir, 'all_transactions.csv'), index=False)
 
@@ -433,12 +423,12 @@ if __name__ == "__main__":
         futures = []
         for run_id in range(1, NUM_RUNS + 1):
             for mev_count in MEV_BUILDER_COUNTS:
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
+                # futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
+                # futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
+                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
 
         for future in as_completed(futures):
             try:
                 future.result()
             except Exception as e:
                 print(f"Error occurred: {e}")
-
