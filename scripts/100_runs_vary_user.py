@@ -351,7 +351,6 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False)
         users = [NormalUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attacknon'
     else:
-        # Do not run the default 50% attack case
         return
 
     builders = [Builder(i < mev_count) for i in range(NUM_BUILDERS)]
@@ -364,28 +363,40 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False)
 
     for block_number in range(NUM_BLOCKS):
         for counter in range(24):
-            attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
-            normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
+            if is_attack_all:
+                user = random.choice(users)  # Only AttackUsers exist
+            elif is_attack_none:
+                user = random.choice(users)  # Only NormalUsers exist
+            else:
+                user = random.choice(users)  # Mixture of NormalUsers and AttackUsers
 
-            # Attack user creates transaction
-            target_tx_pbs = max(
-                (tx for tx in attack_user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
-                default=None,
-                key=lambda tx: tx.fee
-            )
-            target_tx_pos = max(
-                (tx for tx in attack_user.mempool_pos if tx.mev_potential > 0 and not tx.included_pos and tx.id not in targeting_tracker),
-                default=None,
-                key=lambda tx: tx.fee
-            )
-            if target_tx_pbs:
-                attack_user.create_transaction(all_participants, target_tx_pbs, block_number=block_number + 1)
-            if target_tx_pos:
-                attack_user.create_transaction(all_participants, target_tx_pos, block_number=block_number + 1)
+            # Determine if this user should create a normal or attack transaction
+            if isinstance(user, AttackUser):
+                target_tx_pbs = max(
+                    (tx for tx in user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
+                    default=None,
+                    key=lambda tx: tx.fee
+                )
+                target_tx_pos = max(
+                    (tx for tx in user.mempool_pos if tx.mev_potential > 0 and not tx.included_pos and tx.id not in targeting_tracker),
+                    default=None,
+                    key=lambda tx: tx.fee
+                )
+                
+                if target_tx_pbs:
+                    user.create_transaction(all_participants, target_tx_pbs, block_number=block_number + 1)
+                else:
+                    user.create_transaction(all_participants, block_number=block_number + 1)  # Fallback to normal transaction
 
-            # Normal user creates transaction
-            normal_user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
+                if target_tx_pos:
+                    user.create_transaction(all_participants, target_tx_pos, block_number=block_number + 1)
+                else:
+                    user.create_transaction(all_participants, block_number=block_number + 1)  # Fallback to normal transaction
+            else:
+                # If the user is a NormalUser, they always create a normal transaction
+                user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
 
+    # After the block transactions are created, process them for PBS and PoS systems
     cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs, all_transactions_pbs = run_pbs(builders, NUM_BLOCKS, users)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos, all_transactions_pos = run_pos(validators, NUM_BLOCKS, users)
 
@@ -430,3 +441,4 @@ if __name__ == "__main__":
                 future.result()
             except Exception as e:
                 print(f"Error occurred: {e}")
+
