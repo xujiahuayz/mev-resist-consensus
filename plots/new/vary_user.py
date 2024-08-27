@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 import os
 
 sns.set_theme(style="whitegrid")
@@ -63,6 +65,13 @@ def calculate_gini_statistics(profits):
                 gini_stats[system][mev_count] = (np.nan, np.nan, np.nan)
     return gini_stats
 
+def interpolate_and_smooth(x, y, num_points=49, window_length=5, polyorder=2):
+    interp_func = interp1d(x, y, kind='linear', fill_value="extrapolate")
+    x_new = np.linspace(min(x), max(x), num_points)
+    y_new = interp_func(x_new)
+    y_smooth = savgol_filter(y_new, window_length, polyorder)
+    return x_new, y_smooth
+
 def plot_gini_with_confidence(data_dir, mev_counts, output_file):
     profits = load_profits(data_dir, mev_counts)
     gini_stats = calculate_gini_statistics(profits)
@@ -74,11 +83,21 @@ def plot_gini_with_confidence(data_dir, mev_counts, output_file):
     lower_ci_pos = [gini_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[1] for mc in mev_counts]
     upper_ci_pos = [gini_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[2] for mc in mev_counts]
 
+    valid_indices_pbs = [i for i, val in enumerate(gini_pbs) if not np.isnan(val)]
+    valid_indices_pos = [i for i, val in enumerate(gini_pos) if not np.isnan(val)]
+
+    x_pbs, y_pbs = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(gini_pbs)[valid_indices_pbs])
+    x_pos, y_pos = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(gini_pos)[valid_indices_pos])
+    _, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
+    _, upper_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(upper_ci_pbs)[valid_indices_pbs])
+    _, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
+    _, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
+
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=mev_counts, y=gini_pbs, label='PBS', ax=ax)
-    sns.lineplot(x=mev_counts, y=gini_pos, label='POS', ax=ax)
-    ax.fill_between(mev_counts, lower_ci_pbs, upper_ci_pbs, color='blue', alpha=0.2, label='95% CI')
-    ax.fill_between(mev_counts, lower_ci_pos, upper_ci_pos, color='orange', alpha=0.2, label='95% CI')
+    sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax)
+    sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax)
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
 
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient', fontsize=20)
