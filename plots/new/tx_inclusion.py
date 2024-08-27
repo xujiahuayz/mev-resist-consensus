@@ -6,34 +6,43 @@ import os
 
 sns.set_theme(style="whitegrid")
 
-def load_transaction_types(data_dir, mev_counts):
+def load_and_aggregate_transaction_types(data_dir, mev_counts, num_runs):
     transactions = {'pbs': {}, 'pos': {}}
 
     for mev_count in mev_counts:
-        pbs_dir = os.path.join(data_dir, f'pbs/mev{mev_count}/transaction_data_pbs.csv')
-        pos_dir = os.path.join(data_dir, f'pos/mev{mev_count}/transaction_data_pos.csv')
+        pbs_aggregated = pd.Series(dtype='float64')
+        pos_aggregated = pd.Series(dtype='float64')
 
-        if os.path.exists(pbs_dir) and os.path.exists(pos_dir):
-            pbs_df = pd.read_csv(pbs_dir)
-            pos_df = pd.read_csv(pos_dir)
+        for run_id in range(1, num_runs + 1):
+            pbs_dir = os.path.join(data_dir, f'run{run_id}/mev{mev_count}/pbs/transaction_data_pbs.csv')
+            pos_dir = os.path.join(data_dir, f'run{run_id}/mev{mev_count}/pos/transaction_data_pos.csv')
 
-            pbs_df['transaction_type'] = pbs_df['transaction_type'].replace('b_attack', 'attack')
-            pos_df['transaction_type'] = pos_df['transaction_type'].replace('b_attack', 'attack')
+            if os.path.exists(pbs_dir) and os.path.exists(pos_dir):
+                pbs_df = pd.read_csv(pbs_dir)
+                pos_df = pd.read_csv(pos_dir)
 
-            pbs_transaction_types = pbs_df['transaction_type'].value_counts()
-            pos_transaction_types = pos_df['transaction_type'].value_counts()
+                pbs_df['transaction_type'] = pbs_df['transaction_type'].replace('b_attack', 'attack')
+                pos_df['transaction_type'] = pos_df['transaction_type'].replace('b_attack', 'attack')
 
-            transactions['pbs'][mev_count] = pbs_transaction_types
-            transactions['pos'][mev_count] = pos_transaction_types
-        else:
-            print(f"Files for MEV count {mev_count} not found. Skipping...")
+                # Aggregate transaction types across runs
+                pbs_transaction_types = pbs_df['transaction_type'].value_counts(normalize=True) * 100
+                pos_transaction_types = pos_df['transaction_type'].value_counts(normalize=True) * 100
+
+                pbs_aggregated = pbs_aggregated.add(pbs_transaction_types, fill_value=0)
+                pos_aggregated = pos_aggregated.add(pos_transaction_types, fill_value=0)
+            else:
+                print(f"Files for MEV count {mev_count} in run {run_id} not found. Skipping...")
+
+        # Average the percentages over the number of runs
+        transactions['pbs'][mev_count] = pbs_aggregated / num_runs
+        transactions['pos'][mev_count] = pos_aggregated / num_runs
 
     return transactions
 
-def plot_stacked_bar_transaction_distribution(data_dir, mev_counts_to_plot):
-    transactions = load_transaction_types(data_dir, mev_counts_to_plot)
+def plot_smooth_stacked_transaction_distribution(data_dir, mev_counts_to_plot, num_runs):
+    transactions = load_and_aggregate_transaction_types(data_dir, mev_counts_to_plot, num_runs)
 
-    # Prepare the data for stacked bar plots
+    # Prepare the data for stacked area plots
     pbs_data = []
     pos_data = []
 
@@ -52,31 +61,45 @@ def plot_stacked_bar_transaction_distribution(data_dir, mev_counts_to_plot):
     pbs_df = pd.DataFrame(pbs_data).set_index('MEV Count').fillna(0)
     pos_df = pd.DataFrame(pos_data).set_index('MEV Count').fillna(0)
 
-    # Log-transform the counts
-    pbs_df = np.log1p(pbs_df)
-    pos_df = np.log1p(pos_df)
-
-    # Create the plots with the same y-axis scale for comparison
+    # Create the smooth stacked area plots
     fig, axes = plt.subplots(2, 1, figsize=(14, 12), sharex=True, sharey=True)
 
-    pbs_df.plot(kind='bar', stacked=True, ax=axes[0], colormap='Set3')
-    axes[0].set_title('Log-Transformed Transaction Type Distribution in PBS', fontsize=20)
-    axes[0].set_ylabel('Log Count', fontsize=18)
+    pbs_df.plot(kind='area', stacked=True, ax=axes[0], colormap='Set3')
+    axes[0].set_title('Transaction Type Distribution in PBS (Average Percentage)', fontsize=20)
+    axes[0].set_ylabel('Percentage (%)', fontsize=18)
     axes[0].legend(title='Transaction Type', bbox_to_anchor=(1.05, 1), loc='upper left')
 
-    pos_df.plot(kind='bar', stacked=True, ax=axes[1], colormap='Set3')
-    axes[1].set_title('Log-Transformed Transaction Type Distribution in POS', fontsize=20)
+    pos_df.plot(kind='area', stacked=True, ax=axes[1], colormap='Set3')
+    axes[1].set_title('Transaction Type Distribution in POS (Average Percentage)', fontsize=20)
     axes[1].set_xlabel('MEV Count', fontsize=18)
-    axes[1].set_ylabel('Log Count', fontsize=18)
+    axes[1].set_ylabel('Percentage (%)', fontsize=18)
     axes[1].legend(title='Transaction Type', bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.tight_layout()
-    plt.savefig('figures/new/log_stacked_transaction_distribution_pbs_pos.png')
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pbs_pos.png')
+    plt.close()
+
+    # Save separate plots for PBS and POS
+    pbs_df.plot(kind='area', stacked=True, figsize=(14, 8), colormap='Set3')
+    plt.title('Transaction Type Distribution in PBS (Average Percentage)', fontsize=20)
+    plt.ylabel('Percentage (%)', fontsize=18)
+    plt.xlabel('MEV Count', fontsize=18)
+    plt.legend(title='Transaction Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pbs.png')
+    plt.close()
+
+    pos_df.plot(kind='area', stacked=True, figsize=(14, 8), colormap='Set3')
+    plt.title('Transaction Type Distribution in POS (Average Percentage)', fontsize=20)
+    plt.ylabel('Percentage (%)', fontsize=18)
+    plt.xlabel('MEV Count', fontsize=18)
+    plt.legend(title='Transaction Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pos.png')
     plt.close()
 
 if __name__ == "__main__":
-    data_dir = 'data/vary_mev'
-    mev_counts_to_plot = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50] 
-    plot_stacked_bar_transaction_distribution(data_dir, mev_counts_to_plot)
-
-    
+    data_dir = 'data/100_runs'
+    mev_counts_to_plot = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    num_runs = 50
+    plot_smooth_stacked_transaction_distribution(data_dir, mev_counts_to_plot, num_runs)
