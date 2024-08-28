@@ -94,8 +94,7 @@ class AttackUser(Participant):
 
     def create_transaction(self, all_participants, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
-            higher_fees = [x for x in SAMPLE_GAS_FEES if x > target_tx.fee]
-            fee = random.choice(higher_fees) if higher_fees else target_tx.fee + 1
+            fee = target_tx.fee + 100000  # User must pay a fee 100,000 higher than the target
             mev_potential = target_tx.mev_potential
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
             self.broadcast_transaction(all_participants, tx)
@@ -113,7 +112,6 @@ class Builder(Participant):
         super().__init__(builder_counter)
         self.is_attack = is_attack
         builder_counter += 1
-        self.average_bid_percentage = 0.5
 
     def bid(self, block_bid_his, block_number):
         block_value = sum(tx.fee + tx.mev_potential for tx in self.mempool_pbs if not tx.included_pbs and tx.block_created <= block_number)
@@ -121,21 +119,25 @@ class Builder(Participant):
         if block_value == 0:
             return 0
         
-        if block_bid_his:
-            avg_percentage = np.mean([bid / block_value for round_bids in block_bid_his for bid in round_bids.values() if bid <= block_value])
-            self.average_bid_percentage = avg_percentage
-        
-        initial_bid = self.average_bid_percentage * block_value
+        avg_percentage = 0.5  # Let's assume 50% of block value as the bid
+        bid = avg_percentage * block_value
         
         if self.is_attack:
-            bid = min(max(0, initial_bid * 1.1), block_value)
-        else:
-            bid = min(max(0, initial_bid), block_value)
+            bid = max(0, bid * 1.1)
         
         return bid
 
     def select_transactions(self, block_number):
-        return select_transactions_common(self, block_number, self.mempool_pbs, 'pbs')
+        selected_transactions = [tx for tx in self.mempool_pbs if tx.targeting and not tx.included_pbs and tx.block_created <= block_number]
+        
+        # Builder can add their own attack transactions with fee = 0
+        if self.is_attack:
+            for tx in selected_transactions:
+                if not any(tx.id == t.target_tx_id for t in selected_transactions if t != tx):
+                    builder_attack_tx = Transaction(0, 0, self.id, targeting=True, target_tx_id=tx.id, block_created=block_number, transaction_type="b_attack")
+                    selected_transactions.append(builder_attack_tx)
+
+        return selected_transactions[:BLOCK_CAPACITY]
 
 class Validator(Participant):
     def __init__(self, is_attack):
@@ -145,41 +147,29 @@ class Validator(Participant):
         validator_counter += 1
 
     def select_transactions(self, block_number):
-        return select_transactions_common(self, block_number, self.mempool_pos, 'pos')
+        selected_transactions = [tx for tx in self.mempool_pos if tx.targeting and not tx.included_pos and tx.block_created <= block_number]
+        
+        # Validator can add their own attack transactions with fee = 0
+        if self.is_attack:
+            for tx in selected_transactions:
+                if not any(tx.id == t.target_tx_id for t in selected_transactions if t != tx):
+                    validator_attack_tx = Transaction(0, 0, self.id, targeting=True, target_tx_id=tx.id, block_created=block_number, transaction_type="b_attack")
+                    selected_transactions.append(validator_attack_tx)
 
-def select_transactions_common(participant, block_number, mempool, system='pbs'):
-    available_transactions = [tx for tx in mempool if not tx.included_pbs and tx.block_created <= block_number] if system == 'pbs' else [tx for tx in mempool if not tx.included_pos and tx.block_created <= block_number]
-    selected_transactions = []
+        return selected_transactions[:BLOCK_CAPACITY]
 
-    if participant.is_attack:
-        available_transactions.sort(key=lambda x: x.fee + x.mev_potential, reverse=True)
-        targeted_tx_ids = set()
-        attack_count = 0
-        for tx in available_transactions:
-            if len(selected_transactions) >= BLOCK_CAPACITY:
-                break
-            if tx.id in targeted_tx_ids:
-                continue 
-            selected_transactions.append(tx)
-            if tx.mev_potential > 0 and attack_count == 0:
-                if tx.id not in targeting_tracker:
-                    targeting_tracker[tx.id] = True
-                    targeted_tx_ids.add(tx.id)
-                    higher_fees = [x for x in SAMPLE_GAS_FEES if x > tx.fee]
-                    fee = random.choice(higher_fees) if higher_fees else tx.fee + 1
-                    attack_tx = Transaction(fee, tx.mev_potential, participant.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created, transaction_type="b_attack")
-                    selected_transactions.append(attack_tx)
-                    attack_count += 1
-    else:
-        available_transactions.sort(key=lambda x: x.fee + x.mev_potential, reverse=True)
-        selected_transactions = available_transactions[:BLOCK_CAPACITY]
-
+def evaluate_user_initiated_attacks(selected_transactions):
     for tx in selected_transactions:
-        if system == 'pbs':
-            tx.included_pbs = True
-        else:
-            tx.included_pos = True
-
+        if tx.transaction_type == "b_attack" and tx.target_tx_id:
+            target_tx = next((t for t in selected_transactions if t.id == tx.target_tx_id), None)
+            if not target_tx:
+                tx.transaction_type = "failed"
+            elif target_tx.creator_id == tx.creator_id:
+                tx.transaction_type = "failed"
+            elif target_tx.targeting and tx.fee < target_tx.fee:
+                tx.transaction_type = "failed"
+            elif any(t for t in selected_transactions if t.target_tx_id == tx.target_tx_id and t.fee > tx.fee):
+                tx.transaction_type = "failed"
     return selected_transactions
 
 def run_pbs(builders, num_blocks, users):
@@ -208,6 +198,8 @@ def run_pbs(builders, num_blocks, users):
         winning_builder = next(b for b in builders if b.id == winning_builder_id)
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
+
+        selected_transactions = evaluate_user_initiated_attacks(selected_transactions)
 
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = highest_bid
@@ -284,6 +276,8 @@ def run_pos(validators, num_blocks, users):
     for block_num in range(num_blocks):
         validator = random.choice(validators)
         selected_transactions = validator.select_transactions(block_num + 1)
+
+        selected_transactions = evaluate_user_initiated_attacks(selected_transactions)
 
         mev_transactions_in_block = sum(tx.mev_potential > 0 for tx in selected_transactions)
         profit_from_block = sum(tx.fee for tx in selected_transactions)
@@ -423,8 +417,6 @@ if __name__ == "__main__":
         futures = []
         for run_id in range(1, NUM_RUNS + 1):
             for mev_count in MEV_BUILDER_COUNTS:
-                # futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
-                # futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
                 futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
 
         for future in as_completed(futures):
