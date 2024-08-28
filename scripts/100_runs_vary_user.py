@@ -145,14 +145,39 @@ class Builder(Participant):
         return current_bid
 
     def select_transactions(self, block_number):
-        selected_transactions = [tx for tx in self.mempool_pbs if tx.targeting and not tx.included_pbs and tx.block_created <= block_number]
-        
-        # Builder can add their own attack transactions with fee = 0
-        if self.is_attack:
-            for tx in selected_transactions:
-                if not any(tx.id == t.target_tx_id for t in selected_transactions if t != tx):
-                    builder_attack_tx = Transaction(0, 0, self.id, targeting=True, target_tx_id=tx.id, block_created=block_number, transaction_type="b_attack")
-                    selected_transactions.append(builder_attack_tx)
+        # Step 1: Sort transactions by total value (gas + MEV potential) in descending order
+        available_transactions = [tx for tx in self.mempool_pbs if not tx.included_pbs and tx.block_created <= block_number]
+        available_transactions.sort(key=lambda tx: tx.fee + tx.mev_potential, reverse=True)
+
+        selected_transactions = []
+        included_tx_ids = set()
+
+        # Step 2: Evaluate and insert attack transactions
+        for tx in available_transactions:
+            if len(selected_transactions) >= BLOCK_CAPACITY:
+                break
+
+            # Check if it's already included or an attack transaction
+            if tx.id in included_tx_ids or tx.transaction_type == "b_attack":
+                continue
+
+            # If it's a transaction with MEV potential, insert an attack transaction before it
+            if self.is_attack and tx.mev_potential > 0:
+                attack_tx = Transaction(
+                    fee=0,
+                    mev_potential=0,
+                    creator_id=self.id,
+                    targeting=True,
+                    target_tx_id=tx.id,
+                    block_created=block_number,
+                    transaction_type="b_attack"
+                )
+                selected_transactions.append(attack_tx)
+                included_tx_ids.add(attack_tx.id)
+
+            # Add the current transaction
+            selected_transactions.append(tx)
+            included_tx_ids.add(tx.id)
 
         return selected_transactions[:BLOCK_CAPACITY]
 
@@ -164,14 +189,36 @@ class Validator(Participant):
         validator_counter += 1
 
     def select_transactions(self, block_number):
-        selected_transactions = [tx for tx in self.mempool_pos if tx.targeting and not tx.included_pos and tx.block_created <= block_number]
-        
-        # Validator can add their own attack transactions with fee = 0
-        if self.is_attack:
-            for tx in selected_transactions:
-                if not any(tx.id == t.target_tx_id for t in selected_transactions if t != tx):
-                    validator_attack_tx = Transaction(0, 0, self.id, targeting=True, target_tx_id=tx.id, block_created=block_number, transaction_type="b_attack")
-                    selected_transactions.append(validator_attack_tx)
+        # Step 1: Sort transactions by total value (gas + MEV potential) in descending order
+        available_transactions = [tx for tx in self.mempool_pos if not tx.included_pos and tx.block_created <= block_number]
+        available_transactions.sort(key=lambda tx: tx.fee + tx.mev_potential, reverse=True)
+
+        selected_transactions = []
+        included_tx_ids = set()
+
+        # Step 2: Evaluate and insert attack transactions
+        for tx in available_transactions:
+            if len(selected_transactions) >= BLOCK_CAPACITY:
+                break
+
+            if tx.id in included_tx_ids or tx.transaction_type == "b_attack":
+                continue
+
+            if self.is_attack and tx.mev_potential > 0:
+                attack_tx = Transaction(
+                    fee=0,
+                    mev_potential=0,
+                    creator_id=self.id,
+                    targeting=True,
+                    target_tx_id=tx.id,
+                    block_created=block_number,
+                    transaction_type="b_attack"
+                )
+                selected_transactions.append(attack_tx)
+                included_tx_ids.add(attack_tx.id)
+
+            selected_transactions.append(tx)
+            included_tx_ids.add(tx.id)
 
         return selected_transactions[:BLOCK_CAPACITY]
     
