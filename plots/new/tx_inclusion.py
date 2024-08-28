@@ -21,6 +21,11 @@ def load_and_aggregate_transaction_types(data_dir, mev_counts, num_runs):
                 pbs_df = pd.read_csv(pbs_dir)
                 pos_df = pd.read_csv(pos_dir)
 
+                # Filter transactions where fee > 0 (user-initiated transactions)
+                pbs_df = pbs_df[pbs_df['fee'] > 0]
+                pos_df = pos_df[pos_df['fee'] > 0]
+
+                # Mapping transaction types for consistency
                 pbs_df['transaction_type'] = pbs_df['transaction_type'].replace({'b_attack': 'Attack', 'normal': 'Benign', 'failed': 'Failed Attack'})
                 pos_df['transaction_type'] = pos_df['transaction_type'].replace({'b_attack': 'Attack', 'normal': 'Benign', 'failed': 'Failed Attack'})
 
@@ -69,9 +74,26 @@ def plot_stacked_transaction_distribution(data_dir, mev_counts_to_plot, num_runs
         ax.set_xlabel(x_label, fontsize=20)
         ax.legend(title='Transaction Type', title_fontsize=22, bbox_to_anchor=(1.05, 1), loc='upper left')
 
-        plt.tight_layout()
-        plt.savefig(f'figures/new/average_transaction_distribution_{system}.png')
-        plt.close()
+    plt.tight_layout()
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pbs_pos.png')
+    plt.close()
+
+    # Save separate plots for PBS and POS
+    pbs_df.plot(kind='area', stacked=True, figsize=(14, 8), colormap='Set3')
+    plt.ylabel('Number of Transactions (%)', fontsize=20)
+    plt.xlabel('MEV Builder/Validator Number', fontsize=20)
+    plt.legend(title='Transaction Type', title_fontsize=22, bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pbs.png')
+    plt.close()
+
+    pos_df.plot(kind='area', stacked=True, figsize=(14, 8), colormap='Set3')
+    plt.ylabel('Number of Transactions (%)', fontsize=20)
+    plt.xlabel('MEV Builder/Validator Number', fontSize=20)
+    plt.legend(title='Transaction Type', title_fontsize=22, bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig('figures/new/average_smooth_transaction_distribution_pos.png')
+    plt.close()
 
 if __name__ == "__main__":
     data_dir = 'data/100_runs'
