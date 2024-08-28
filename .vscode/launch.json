@@ -8,10 +8,17 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [],
-            "justMyCode": true,
             "pythonArgs": [
                 "-Xfrozen_modules=off"
-            ]
+            ],
+            "justMyCode": false, // Set this to false to allow debugging of all code
+            "env": {
+                "PYDEVD_DISABLE_FILE_VALIDATION": "1"
+            },
+            "logToFile": true, // Enables logging to a file for debugging
+            "debugOptions": [
+                "RedirectOutput"
+            ] // Redirects the output to the VS Code Debug Console
         }
     ]
 }

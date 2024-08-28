@@ -94,7 +94,11 @@ class AttackUser(Participant):
 
     def create_transaction(self, all_participants, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
-            fee = target_tx.fee + 100000  # User must pay a fee 100,000 higher than the target
+            # Ensure that user-initiated attacks have a fee 100,000 higher than the target's fee
+            fee = target_tx.fee + 100000
+            if fee <= 0:  # Prevent zero or negative fees
+                fee = max(SAMPLE_GAS_FEES)  # Set to a high gas fee from the sample list
+
             mev_potential = target_tx.mev_potential
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
             self.broadcast_transaction(all_participants, tx)
@@ -118,14 +122,27 @@ class Builder(Participant):
         
         if block_value == 0:
             return 0
+
+        current_bid = 0.5 * block_value
         
-        avg_percentage = 0.5  # Let's assume 50% of block value as the bid
-        bid = avg_percentage * block_value
-        
+        if block_bid_his:
+            last_round_bids = block_bid_his[-1].values()
+            highest_bid = max(last_round_bids)
+
+            new_bid = random.uniform(1.0, 1.1) * highest_bid
+
+            current_bid = min(new_bid, block_value)
+
+        if block_bid_his and self.id in block_bid_his[-1]:
+            last_round_bids = sorted(block_bid_his[-1].values(), reverse=True)
+            if len(last_round_bids) > 1 and block_bid_his[-1][self.id] == highest_bid:
+                second_highest_bid = last_round_bids[1]
+                current_bid = second_highest_bid + 0.5 * (highest_bid - second_highest_bid)
+
         if self.is_attack:
-            bid = max(0, bid * 1.1)
+            current_bid = min(max(0, current_bid * 1.1), block_value)
         
-        return bid
+        return current_bid
 
     def select_transactions(self, block_number):
         selected_transactions = [tx for tx in self.mempool_pbs if tx.targeting and not tx.included_pbs and tx.block_created <= block_number]
@@ -157,6 +174,7 @@ class Validator(Participant):
                     selected_transactions.append(validator_attack_tx)
 
         return selected_transactions[:BLOCK_CAPACITY]
+    
 
 def evaluate_user_initiated_attacks(selected_transactions):
     for tx in selected_transactions:
