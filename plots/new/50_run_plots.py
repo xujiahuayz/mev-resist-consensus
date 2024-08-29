@@ -13,7 +13,7 @@ def compute_gini(array):
     array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
-    array += 0.0000001  # To avoid division by zero
+    array += 0.0000001
     array = np.sort(array)
     index = np.arange(1, array.shape[0] + 1)
     n = array.shape[0]
