@@ -68,14 +68,26 @@ class Participant:
         self.mempool_pbs = []
         self.mempool_pos = []
 
-    def create_transaction(self, all_participants, is_mev=False, block_number=None):
-        fee = random.choice(SAMPLE_GAS_FEES)
-        mev_potential = random.choice(MEV_POTENTIALS) if is_mev else 0
-        tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
-        self.broadcast_transaction(all_participants, tx)
-        return tx
+    def create_transaction(self, all_participants, target_tx=None, block_number=None):
+        if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
+            # Ensure that user-initiated attacks have a fee 100,000 higher than the target's fee
+            fee = target_tx.fee + 100000
+
+            mev_potential = target_tx.mev_potential
+            tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
+            print(f"Created attack transaction: {tx.id} with fee: {tx.fee}, target: {tx.target_tx_id}")
+            self.broadcast_transaction(all_participants, tx)
+            return tx
+        else:
+            fee = random.choice(SAMPLE_GAS_FEES)
+            mev_potential = random.choice(MEV_POTENTIALS)
+            tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
+            print(f"Created normal transaction: {tx.id} with fee: {tx.fee}")
+            self.broadcast_transaction(all_participants, tx)
+            return tx
 
     def broadcast_transaction(self, all_participants, tx):
+        print(f"Broadcasting transaction: {tx.id} to all participants.")
         for participant in all_participants:
             participant.mempool_pbs.append(tx)
             participant.mempool_pos.append(tx)
@@ -86,27 +98,41 @@ class NormalUser(Participant):
         super().__init__(user_counter)
         user_counter += 1
 
+    def create_transaction(self, all_participants, is_mev=False, block_number=None):
+        # Always choose a random MEV potential
+        mev_potential = random.choice(MEV_POTENTIALS)
+        fee = random.choice(SAMPLE_GAS_FEES)
+        tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
+        print(f"Created normal transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}")
+        self.broadcast_transaction(all_participants, tx)
+        return tx
+
 class AttackUser(Participant):
     def __init__(self):
         global user_counter
         super().__init__(user_counter)
         user_counter += 1
 
-    def create_transaction(self, all_participants, target_tx=None, block_number=None):
-        if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
+    def create_transaction(self, all_participants, target_tx=None, block_number=None, is_mev=False):
+        # Check if targeting a specific transaction
+        if target_tx and isinstance(target_tx, Transaction) and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
             # Ensure that user-initiated attacks have a fee 100,000 higher than the target's fee
             fee = target_tx.fee + 100000
             if fee <= 0:  # Prevent zero or negative fees
                 fee = max(SAMPLE_GAS_FEES)  # Set to a high gas fee from the sample list
 
-            mev_potential = target_tx.mev_potential
+            # Always choose a random MEV potential
+            mev_potential = random.choice(MEV_POTENTIALS)
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
+            print(f"Created attack transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}, targeting: {tx.target_tx_id}")
             self.broadcast_transaction(all_participants, tx)
             return tx
         else:
+            # Default transaction creation when not targeting
             fee = random.choice(SAMPLE_GAS_FEES)
             mev_potential = random.choice(MEV_POTENTIALS)
             tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
+            print(f"Created normal transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}")
             self.broadcast_transaction(all_participants, tx)
             return tx
 
@@ -129,7 +155,10 @@ class Builder(Participant):
             last_round_bids = block_bid_his[-1].values()
             highest_bid = max(last_round_bids)
 
-            new_bid = random.uniform(1.0, 1.1) * highest_bid
+            if self.is_attack:
+                new_bid = random.uniform(1.0, 1.2) * highest_bid
+            else:
+                new_bid = random.uniform(1.0, 1.1) * highest_bid
 
             current_bid = min(new_bid, block_value)
 
@@ -139,9 +168,6 @@ class Builder(Participant):
                 second_highest_bid = last_round_bids[1]
                 current_bid = second_highest_bid + 0.5 * (highest_bid - second_highest_bid)
 
-        if self.is_attack:
-            current_bid = min(max(0, current_bid * 1.1), block_value)
-        
         return current_bid
 
     def select_transactions(self, block_number):
@@ -403,17 +429,19 @@ def run_pos(validators, num_blocks, users):
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data, all_transactions_log
 
 def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False, is_attack_50_percent=False):
+    # Initialize users based on the attack scenarios
     if is_attack_all:
-        users = [AttackUser() for i in range(NUM_USERS)]
+        users = [NormalUser() if i == 0 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attackall'
     elif is_attack_none:
-        users = [NormalUser() for i in range(NUM_USERS)]
+        users = [AttackUser() if i == 0 else NormalUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attacknon'
     elif is_attack_50_percent:
         users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100_runs'
     else:
-        return
+        users = [NormalUser() for i in range(NUM_USERS)]  
+        output_dir = 'data/default_run'
 
     builders = [Builder(i < mev_count) for i in range(NUM_BUILDERS)]
     validators = [Validator(i < mev_count) for i in range(NUM_VALIDATORS)]
@@ -424,32 +452,40 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
     targeting_tracker = {}
 
     for block_number in range(NUM_BLOCKS):
-        for counter in range(24):
-            user = random.choice(users)
+        transactions_per_block = 0
 
-            if isinstance(user, AttackUser):
-                target_tx_pbs = max(
-                    (tx for tx in user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
-                    default=None,
-                    key=lambda tx: tx.fee
-                )
-                target_tx_pos = max(
-                    (tx for tx in user.mempool_pos if tx.mev_potential > 0 and not tx.included_pos and tx.id not in targeting_tracker),
-                    default=None,
-                    key=lambda tx: tx.fee
-                )
-                
-                if target_tx_pbs:
-                    user.create_transaction(all_participants, target_tx_pbs, block_number=block_number + 1)
-                else:
-                    user.create_transaction(all_participants, block_number=block_number + 1)
+        # Loop to ensure at least 50 transactions per block
+        while transactions_per_block < BLOCK_CAPACITY:
+            for user in users:
+                if transactions_per_block >= BLOCK_CAPACITY:
+                    break
 
-                if target_tx_pos:
-                    user.create_transaction(all_participants, target_tx_pos, block_number=block_number + 1)
+                if isinstance(user, AttackUser):
+                    target_tx_pbs = max(
+                        (tx for tx in user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
+                        default=None,
+                        key=lambda tx: tx.fee
+                    )
+                    target_tx_pos = max(
+                        (tx for tx in user.mempool_pos if tx.mev_potential > 0 and not tx.included_pos and tx.id not in targeting_tracker),
+                        default=None,
+                        key=lambda tx: tx.fee
+                    )
+
+                    if isinstance(target_tx_pbs, Transaction):
+                        user.create_transaction(all_participants, target_tx=target_tx_pbs, block_number=block_number + 1)
+                    else:
+                        user.create_transaction(all_participants, block_number=block_number + 1)
+
+                    if isinstance(target_tx_pos, Transaction):
+                        user.create_transaction(all_participants, target_tx=target_tx_pos, block_number=block_number + 1)
+                    else:
+                        user.create_transaction(all_participants, block_number=block_number + 1)
+
                 else:
-                    user.create_transaction(all_participants, block_number=block_number + 1)
-            else:
-                user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
+                    user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
+
+                transactions_per_block += 1 
 
     cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs, all_transactions_pbs = run_pbs(builders, NUM_BLOCKS, users)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos, all_transactions_pos = run_pos(validators, NUM_BLOCKS, users)
@@ -482,7 +518,7 @@ if __name__ == "__main__":
         futures = []
         for run_id in range(1, NUM_RUNS + 1):
             for mev_count in MEV_BUILDER_COUNTS:
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
+                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
 
         for future in as_completed(futures):
             try:
