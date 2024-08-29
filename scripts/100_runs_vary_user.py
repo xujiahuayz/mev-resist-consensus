@@ -431,16 +431,16 @@ def run_pos(validators, num_blocks, users):
 def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False, is_attack_50_percent=False):
     # Initialize users based on the attack scenarios
     if is_attack_all:
-        users = [NormalUser() if i == 0 else AttackUser() for i in range(NUM_USERS)]
+        users = [AttackUser() for _ in range(NUM_USERS)]
         output_dir = 'data/100run_attackall'
     elif is_attack_none:
-        users = [AttackUser() if i == 0 else NormalUser() for i in range(NUM_USERS)]
+        users = [NormalUser() for _ in range(NUM_USERS)]
         output_dir = 'data/100run_attacknon'
     elif is_attack_50_percent:
         users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100_runs'
     else:
-        users = [NormalUser() for i in range(NUM_USERS)]  
+        users = [NormalUser() for _ in range(NUM_USERS)]  
         output_dir = 'data/default_run'
 
     builders = [Builder(i < mev_count) for i in range(NUM_BUILDERS)]
@@ -454,12 +454,10 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
     for block_number in range(NUM_BLOCKS):
         transactions_per_block = 0
 
-        # Loop to ensure at least 50 transactions per block
-        while transactions_per_block < BLOCK_CAPACITY:
+        # Ensure at least 50 transactions per block
+        for _ in range(BLOCK_CAPACITY):
             for user in users:
-                if transactions_per_block >= BLOCK_CAPACITY:
-                    break
-
+                # Creating transactions
                 if isinstance(user, AttackUser):
                     target_tx_pbs = max(
                         (tx for tx in user.mempool_pbs if tx.mev_potential > 0 and not tx.included_pbs and tx.id not in targeting_tracker),
@@ -473,19 +471,26 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
                     )
 
                     if isinstance(target_tx_pbs, Transaction):
+                        print(f"Attacking PBS Transaction with ID {target_tx_pbs.id}")
                         user.create_transaction(all_participants, target_tx=target_tx_pbs, block_number=block_number + 1)
                     else:
+                        print("Creating normal transaction for PBS")
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
                     if isinstance(target_tx_pos, Transaction):
+                        print(f"Attacking POS Transaction with ID {target_tx_pos.id}")
                         user.create_transaction(all_participants, target_tx=target_tx_pos, block_number=block_number + 1)
                     else:
+                        print("Creating normal transaction for POS")
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
                 else:
+                    print("Creating transaction for normal user")
                     user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
 
-                transactions_per_block += 1 
+                transactions_per_block += 1
+
+        print(f"Total transactions created in block {block_number + 1}: {transactions_per_block}")
 
     cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs, all_transactions_pbs = run_pbs(builders, NUM_BLOCKS, users)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos, all_transactions_pos = run_pos(validators, NUM_BLOCKS, users)
