@@ -86,6 +86,7 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     selection_counts = load_block_data(data_dir, mev_counts)
     gini_selection_stats = calculate_gini_selection_statistics(selection_counts)
 
+    # Extract Gini coefficient data and confidence intervals
     gini_pbs = [gini_selection_stats['pbs'].get(mc, (np.nan, np.nan, np.nan))[0] for mc in mev_counts]
     gini_pos = [gini_selection_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[0] for mc in mev_counts]
     lower_ci_pbs = [gini_selection_stats['pbs'].get(mc, (np.nan, np.nan, np.nan))[1] for mc in mev_counts]
@@ -93,9 +94,11 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     lower_ci_pos = [gini_selection_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[1] for mc in mev_counts]
     upper_ci_pos = [gini_selection_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[2] for mc in mev_counts]
 
+    # Filter out the valid indices for plotting
     valid_indices_pbs = [i for i, val in enumerate(gini_pbs) if not np.isnan(val)]
     valid_indices_pos = [i for i, val in enumerate(gini_pos) if not np.isnan(val)]
 
+    # Interpolate and smooth data for plotting
     x_pbs, y_pbs = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(gini_pbs)[valid_indices_pbs])
     x_pos, y_pos = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(gini_pos)[valid_indices_pos])
     _, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
@@ -103,12 +106,18 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     _, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
     _, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
 
+    # Plotting
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax)
-    sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax)
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI')
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI')
 
+    # Plot the lines for PBS and POS
+    sns.lineplot(x=x_pbs, y=y_pbs, label='PBS', ax=ax, color='blue')
+    sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax, color='orange')
+
+    # Plot the confidence intervals as shaded areas
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2)
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2)
+
+    # Set plot labels, legend, and grid
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
     ax.set_ylabel('Gini Coefficient of Builder/Validator Selection', fontsize=20)
     ax.tick_params(axis='both', which='major', labelsize=18)
@@ -122,6 +131,7 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     if ylim:
         ax.set_ylim(ylim)
 
+    # Save the plot
     plt.savefig(output_file)
     plt.close()
 
@@ -133,6 +143,6 @@ if __name__ == "__main__":
 
     ylim = get_y_axis_limits([data_dir_default, data_dir_attackall, data_dir_attacknon], mev_counts)
 
-    plot_gini_selection_with_confidence(data_dir_default, mev_counts, 'figures/new/smooth_gini_selection.png', ylim)
-    plot_gini_selection_with_confidence(data_dir_attackall, mev_counts, 'figures/new/smooth_gini_selection_attackall.png', ylim)
-    plot_gini_selection_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/smooth_gini_selection_attacknon.png', ylim)
+    plot_gini_selection_with_confidence(data_dir_default, mev_counts, 'figures/new/gini_selection.png', ylim)
+    plot_gini_selection_with_confidence(data_dir_attackall, mev_counts, 'figures/new/gini_selection_attackall.png', ylim)
+    plot_gini_selection_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/gini_selection_attacknon.png', ylim)

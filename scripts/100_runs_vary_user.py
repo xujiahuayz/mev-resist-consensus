@@ -75,19 +75,19 @@ class Participant:
 
             mev_potential = target_tx.mev_potential
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
-            print(f"Created attack transaction: {tx.id} with fee: {tx.fee}, target: {tx.target_tx_id}")
+            # print(f"Created attack transaction: {tx.id} with fee: {tx.fee}, target: {tx.target_tx_id}")
             self.broadcast_transaction(all_participants, tx)
             return tx
         else:
             fee = random.choice(SAMPLE_GAS_FEES)
             mev_potential = random.choice(MEV_POTENTIALS)
             tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
-            print(f"Created normal transaction: {tx.id} with fee: {tx.fee}")
+            # print(f"Created normal transaction: {tx.id} with fee: {tx.fee}")
             self.broadcast_transaction(all_participants, tx)
             return tx
 
     def broadcast_transaction(self, all_participants, tx):
-        print(f"Broadcasting transaction: {tx.id} to all participants.")
+        # print(f"Broadcasting transaction: {tx.id} to all participants.")
         for participant in all_participants:
             participant.mempool_pbs.append(tx)
             participant.mempool_pos.append(tx)
@@ -103,7 +103,7 @@ class NormalUser(Participant):
         mev_potential = random.choice(MEV_POTENTIALS)
         fee = random.choice(SAMPLE_GAS_FEES)
         tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
-        print(f"Created normal transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}")
+        # print(f"Created normal transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}")
         self.broadcast_transaction(all_participants, tx)
         return tx
 
@@ -124,7 +124,7 @@ class AttackUser(Participant):
             # Always choose a random MEV potential
             mev_potential = random.choice(MEV_POTENTIALS)
             tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
-            print(f"Created attack transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}, targeting: {tx.target_tx_id}")
+            # print(f"Created attack transaction: {tx.id} with fee: {tx.fee} and MEV potential: {tx.mev_potential}, targeting: {tx.target_tx_id}")
             self.broadcast_transaction(all_participants, tx)
             return tx
         else:
@@ -431,10 +431,10 @@ def run_pos(validators, num_blocks, users):
 def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False, is_attack_50_percent=False):
     # Initialize users based on the attack scenarios
     if is_attack_all:
-        users = [AttackUser() for _ in range(NUM_USERS)]
+        users = [NormalUser() if i < 2 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attackall'
     elif is_attack_none:
-        users = [NormalUser() for _ in range(NUM_USERS)]
+        users = [NormalUser() if i < 18 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100run_attacknon'
     elif is_attack_50_percent:
         users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
@@ -471,26 +471,26 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
                     )
 
                     if isinstance(target_tx_pbs, Transaction):
-                        print(f"Attacking PBS Transaction with ID {target_tx_pbs.id}")
+                        # print(f"Attacking PBS Transaction with ID {target_tx_pbs.id}")
                         user.create_transaction(all_participants, target_tx=target_tx_pbs, block_number=block_number + 1)
                     else:
-                        print("Creating normal transaction for PBS")
+                        # print("Creating normal transaction for PBS")
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
                     if isinstance(target_tx_pos, Transaction):
-                        print(f"Attacking POS Transaction with ID {target_tx_pos.id}")
+                        # print(f"Attacking POS Transaction with ID {target_tx_pos.id}")
                         user.create_transaction(all_participants, target_tx=target_tx_pos, block_number=block_number + 1)
                     else:
-                        print("Creating normal transaction for POS")
+                        # print("Creating normal transaction for POS")
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
                 else:
-                    print("Creating transaction for normal user")
+                    # print("Creating transaction for normal user")
                     user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
 
                 transactions_per_block += 1
 
-        print(f"Total transactions created in block {block_number + 1}: {transactions_per_block}")
+        # print(f"Total transactions created in block {block_number + 1}: {transactions_per_block}")
 
     cumulative_mev_included_pbs, proposer_profits, block_data_pbs, transaction_data_pbs, all_transactions_pbs = run_pbs(builders, NUM_BLOCKS, users)
     cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos, all_transactions_pos = run_pos(validators, NUM_BLOCKS, users)
