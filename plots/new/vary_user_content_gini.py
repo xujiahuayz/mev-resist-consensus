@@ -17,7 +17,7 @@ def compute_gini(array):
     array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
-    array += 0.0000001
+    array += 0.0000001  # To prevent division by zero
     array = np.sort(array)
     index = np.arange(1, array.shape[0] + 1)
     n = array.shape[0]
@@ -32,11 +32,13 @@ def load_block_data(data_dir, mev_counts):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'block_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
-                    # Count the number of blocks built by each builder/validator
+                    # Ensure all builders/validators are accounted for by using reindex
                     if system == 'pbs':
+                        # Count blocks built by each builder, including those with zero count
                         builder_counts = df['builder_id'].value_counts().reindex(range(1, NUM_BUILDERS + 1), fill_value=0).values
                         selection_counts.append(builder_counts)
                     elif system == 'pos':
+                        # Count blocks built by each validator, including those with zero count
                         validator_counts = df['validator_id'].value_counts().reindex(range(1, NUM_VALIDATORS + 1), fill_value=0).values
                         selection_counts.append(validator_counts)
 
