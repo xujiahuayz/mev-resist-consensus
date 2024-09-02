@@ -17,7 +17,7 @@ def compute_gini(array):
     array = array.astype(float).flatten()
     if np.amin(array) < 0:
         array -= np.amin(array)
-    array += 0.0000001  # To prevent division by zero
+    array += 0.0000001  # Adding a small epsilon to avoid division by zero
     array = np.sort(array)
     index = np.arange(1, array.shape[0] + 1)
     n = array.shape[0]
@@ -32,13 +32,11 @@ def load_block_data(data_dir, mev_counts):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'block_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
-                    # Ensure all builders/validators are accounted for by using reindex
+                    # Count the number of blocks built by each builder/validator
                     if system == 'pbs':
-                        # Count blocks built by each builder, including those with zero count
                         builder_counts = df['builder_id'].value_counts().reindex(range(1, NUM_BUILDERS + 1), fill_value=0).values
                         selection_counts.append(builder_counts)
                     elif system == 'pos':
-                        # Count blocks built by each validator, including those with zero count
                         validator_counts = df['validator_id'].value_counts().reindex(range(1, NUM_VALIDATORS + 1), fill_value=0).values
                         selection_counts.append(validator_counts)
 
@@ -64,6 +62,8 @@ def calculate_gini_selection_statistics(selection_counts):
     return gini_selection_stats
 
 def interpolate_and_smooth(x, y, num_points=49, window_length=5, polyorder=2):
+    if len(x) < window_length:
+        return x, y  # Avoid interpolation if not enough points
     interp_func = interp1d(x, y, kind='linear', fill_value="extrapolate")
     x_new = np.linspace(min(x), max(x), num_points)
     y_new = interp_func(x_new)
@@ -96,6 +96,14 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     lower_ci_pos = [gini_selection_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[1] for mc in mev_counts]
     upper_ci_pos = [gini_selection_stats['pos'].get(mc, (np.nan, np.nan, np.nan))[2] for mc in mev_counts]
 
+    # Debugging: Print out values to make sure they are calculated correctly
+    print("Gini PBS:", gini_pbs)
+    print("Lower CI PBS:", lower_ci_pbs)
+    print("Upper CI PBS:", upper_ci_pbs)
+    print("Gini POS:", gini_pos)
+    print("Lower CI POS:", lower_ci_pos)
+    print("Upper CI POS:", upper_ci_pos)
+
     # Filter out the valid indices for plotting
     valid_indices_pbs = [i for i, val in enumerate(gini_pbs) if not np.isnan(val)]
     valid_indices_pos = [i for i, val in enumerate(gini_pos) if not np.isnan(val)]
@@ -103,10 +111,10 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     # Interpolate and smooth data for plotting
     x_pbs, y_pbs = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(gini_pbs)[valid_indices_pbs])
     x_pos, y_pos = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(gini_pos)[valid_indices_pos])
-    _, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
-    _, upper_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(upper_ci_pbs)[valid_indices_pbs])
-    _, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
-    _, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
+    x_pbs, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
+    x_pbs, upper_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(upper_ci_pbs)[valid_indices_pbs])
+    x_pos, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
+    x_pos, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
 
     # Plotting
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -116,8 +124,8 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax, color='orange')
 
     # Plot the confidence intervals as shaded areas
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2)
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2)
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI PBS')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI POS')
 
     # Set plot labels, legend, and grid
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
@@ -125,10 +133,6 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     ax.tick_params(axis='both', which='major', labelsize=18)
     ax.legend(fontsize=18, loc='lower right')
     ax.grid(True)
-    ax.xaxis.grid(True)
-    ax.yaxis.grid(True)
-    ax.xaxis.grid(False)
-    ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.7)
 
     if ylim:
         ax.set_ylim(ylim)
