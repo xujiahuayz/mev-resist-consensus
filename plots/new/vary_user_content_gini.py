@@ -142,7 +142,7 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     plt.close()
 
 if __name__ == "__main__":
-    mev_counts = list(range(1, 51))
+    mev_counts = list(range(0, 51))
     data_dir_default = 'data/100_runs'
     data_dir_attackall = 'data/100run_attackall'
     data_dir_attacknon = 'data/100run_attacknon'
