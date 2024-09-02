@@ -24,7 +24,7 @@ def load_profits(data_dir, mev_counts):
     for mev_count in mev_counts:
         for system in ['pbs', 'pos']:
             run_profits = []
-            for run_id in range(1, 51):
+            for run_id in range(1, 5):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'transaction_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
