@@ -25,27 +25,34 @@ def load_transaction_data(data_dir, mev_counts):
                     # Determine which column to use for inclusion check
                     included_column = 'included_pbs' if system == 'pbs' else 'included_pos'
                     
-                    # Calculate probability of inclusion for MEV transactions
-                    included_mev = mev_user_tx[mev_user_tx[included_column]]
-                    probability_inclusion = len(included_mev) / len(mev_user_tx) if len(mev_user_tx) > 0 else 0
+                    # Check if there are any MEV transactions
+                    if len(mev_user_tx) > 0:
+                        included_mev = mev_user_tx[mev_user_tx[included_column]]
+                        probability_inclusion = len(included_mev) / len(mev_user_tx)
+                    else:
+                        probability_inclusion = np.nan  # Use NaN to indicate no data
+
                     all_inclusion_data.append(probability_inclusion)
 
                     # Time to inclusion for different types of transactions
                     inclusion_time_column = 'pbs_inclusion_time' if system == 'pbs' else 'pos_inclusion_time'
                     for tx_type in ['normal', 'mev', 'attack']:
                         times = df[df['transaction_type'] == tx_type][inclusion_time_column].dropna().values
-                        all_times[tx_type].extend(times)
+                        if len(times) > 0:
+                            all_times[tx_type].extend(times)
+                        else:
+                            all_times[tx_type].append(np.nan)  # Add NaN for empty cases
 
-            inclusion_probabilities[system][mev_count] = np.mean(all_inclusion_data) if all_inclusion_data else 0
-            inclusion_times[system][mev_count] = {tx_type: np.mean(all_times[tx_type]) for tx_type in all_times}
+            inclusion_probabilities[system][mev_count] = np.nanmean(all_inclusion_data) if all_inclusion_data else np.nan
+            inclusion_times[system][mev_count] = {tx_type: np.nanmean(all_times[tx_type]) for tx_type in all_times}
 
     return inclusion_probabilities, inclusion_times
 
 def plot_mev_inclusion_probability(data_dir, mev_counts, output_file):
     inclusion_probabilities, _ = load_transaction_data(data_dir, mev_counts)
 
-    prob_pbs = [inclusion_probabilities['pbs'].get(mc, 0) for mc in mev_counts]
-    prob_pos = [inclusion_probabilities['pos'].get(mc, 0) for mc in mev_counts]
+    prob_pbs = [inclusion_probabilities['pbs'].get(mc, np.nan) for mc in mev_counts]
+    prob_pos = [inclusion_probabilities['pos'].get(mc, np.nan) for mc in mev_counts]
 
     plt.figure(figsize=(10, 6))
     plt.plot(mev_counts, prob_pbs, label='PBS', color='blue')
