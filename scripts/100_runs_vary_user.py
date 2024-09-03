@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import random
 import pandas as pd
 import numpy as np
+import time
 
 # Add project root to PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -90,7 +91,7 @@ class Participant:
             return tx
 
     def broadcast_transaction(self, all_participants, tx):
-        # print(f"Broadcasting transaction: {tx.id} to all participants.")
+        # to 80% of random participants
         for participant in all_participants:
             participant.mempool_pbs.append(tx)
             participant.mempool_pos.append(tx)
@@ -174,9 +175,15 @@ class Builder(Participant):
         return current_bid
 
     def select_transactions(self, block_number):
+        # different ranking for mev and non mev builders
+        
         # Step 1: Sort transactions by total value (gas + MEV potential) in descending order
         available_transactions = [tx for tx in self.mempool_pbs if not tx.included_pbs and tx.block_created <= block_number]
+        time_start = time.time()
         available_transactions.sort(key=lambda tx: tx.fee + tx.mev_potential, reverse=True)
+        time_end = time.time()
+        print(f"Time taken to sort transactions: {time_end - time_start}")
+        print(f"Number of transactions: {len(available_transactions)}")
 
         selected_transactions = []
         included_tx_ids = set()
@@ -489,7 +496,7 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
 
                 else:
                     # print("Creating transaction for normal user")
-                    user.create_transaction(all_participants, is_mev=random.choice([True, False]), block_number=block_number + 1)
+                    user.create_transaction(all_participants, is_mev=False, block_number=block_number + 1)
 
                 transactions_per_block += 1
 
