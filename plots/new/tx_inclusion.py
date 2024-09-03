@@ -7,81 +7,78 @@ import os
 sns.set_theme(style="whitegrid")
 
 def load_transaction_data(data_dir, mev_counts):
-    inclusion_probabilities = {'pbs': {}, 'pos': {}}
     inclusion_times = {'pbs': {}, 'pos': {}}
+    attack_inclusion_probabilities = {'pbs': {}, 'pos': {}}
 
     for mev_count in mev_counts:
         for system in ['pbs', 'pos']:
-            all_inclusion_data = []
             all_times = {'normal': [], 'mev': [], 'attack': []}
+            total_attack_tx = 0
+            included_attack_tx = 0
 
-            for run_id in range(1, 51):
-                file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', 'all_transactions', 'all_transactions.csv')
+            for run_id in range(1, 51):  # Adjust according to the number of runs
+                mev_dir = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}')
+                file_path = os.path.join(mev_dir, 'all_transactions', 'all_transactions.csv')
+
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
-                    # Filter user-initiated MEV transactions
-                    mev_user_tx = df[(df['mev_potential'] > 0) & (df['transaction_type'] == 'mev')]
 
-                    # Determine which column to use for inclusion check
+                    # Ensure inclusion columns are present
+                    if 'included_pbs' not in df.columns or 'included_pos' not in df.columns:
+                        continue
+
                     included_column = 'included_pbs' if system == 'pbs' else 'included_pos'
-                    
-                    # Check if there are any MEV transactions
-                    if len(mev_user_tx) > 0:
-                        included_mev = mev_user_tx[mev_user_tx[included_column]]
-                        probability_inclusion = len(included_mev) / len(mev_user_tx)
-                    else:
-                        probability_inclusion = np.nan  # Use NaN to indicate no data
-
-                    all_inclusion_data.append(probability_inclusion)
+                    inclusion_time_column = 'pbs_inclusion_time' if system == 'pbs' else 'pos_inclusion_time'
 
                     # Time to inclusion for different types of transactions
-                    inclusion_time_column = 'pbs_inclusion_time' if system == 'pbs' else 'pos_inclusion_time'
                     for tx_type in ['normal', 'mev', 'attack']:
-                        times = df[df['transaction_type'] == tx_type][inclusion_time_column].dropna().values
-                        if len(times) > 0:
-                            all_times[tx_type].extend(times)
-                        else:
-                            all_times[tx_type].append(np.nan)  # Add NaN for empty cases
+                        times = df[(df['transaction_type'] == tx_type) & (df[included_column].astype(bool))][inclusion_time_column].dropna().values
+                        all_times[tx_type].extend(times)
 
-            inclusion_probabilities[system][mev_count] = np.nanmean(all_inclusion_data) if all_inclusion_data else np.nan
-            inclusion_times[system][mev_count] = {tx_type: np.nanmean(all_times[tx_type]) for tx_type in all_times}
+                    # Calculate the inclusion probability for user-initiated attack transactions
+                    attack_tx = df[(df['transaction_type'] == 'attack') & (df['mev_potential'] > 0)]
+                    total_attack_tx += len(attack_tx)
+                    included_attack_tx += len(attack_tx[attack_tx[included_column].astype(bool)])
 
-    return inclusion_probabilities, inclusion_times
+            inclusion_times[system][mev_count] = {tx_type: all_times[tx_type] for tx_type in all_times}
+            attack_inclusion_probabilities[system][mev_count] = (included_attack_tx / total_attack_tx) * 100 if total_attack_tx > 0 else 0
 
-def plot_mev_inclusion_probability(data_dir, mev_counts, output_file):
-    inclusion_probabilities, _ = load_transaction_data(data_dir, mev_counts)
+    return inclusion_times, attack_inclusion_probabilities
 
-    prob_pbs = [inclusion_probabilities['pbs'].get(mc, np.nan) for mc in mev_counts]
-    prob_pos = [inclusion_probabilities['pos'].get(mc, np.nan) for mc in mev_counts]
+def plot_inclusion_time_for_specific_mev_counts(data_dir, mev_counts, output_file):
+    inclusion_times, _ = load_transaction_data(data_dir, mev_counts)
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(mev_counts, prob_pbs, label='PBS', color='blue')
-    plt.plot(mev_counts, prob_pos, label='POS', color='orange')
+    # Define the specific MEV counts to plot
+    specific_mev_counts = [0, 25, 50]
+
+    plt.figure(figsize=(12, 8))
+    for system in ['pbs', 'pos']:
+        for tx_type in ['normal', 'mev', 'attack']:
+            for mc in specific_mev_counts:
+                if mc in inclusion_times[system]:
+                    times = inclusion_times[system][mc][tx_type]
+                    plt.plot([mc] * len(times), times, 'o', label=f'{system.upper()} - {tx_type.capitalize()} (MEV {mc})', alpha=0.7)
+
     plt.xlabel('Number of MEV Builders/Validators', fontsize=20)
-    plt.ylabel('Probability of Inclusion of MEV Transactions', fontsize=20)
-    plt.legend(fontsize=18)
+    plt.ylabel('Number of Blocks Taken to Inclusion', fontsize=20)
+    plt.legend(fontsize=14, loc='upper left')
     plt.grid(True)
     plt.savefig(output_file)
     plt.close()
 
-def plot_inclusion_time(data_dir, mev_counts, output_file):
-    _, inclusion_times = load_transaction_data(data_dir, mev_counts)
+def plot_attack_inclusion_probability_for_specific_mev_counts(data_dir, mev_counts, output_file):
+    _, attack_inclusion_probabilities = load_transaction_data(data_dir, mev_counts)
 
-    inclusion_time_data = {'pbs': {'normal': [], 'mev': [], 'attack': []}, 'pos': {'normal': [], 'mev': [], 'attack': []}}
+    specific_mev_counts = [0, 25, 50]
+    prob_pbs = [attack_inclusion_probabilities['pbs'].get(mc, 0) for mc in specific_mev_counts]
+    prob_pos = [attack_inclusion_probabilities['pos'].get(mc, 0) for mc in specific_mev_counts]
 
-    for system in ['pbs', 'pos']:
-        for tx_type in ['normal', 'mev', 'attack']:
-            for mc in mev_counts:
-                inclusion_time_data[system][tx_type].append(inclusion_times[system].get(mc, {}).get(tx_type, np.nan))
-
-    plt.figure(figsize=(12, 8))
-    for tx_type in ['normal', 'mev', 'attack']:
-        plt.plot(mev_counts, inclusion_time_data['pbs'][tx_type], label=f'PBS - {tx_type.capitalize()}')
-        plt.plot(mev_counts, inclusion_time_data['pos'][tx_type], label=f'POS - {tx_type.capitalize()}')
-
+    plt.figure(figsize=(10, 6))
+    plt.plot(specific_mev_counts, prob_pbs, '-o', label='PBS', color='blue')
+    plt.plot(specific_mev_counts, prob_pos, '-o', label='POS', color='orange')
     plt.xlabel('Number of MEV Builders/Validators', fontsize=20)
-    plt.ylabel('Average Time to Inclusion', fontsize=20)
-    plt.legend(fontsize=14)
+    plt.ylabel('Probability of Attack Transaction Inclusion (%)', fontsize=20)
+    plt.legend(fontsize=18)
     plt.grid(True)
     plt.savefig(output_file)
     plt.close()
@@ -89,8 +86,9 @@ def plot_inclusion_time(data_dir, mev_counts, output_file):
 if __name__ == "__main__":
     mev_counts = list(range(1, 51))
     data_dir_default = 'data/100_runs'
-    data_dir_attackall = 'data/100run_attackall'
-    data_dir_attacknon = 'data/100run_attacknon'
 
-    plot_mev_inclusion_probability(data_dir_default, mev_counts, 'figures/new/mev_inclusion_probability.png')
-    plot_inclusion_time(data_dir_default, mev_counts, 'figures/new/inclusion_time.png')
+    # Plot the number of blocks taken for inclusion
+    plot_inclusion_time_for_specific_mev_counts(data_dir_default, mev_counts, 'figures/new/inclusion_time_specific.png')
+
+    # Plot the probability of user-initiated attack transactions being included in the final block
+    plot_attack_inclusion_probability_for_specific_mev_counts(data_dir_default, mev_counts, 'figures/new/attack_inclusion_probability_specific.png')
