@@ -28,7 +28,7 @@ def load_block_data(data_dir, mev_counts):
     for mev_count in mev_counts:
         for system in ['pbs', 'pos']:
             selection_counts = []
-            for run_id in range(1, 2):
+            for run_id in range(1, 7):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'block_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
