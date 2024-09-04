@@ -19,7 +19,7 @@ NUM_VALIDATORS = 50
 BLOCK_CAPACITY = 50
 NUM_BLOCKS = 50
 MEV_BUILDER_COUNTS = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-NUM_RUNS = 50
+NUM_RUNS = 10
 
 SAMPLE_GAS_FEES = np.array(SAMPLE_GAS_FEES)
 MEV_POTENTIALS = np.array(MEV_POTENTIALS)
@@ -508,13 +508,13 @@ if __name__ == "__main__":
             for mev_count in MEV_BUILDER_COUNTS:
                 futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
 
-        for run_id in range(1, NUM_RUNS + 1):
-            for mev_count in MEV_BUILDER_COUNTS:
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
+        # for run_id in range(1, NUM_RUNS + 1):
+        #     for mev_count in MEV_BUILDER_COUNTS:
+        #         futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
 
-        for run_id in range(1, NUM_RUNS + 1):
-            for mev_count in MEV_BUILDER_COUNTS:
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
+        # for run_id in range(1, NUM_RUNS + 1):
+        #     for mev_count in MEV_BUILDER_COUNTS:
+        #         futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
 
         for future in as_completed(futures):
             try:
