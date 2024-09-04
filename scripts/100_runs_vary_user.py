@@ -260,12 +260,18 @@ def run_pbs(builders, num_blocks, users):
     for block_num in range(num_blocks):
         block_bid_his = []
 
-        for _ in range(24):  # Simulate multiple rounds of bidding
+        # Reduce the number of rounds from 24 to 4, distributed evenly across 24 counters
+        rounds = 4
+        counters_per_round = 24 // rounds  # 6 counters per round
+
+        for round_idx in range(rounds):
             counter_bids = {}
             for builder in builders:
                 bid = builder.bid(block_bid_his, block_num + 1)
                 counter_bids[builder.id] = bid
-            block_bid_his.append(counter_bids)
+            # Repeat the bids across the corresponding range of counters
+            for _ in range(counters_per_round):
+                block_bid_his.append(counter_bids)
 
         # Determine the winning builder based on the highest bid
         highest_bid = max(block_bid_his[-1].values())
@@ -497,6 +503,11 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
 if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
         futures = []
+
+        for run_id in range(1, NUM_RUNS + 1):
+            for mev_count in MEV_BUILDER_COUNTS:
+                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
+
         for run_id in range(1, NUM_RUNS + 1):
             for mev_count in MEV_BUILDER_COUNTS:
                 futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))

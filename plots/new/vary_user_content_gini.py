@@ -28,7 +28,7 @@ def load_block_data(data_dir, mev_counts):
     for mev_count in mev_counts:
         for system in ['pbs', 'pos']:
             selection_counts = []
-            for run_id in range(1, 7):
+            for run_id in range(1, 51):
                 file_path = os.path.join(data_dir, f'run{run_id}', f'mev{mev_count}', system, f'block_data_{system}.csv')
                 if os.path.exists(file_path):
                     df = pd.read_csv(file_path)
@@ -47,35 +47,40 @@ def load_block_data(data_dir, mev_counts):
 
     return builder_selection
 
-def calculate_gini_selection_statistics(selection_counts):
+def calculate_gini_selection_statistics(selection_counts, confidence_level=68):
+    """Calculate Gini coefficient statistics including confidence intervals."""
     gini_selection_stats = {'pbs': {}, 'pos': {}}
     for system in ['pbs', 'pos']:
         for mev_count, runs in selection_counts[system].items():
             gini_values = [compute_gini(run) for run in runs if len(run) > 0]
             if gini_values:
                 mean_gini = np.mean(gini_values)
-                lower_ci = np.percentile(gini_values, 2.5)
-                upper_ci = np.percentile(gini_values, 97.5)
+                lower_ci = np.percentile(gini_values, (100 - confidence_level) / 2)
+                upper_ci = np.percentile(gini_values, 100 - (100 - confidence_level) / 2)
                 gini_selection_stats[system][mev_count] = (mean_gini, lower_ci, upper_ci)
             else:
                 gini_selection_stats[system][mev_count] = (np.nan, np.nan, np.nan)
     return gini_selection_stats
 
-def interpolate_and_smooth(x, y, num_points=49, window_length=5, polyorder=2):
+def interpolate_and_smooth(x, y, num_points=49, window_length=7, polyorder=2):
+    # Make sure window_length is appropriate for the data
     if len(x) < window_length:
         return x, y  # Avoid interpolation if not enough points
+    if window_length % 2 == 0:
+        window_length += 1  # Ensure window length is odd
+
     interp_func = interp1d(x, y, kind='linear', fill_value="extrapolate")
     x_new = np.linspace(min(x), max(x), num_points)
     y_new = interp_func(x_new)
     y_smooth = savgol_filter(y_new, window_length, polyorder)
     return x_new, y_smooth
 
-def get_y_axis_limits(data_dirs, mev_counts):
+def get_y_axis_limits(data_dirs, mev_counts, confidence_level=68):
     all_gini_values = []
 
     for data_dir in data_dirs:
         selection_counts = load_block_data(data_dir, mev_counts)
-        gini_selection_stats = calculate_gini_selection_statistics(selection_counts)
+        gini_selection_stats = calculate_gini_selection_statistics(selection_counts, confidence_level)
 
         for system in ['pbs', 'pos']:
             all_gini_values.extend([gini_selection_stats[system].get(mc, (np.nan, np.nan, np.nan))[0] for mc in mev_counts])
@@ -84,9 +89,9 @@ def get_y_axis_limits(data_dirs, mev_counts):
     max_y = max(all_gini_values)
     return min_y, max_y
 
-def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=None):
+def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=None, confidence_level=68):
     selection_counts = load_block_data(data_dir, mev_counts)
-    gini_selection_stats = calculate_gini_selection_statistics(selection_counts)
+    gini_selection_stats = calculate_gini_selection_statistics(selection_counts, confidence_level)
 
     # Extract Gini coefficient data and confidence intervals
     gini_pbs = [gini_selection_stats['pbs'].get(mc, (np.nan, np.nan, np.nan))[0] for mc in mev_counts]
@@ -111,10 +116,10 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     # Interpolate and smooth data for plotting
     x_pbs, y_pbs = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(gini_pbs)[valid_indices_pbs])
     x_pos, y_pos = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(gini_pos)[valid_indices_pos])
-    x_pbs, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
-    x_pbs, upper_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(upper_ci_pbs)[valid_indices_pbs])
-    x_pos, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
-    x_pos, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
+    _, lower_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(lower_ci_pbs)[valid_indices_pbs])
+    _, upper_ci_pbs_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pbs], np.array(upper_ci_pbs)[valid_indices_pbs])
+    _, lower_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(lower_ci_pos)[valid_indices_pos])
+    _, upper_ci_pos_smooth = interpolate_and_smooth(np.array(mev_counts)[valid_indices_pos], np.array(upper_ci_pos)[valid_indices_pos])
 
     # Plotting
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -124,8 +129,8 @@ def plot_gini_selection_with_confidence(data_dir, mev_counts, output_file, ylim=
     sns.lineplot(x=x_pos, y=y_pos, label='POS', ax=ax, color='orange')
 
     # Plot the confidence intervals as shaded areas
-    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='95% CI PBS')
-    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='95% CI POS')
+    ax.fill_between(x_pbs, lower_ci_pbs_smooth, upper_ci_pbs_smooth, color='blue', alpha=0.2, label='Confidence Interval')
+    ax.fill_between(x_pos, lower_ci_pos_smooth, upper_ci_pos_smooth, color='orange', alpha=0.2, label='_nolegend_')
 
     # Set plot labels, legend, and grid
     ax.set_xlabel('Number of MEV Builders/Validators', fontsize=20)
@@ -147,8 +152,8 @@ if __name__ == "__main__":
     data_dir_attackall = 'data/100run_attackall'
     data_dir_attacknon = 'data/100run_attacknon'
 
-    ylim = get_y_axis_limits([data_dir_default, data_dir_attackall, data_dir_attacknon], mev_counts)
+    ylim = get_y_axis_limits([data_dir_default, data_dir_attackall, data_dir_attacknon], mev_counts, confidence_level=68)
 
-    plot_gini_selection_with_confidence(data_dir_default, mev_counts, 'figures/new/gini_selection.png', ylim)
-    plot_gini_selection_with_confidence(data_dir_attackall, mev_counts, 'figures/new/gini_selection_attackall.png', ylim)
-    plot_gini_selection_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/gini_selection_attacknon.png', ylim)
+    plot_gini_selection_with_confidence(data_dir_default, mev_counts, 'figures/new/gini_selection.png', ylim, confidence_level=68)
+    plot_gini_selection_with_confidence(data_dir_attackall, mev_counts, 'figures/new/gini_selection_attackall.png', ylim, confidence_level=68)
+    plot_gini_selection_with_confidence(data_dir_attacknon, mev_counts, 'figures/new/gini_selection_attacknon.png', ylim, confidence_level=68)
