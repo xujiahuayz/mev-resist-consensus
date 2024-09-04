@@ -103,7 +103,6 @@ class NormalUser(Participant):
         global user_counter
         super().__init__(user_counter)
         user_counter += 1
-        # No need to redefine create_transaction here unless logic differs
 
 class AttackUser(Participant):
     def __init__(self):
@@ -259,47 +258,32 @@ def run_pbs(builders, num_blocks, users):
     targeting_tracker = {}
 
     for block_num in range(num_blocks):
-        print(f"\nProcessing Block {block_num + 1}/{num_blocks}...")  # Debug: Track block processing
-
-        block_start_time = time.time()  # Start time for the block
         block_bid_his = []
 
-        bid_round_start_time = time.time()  # Start time for bid rounds
         for _ in range(24):  # Simulate multiple rounds of bidding
             counter_bids = {}
             for builder in builders:
                 bid = builder.bid(block_bid_his, block_num + 1)
                 counter_bids[builder.id] = bid
             block_bid_his.append(counter_bids)
-        bid_round_end_time = time.time()  # End time for bid rounds
-        print(f"Time taken for 24 bidding rounds: {bid_round_end_time - bid_round_start_time:.4f} seconds")
 
         # Determine the winning builder based on the highest bid
-        winner_selection_start_time = time.time()  # Start time for winner selection
         highest_bid = max(block_bid_his[-1].values())
         winning_builders = [builder_id for builder_id, bid in block_bid_his[-1].items() if bid == highest_bid]
         winning_builder_id = random.choice(winning_builders)
         winning_builder = next(b for b in builders if b.id == winning_builder_id)
-        winner_selection_end_time = time.time()  # End time for winner selection
-        print(f"Time taken for selecting the winning builder: {winner_selection_end_time - winner_selection_start_time:.4f} seconds")
 
         # Select transactions and evaluate user-initiated attacks
-        transaction_selection_start_time = time.time()  # Start time for transaction selection
         selected_transactions = winning_builder.select_transactions(block_num + 1)
         selected_transactions = evaluate_user_initiated_attacks(selected_transactions)
-        transaction_selection_end_time = time.time()  # End time for transaction selection
-        print(f"Time taken for selecting and evaluating transactions: {transaction_selection_end_time - transaction_selection_start_time:.4f} seconds")
 
         # Calculate the block value and profits
-        profit_calculation_start_time = time.time()  # Start time for profit calculation
         block_value = sum(tx.fee for tx in selected_transactions)
         profit = highest_bid
         proposer_profits[winning_builder_id].append(proposer_profits[winning_builder_id][-1] + profit if proposer_profits[winning_builder_id] else profit)
 
         mev_transactions_in_block = sum(1 for tx in selected_transactions if tx.mev_potential > 0)
         cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
-        profit_calculation_end_time = time.time()  # End time for profit calculation
-        print(f"Time taken for calculating profits: {profit_calculation_end_time - profit_calculation_start_time:.4f} seconds")
 
         # Collect block data
         builder_type = 'attack' if winning_builder.is_attack else 'normal'
@@ -313,7 +297,6 @@ def run_pbs(builders, num_blocks, users):
         })
 
         # Process transaction inclusion
-        transaction_processing_start_time = time.time()  # Start time for transaction processing
         included_tx_ids = set()
         for tx in selected_transactions:
             success = False
@@ -348,18 +331,10 @@ def run_pbs(builders, num_blocks, users):
             })
 
             all_transactions_log.append(tx)
-        transaction_processing_end_time = time.time()  # End time for transaction processing
-        print(f"Time taken for processing transactions: {transaction_processing_end_time - transaction_processing_start_time:.4f} seconds")
 
         # Remove included transactions from all participants' mempools
-        cleanup_start_time = time.time()  # Start time for cleanup
         for participant in builders + users:
             participant.mempool_pbs = [tx for tx in participant.mempool_pbs if tx.id not in included_tx_ids]
-        cleanup_end_time = time.time()  # End time for cleanup
-        print(f"Time taken for cleaning up mempools: {cleanup_end_time - cleanup_start_time:.4f} seconds")
-
-        block_end_time = time.time()  # End time for the block
-        print(f"Total time taken for Block {block_num + 1}: {block_end_time - block_start_time:.4f} seconds")
 
     proposer_final_profits = {k: v[-1] for k, v in proposer_profits.items() if v}
 
@@ -484,7 +459,7 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
                     if isinstance(target_tx_pos, Transaction):
-                        user.create_attack(all_participants, target_tx=target_tx_pbs, block_number=block_number + 1)
+                        user.create_attack(all_participants, target_tx=target_tx_pos, block_number=block_number + 1)
                     else:
                         user.create_transaction(all_participants, block_number=block_number + 1)
 
