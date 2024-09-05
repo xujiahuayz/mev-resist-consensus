@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 from scipy.signal import savgol_filter
-
+from scipy.interpolate import interp1d
+import os
 
 # Constants
 MEV_BUILDER_COUNTS = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
@@ -60,23 +60,20 @@ def calculate_average_profits(total_profits):
                 avg_profits[system][mev_count] = np.nan
     return avg_profits
 
-def smooth_data(y, window_length=5, polyorder=2):
-    """Smooth data using the Savitzky-Golay filter with a more adaptive approach."""
-    # Determine a reasonable window length based on the data length
-    if len(y) < window_length:
-        window_length = len(y) if len(y) % 2 != 0 else len(y) - 1  # Make window length odd if necessary
-    
-    # Ensure window length is odd and suitable for the data size
-    if window_length % 2 == 0:
-        window_length += 1  # Make window length odd
+def interpolate_and_smooth(x, y, num_points=50, window_length=7, polyorder=2):
+    """Smooth data using interpolation and the Savitzky-Golay filter."""
+    # Interpolate the data to increase resolution
+    interp_func = interp1d(x, y, kind='linear', fill_value="extrapolate")
+    x_new = np.linspace(min(x), max(x), num_points)
+    y_new = interp_func(x_new)
 
-    # Apply Savitzky-Golay filter
-    smoothed_y = savgol_filter(y, window_length, polyorder)
+    # Apply the Savitzky-Golay filter to smooth the interpolated data
+    y_smooth = savgol_filter(y_new, window_length, polyorder)
 
-    # Adjust the smoothing to maintain proximity to original data
-    adjusted_smoothing = 0.7 * np.array(y) + 0.3 * smoothed_y  # Weighted average to combine original and smoothed data
+    # Round the smoothed data to two significant figures
+    y_smooth = np.round(y_smooth, 2)
 
-    return adjusted_smoothing
+    return x_new, y_smooth
 
 def plot_total_profits(avg_profits, output_file):
     """Plots the total profits of PBS and PoS systems."""
@@ -88,12 +85,12 @@ def plot_total_profits(avg_profits, output_file):
     avg_profit_pos = [avg_profits['pos'][mc] for mc in mev_counts]
 
     # Smooth data
-    smoothed_pbs = smooth_data(avg_profit_pbs, window_length=7, polyorder=2)
-    smoothed_pos = smooth_data(avg_profit_pos, window_length=7, polyorder=2)
+    x_pbs, smoothed_pbs = interpolate_and_smooth(mev_counts, avg_profit_pbs, window_length=7, polyorder=2)
+    x_pos, smoothed_pos = interpolate_and_smooth(mev_counts, avg_profit_pos, window_length=7, polyorder=2)
 
     # Plotting
-    plt.plot(mev_counts, smoothed_pos, label='PBS', color='blue')
-    plt.plot(mev_counts, smoothed_pbs, label='PoS', color='orange')
+    plt.plot(x_pbs, smoothed_pbs, label='PBS', color='blue')
+    plt.plot(x_pos, smoothed_pos, label='PoS', color='orange')
 
     # Labels and Title
     plt.xlabel('Number of MEV Builders/Validators', fontsize=20)
@@ -112,4 +109,4 @@ if __name__ == "__main__":
     check_data_files(data_dir, MEV_BUILDER_COUNTS)
     total_profits = load_transaction_data(data_dir, MEV_BUILDER_COUNTS)
     avg_profits = calculate_average_profits(total_profits)
-    plot_total_profits(avg_profits, 'figures/total_profit_comparison.png')
+    plot_total_profits(avg_profits, 'figures/new/total_profit_comparison.png')
