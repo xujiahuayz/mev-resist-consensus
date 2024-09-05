@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 from scipy.signal import savgol_filter
 
+
 # Constants
 MEV_BUILDER_COUNTS = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
@@ -59,14 +60,23 @@ def calculate_average_profits(total_profits):
                 avg_profits[system][mev_count] = np.nan
     return avg_profits
 
-def smooth_data(y, window_length=7, polyorder=2):
-    """Smooth data using the Savitzky-Golay filter."""
-    # Ensure window length is odd and appropriate for data size
+def smooth_data(y, window_length=5, polyorder=2):
+    """Smooth data using the Savitzky-Golay filter with a more adaptive approach."""
+    # Determine a reasonable window length based on the data length
     if len(y) < window_length:
-        return y  # Return original data if too short to smooth
+        window_length = len(y) if len(y) % 2 != 0 else len(y) - 1  # Make window length odd if necessary
+    
+    # Ensure window length is odd and suitable for the data size
     if window_length % 2 == 0:
         window_length += 1  # Make window length odd
-    return savgol_filter(y, window_length, polyorder)
+
+    # Apply Savitzky-Golay filter
+    smoothed_y = savgol_filter(y, window_length, polyorder)
+
+    # Adjust the smoothing to maintain proximity to original data
+    adjusted_smoothing = 0.7 * np.array(y) + 0.3 * smoothed_y  # Weighted average to combine original and smoothed data
+
+    return adjusted_smoothing
 
 def plot_total_profits(avg_profits, output_file):
     """Plots the total profits of PBS and PoS systems."""
@@ -86,11 +96,12 @@ def plot_total_profits(avg_profits, output_file):
     plt.plot(mev_counts, smoothed_pbs, label='PoS', color='orange')
 
     # Labels and Title
-    plt.xlabel('Number of MEV Builders/Validators')
-    plt.ylabel('Average Total Profit')
-    plt.title('Average Total Profit of PBS and PoS Systems')
-    plt.legend()
-    plt.grid(True)
+    plt.xlabel('Number of MEV Builders/Validators', fontsize=20)
+    plt.ylabel('Total System Profit', fontsize=20)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=18)
+    plt.grid(axis='y')
 
     # Save the plot
     plt.savefig(output_file)
