@@ -504,17 +504,17 @@ if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
         futures = []
 
-        for run_id in range(1, NUM_RUNS + 1):
-            for mev_count in MEV_BUILDER_COUNTS:
-                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
+        # for run_id in range(1, NUM_RUNS + 1):
+        #     for mev_count in MEV_BUILDER_COUNTS:
+        #         futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_50_percent=True))
 
         # for run_id in range(1, NUM_RUNS + 1):
         #     for mev_count in MEV_BUILDER_COUNTS:
         #         futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_none=True))
 
-        # for run_id in range(1, NUM_RUNS + 1):
-        #     for mev_count in MEV_BUILDER_COUNTS:
-        #         futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
+        for run_id in range(1, NUM_RUNS + 1):
+            for mev_count in MEV_BUILDER_COUNTS:
+                futures.append(executor.submit(run_simulation, run_id, mev_count, is_attack_all=True))
 
         for future in as_completed(futures):
             try:
