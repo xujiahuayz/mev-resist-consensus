@@ -7,11 +7,10 @@ random.seed(16)
 BLOCKNUM = 50
 USERNUM = 50
 
-tx_counter = 1
+tx_counter = 0
 
 class Transaction:
     def __init__(self, gas_fee, mev_potential, creator_id, created_at, included_at, target_tx=None):
-        # trasnaction id should be unique
         global tx_counter
         self.id = tx_counter
         tx_counter += 1
