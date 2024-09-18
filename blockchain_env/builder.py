@@ -26,7 +26,31 @@ class Builder:
             self.mempool.sort(key=lambda x: x['mev_potential'] + x['gas_fee'], reverse=True)
         else:
             self.mempool.sort(key=lambda x: x['gas_fee'], reverse=True)
-        return self.mempool[:10]
+
+        selected_transactions = []
+        total_gas_fee = 0
+
+        if self.is_attacker == False:
+            for transaction in self.mempool:
+                # include the transaction if it does not exceed the block limit of 100 trasnactions
+                if len(selected_transactions) < BLOCK_CAP:
+                    selected_transactions.append(transaction)
+                    total_gas_fee += transaction['gas_fee']
+                else:
+                    break
+        elif self.is_attacker == True:
+            for transaction in self.mempool:
+                # if the transaction has mev potential, the attacker can launch attack on it
+                if transaction['mev_potential'] > 0:
+                    # select the trasnction as the attack target
+                    target_transaction = transaction
+                    
+                    
+
+        return selected_transactions
+
+
+
         
         # for the non-attacker builder, just select the trasnctions based on gas fee untill block limit is reached
         # for the attacker, if a trasnctions has mev potential: to get the profit, they need to attack it.
