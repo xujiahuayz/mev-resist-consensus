@@ -56,3 +56,5 @@ class Builder:
         # for the attacker, if a trasnctions has mev potential: to get the profit, they need to attack it.
 
     def bid(self, transaction):
+
+
