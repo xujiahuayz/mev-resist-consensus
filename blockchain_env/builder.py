@@ -57,4 +57,22 @@ class Builder:
 
     def bid(self, transaction):
 
+        # calculate the total block value, start with 50% of the block value as the bid
+        # use reactive strategy
+        bid = 0.5 * transaction['block_value']
+
+        # react 5 round per block
+        # the reaction is based on the history this block bid value which is put forward by all builders
+        # increase the bid to 0.9-1.1 of the highest bid, make sure the bid is not higher than the block value
+        # if highest bid: decrease to second bid + (0.5* (highest - second bid))
+
+        for i in range(5):
+            # react to the highest bid
+            highest_bid = max([transaction['bid'] for transaction in self.mempool])
+            if highest_bid > bid:
+                bid = min(highest_bid, bid + 0.1 * highest_bid)
+            else:
+                second_highest_bid = sorted([transaction['bid'] for transaction in self.mempool], reverse=True)[1]
+                bid = max(0.5 * (highest_bid + second_highest_bid), bid)
+
 
