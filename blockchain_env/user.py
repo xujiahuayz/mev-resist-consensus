@@ -1,18 +1,20 @@
 import random
 
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
+from blockchain_env.transaction import Transaction
 
 random.seed(16)
 
 BLOCKNUM = 50
 
+# remember 1 initialise builders then users
+
 class User:
-    def __init__(self, user_id, is_attacker):
+    def __init__(self, user_id, is_attacker, builders):
         self.id = user_id
-        self.is_attacker = is_attacker 
-        self.transactions = []
-        self.gas_fee = 0
-        self.mempool = []
+        self.is_attacker = is_attacker
+        # self.transactions = []
+        self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
 
     def create_transactions(self, block_num):
         # create normal trasnctions with random gas fee and mev potential from the sample list
@@ -20,22 +22,24 @@ class User:
         mev_potential = random.choice(MEV_POTENTIALS)
         creator_id = self.id
         created_at = block_num
-        self.transactions.append((gas_fee, mev_potential, creator_id, created_at))
-
-    def launch_attack(self, block_num):
+        target_tx = None
+        return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
+        
+    def launch_attack(self, block_num, mempool_content):
         # if there are profitable transctions in the mempool, user can launch attack
         # the attack could be front, back, or sandwich attack (let this be random)
         # attack the transaction with highest mev potential (if you see that there are already a lot transactions taregting the same transaction, try to attack another one)
         # other attack transactions could be spotted by seeing that gas fee is similar to the target transaction
         # the more they see others attacking the same transaction, the more likely they are to attack the same transaction
         # if no transactions are with non zero mev potential, just create benign transactions
-        profitable_txs = [tx for tx in self.mempool if tx['mev_potential'] > 0]
+        # mempool_content = 
+        profitable_txs = [tx for tx in self.transactions if tx['mev_potential'] > 0]
         mev_potential = random.choice(MEV_POTENTIALS)
         if profitable_txs:
             profitable_txs.sort(key=lambda x: x['mev_potential'], reverse=True)
             for i in range(min(len(profitable_txs), 5)):  # Limit to 5 attempts or less
                 target_tx = profitable_txs[i]
-                existing_attacks = [tx for tx in self.mempool if tx['gas_fee'] - 2 <= target_tx['gas_fee'] <= tx['gas_fee'] + 2]
+                existing_attacks = [tx for tx in self.transactions if tx['gas_fee'] - 2 <= target_tx['gas_fee'] <= tx['gas_fee'] + 2]
                 switch_prob = min(0.9, len(existing_attacks) / 10)
                 if random.random() >= switch_prob:
                     break
@@ -45,18 +49,20 @@ class User:
             attack_type = random.choice(['front', 'back', 'sandwich'])
             if attack_type == 'front':
                 gas_fee = target_tx['gas_fee'] + 1
-                self.transactions.append((gas_fee, mev_potential, self.id, target_tx['created_at']))
+                return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
             elif attack_type == 'back':
                 gas_fee = target_tx['gas_fee'] - 1
-                self.transactions.append((gas_fee, mev_potential, self.id, target_tx['created_at']))
+                return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
             elif attack_type == 'sandwich':
                 gas_fee = target_tx['gas_fee'] + 1
-                self.transactions.append((gas_fee, mev_potential, self.id, target_tx['created_at']))
+                return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
                 gas_fee = target_tx['gas_fee'] - 1
-                self.transactions.append((gas_fee, mev_potential, self.id, target_tx['created_at']))
+                return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
 
-        else:
-            self.create_transactions(block_num)
+        # else:
+        #     # self.create_transactions(block_num)
+        #     # don't create transactions
+        #     return None
 
 
     def broadcast_transactions(self, builders):
@@ -67,5 +73,12 @@ class User:
         for builder in visible_builders:
             for tx in self.transactions:
                 builder.receive_transaction(tx)
-            self.mempool.extend(builder.get_mempool())
+            self.transactions.extend(builder.get_mempool())
 
+    def test_case_1(self):
+        # test if builder can get the broadcassted transactions
+        # test if the transactions are correctly added to the mempool
+
+
+if __name__ == "__main__":
+    builders = [Builder() for i in range(5)]

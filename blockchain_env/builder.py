@@ -1,4 +1,5 @@
 import random
+from blockchain_env.transaction import Transaction
 
 BLOCK_CAP = 100
 
@@ -9,12 +10,15 @@ class Builder:
         self.balance = balance
         self.mempool = []
 
-    def launch_attack(self, block_num):
+    def launch_attack(self, block_num, target_transaction):
         # this is for the attack builder, after identifying the target transaction, they will launch attack with 0 gas fee and 0 mev potential, they include this attack directly in the block that they are building
         mev_potential = 0
         gas_fee = 0
+        creator_id = self.id
+        created_at = block_num
+        target_tx = target_transaction
 
-        attack_type = random.choice(['front', 'back', 'sandwich'])
+        return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
 
 
     def select_transactions(self):
@@ -42,20 +46,35 @@ class Builder:
             for transaction in self.mempool:
                 # if the transaction has mev potential, the attacker can launch attack on it
                 if transaction['mev_potential'] > 0:
-                    # select the trasnction as the attack target
+                    # select the transaction as the attack target
                     target_transaction = transaction
+                    attack_transaction = self.launch_attack(block_num, target_transaction)
                     
+                    # find the index of the target transaction in the mempool
+                    target_index = self.mempool.index(target_transaction)
                     
+                    # insert the attack transaction next to the target transaction
+                    if attack_transaction['attack_type'] == 'front':
+                        selected_transactions.insert(target_index, attack_transaction)
+                        selected_transactions.insert(target_index + 1, target_transaction)
+                    elif attack_transaction['attack_type'] == 'back':
+                        selected_transactions.insert(target_index, target_transaction)
+                        selected_transactions.insert(target_index + 1, attack_transaction)
+                    
+                    # ensure the block limit is not exceeded
+                    if len(selected_transactions) > BLOCK_CAP:
+                        selected_transactions.pop()
 
         return selected_transactions
-
-
-
         
         # for the non-attacker builder, just select the trasnctions based on gas fee untill block limit is reached
         # for the attacker, if a trasnctions has mev potential: to get the profit, they need to attack it.
 
-    def bid(self, transaction):
+    def bid(self, selected_transaction):
+
+        sum_gas_fee = 0
+        for transaction in selected_transaction:
+            sum_gas_fee += 
 
         # calculate the total block value, start with 50% of the block value as the bid
         # use reactive strategy

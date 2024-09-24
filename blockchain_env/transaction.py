@@ -10,7 +10,7 @@ USERNUM = 50
 tx_counter = 0
 
 class Transaction:
-    def __init__(self, gas_fee, mev_potential, creator_id, created_at, included_at, target_tx=None):
+    def __init__(self, gas_fee: int, mev_potential: int, creator_id: str, created_at: int, target_tx=None):
         global tx_counter
         self.id = tx_counter
         tx_counter += 1
@@ -18,7 +18,7 @@ class Transaction:
         self.mev_potential = mev_potential
         self.creator_id = creator_id
         self.created_at = created_at
-        self.included_at = included_at
+        self.included_at = None
         self.target_tx = target_tx
 
     def test_case_1(self):
@@ -29,9 +29,9 @@ class Transaction:
         initial_counter = tx_counter
         
         # Generate some transactions without specifying id
-        tx1 = Transaction(gas_fee=10, mev_potential=5, creator_id=1, created_at=0, included_at=1)
-        tx2 = Transaction(gas_fee=20, mev_potential=10, creator_id=2, created_at=1, included_at=2)
-        tx3 = Transaction(gas_fee=30, mev_potential=15, creator_id=3, created_at=2, included_at=3)
+        tx1 = Transaction(gas_fee=10, mev_potential=5, creator_id=1, created_at=0)
+        tx2 = Transaction(gas_fee=20, mev_potential=10, creator_id=2, created_at=1)
+        tx3 = Transaction(gas_fee=30, mev_potential=15, creator_id=3, created_at=2)
         
         # Check how id works
         print(f"Transaction 1 ID: {tx1.id}")
