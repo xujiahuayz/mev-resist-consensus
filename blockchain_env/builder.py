@@ -74,7 +74,8 @@ class Builder:
 
         sum_gas_fee = 0
         for transaction in selected_transaction:
-            sum_gas_fee += 
+            sum_gas_fee +=
+            pass
 
         # calculate the total block value, start with 50% of the block value as the bid
         # use reactive strategy
