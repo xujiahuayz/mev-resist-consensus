@@ -32,8 +32,6 @@ class Builder:
             self.mempool.sort(key=lambda x: x['gas_fee'], reverse=True)
 
         selected_transactions = []
-        total_gas_fee = 0
-
         if self.is_attacker == False:
             for transaction in self.mempool:
                 # include the transaction if it does not exceed the block limit of 100 trasnactions
@@ -74,8 +72,7 @@ class Builder:
 
         sum_gas_fee = 0
         for transaction in selected_transaction:
-            sum_gas_fee +=
-            pass
+            sum_gas_fee += 
 
         # calculate the total block value, start with 50% of the block value as the bid
         # use reactive strategy
