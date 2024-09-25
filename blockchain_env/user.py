@@ -1,4 +1,5 @@
 import random
+import deepcopy
 
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
@@ -25,15 +26,19 @@ class User:
         target_tx = None
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
         
-    def launch_attack(self, block_num, mempool_content):
-        # if there are profitable transctions in the mempool, user can launch attack
+    def launch_attack(self, block_num):
         # the attack could be front, back, or sandwich attack (let this be random)
         # attack the transaction with highest mev potential (if you see that there are already a lot transactions taregting the same transaction, try to attack another one)
         # other attack transactions could be spotted by seeing that gas fee is similar to the target transaction
         # the more they see others attacking the same transaction, the more likely they are to attack the same transaction
         # if no transactions are with non zero mev potential, just create benign transactions
-        # mempool_content = 
-        profitable_txs = [tx for tx in self.transactions if tx['mev_potential'] > 0]
+        
+        # get the mempool content from the visible builders
+        mempool_content = []
+        for builder in self.visible_builders:
+            mempool_content.
+
+        profitable_txs = [tx for tx in mempool_content if tx['mev_potential'] > 0]
         mev_potential = random.choice(MEV_POTENTIALS)
         if profitable_txs:
             profitable_txs.sort(key=lambda x: x['mev_potential'], reverse=True)
@@ -55,8 +60,6 @@ class User:
                 return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
             elif attack_type == 'sandwich':
                 gas_fee = target_tx['gas_fee'] + 1
-                return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
-                gas_fee = target_tx['gas_fee'] - 1
                 return Transaction(gas_fee, mev_potential, self.id, block_num, target_tx)
 
         # else:

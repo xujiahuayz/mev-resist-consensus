@@ -51,7 +51,7 @@ class Participant:
         if profitable_txs:
             profitable_txs.sort(key=lambda x: x['mev_potential'], reverse=True)
             target_tx = profitable_txs[0]
-            existing_attacks = [tx for tx in self.mempool if target_ tx['gas_fee']]
+            existing_attacks = [tx for tx in self.mempool if target_tx['gas_fee']]
 
 
 
