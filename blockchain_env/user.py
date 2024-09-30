@@ -67,7 +67,6 @@ class User:
         #     # don't create transactions
         #     return None
 
-
     def broadcast_transactions(self, builders):
         # for users: they should only have a set of builders they are sending transactions to
         # this should be 80% of the total builders
