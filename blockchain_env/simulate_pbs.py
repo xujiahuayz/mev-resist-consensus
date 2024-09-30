@@ -1,11 +1,12 @@
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
+from copy import deepcopy
 import random
 
 random.seed(16)
 
-BLOCKNUM = 50
+BLOCKNUM = 5
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
@@ -61,7 +62,7 @@ def simulate_pbs():
 
         # Builders select transactions and calculate bids
         for builder in builders:
-            selected_transactions = builder.select_transactions(block_num)
+            selected_transactions = deepcopy(builder.select_transactions(block_num))
             bid_value = builder.bid(selected_transactions)
             builder.bid_value = bid_value  # Store the builder's bid value for later block selection
 
@@ -73,7 +74,7 @@ def simulate_pbs():
             "block_num": block_num,
             "builder_id": highest_bid_builder.id,
             "bid_value": highest_bid_builder.bid_value,
-            "transactions": [tx.__dict__ for tx in highest_bid_builder.mempool]
+            "transactions": [tx.__dict__ for tx in highest_bid_builder.selected_transactions]
         }
         
         # Add the block content to the list of blocks
@@ -87,14 +88,15 @@ def simulate_pbs():
                 reward = total_gas_fees - builder.bid_value
                 builder.balance += reward
 
-                # Additional reward for successful attack-based MEV exploitation
-                for tx in builder.mempool:
-                    if tx.target_tx and tx.mev_potential > 0:
-                        # If the builder successfully exploited an MEV transaction
-                        builder.balance += tx.mev_potential  # Add MEV potential as reward
-            else:
-                # Other builders who did not win may have missed rewards or penalties based on attacks
-                pass
+                for tx in block_content["transactions"]:
+                    if tx['creator_id'] == builder.id and tx['target_tx'] and tx['mev_potential'] > 0:
+                        # If the builder successfully initiated and included an MEV transaction
+                        target_tx = next((t for t in block_content["transactions"] if t['id'] == tx['target_tx']), None)
+                        if target_tx:
+                            builder.balance += target_tx['mev_potential']  # Add MEV potential as reward
+                        else:
+                            print(f"Warning: Target transaction {tx['target_tx']} not found in block")
+
 
         # Calculate rewards for users based on successful transactions
         for user in users:
@@ -161,7 +163,7 @@ def test_simulate_pbs():
 if __name__ == "__main__":
     test_builder_initialization()  # Test if builders are initialized correctly
     test_user_initialization()  # Test if users are initialized correctly
-    test_transaction_creation()  # Test transaction creation for users
-    test_simulate_pbs()  # Test the simulation of PBS
+    test_transaction_creation()
+    test_simulate_pbs()  # Test transaction creation for users
 
     simulate_pbs()
