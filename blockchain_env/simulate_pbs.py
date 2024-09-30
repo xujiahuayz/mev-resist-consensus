@@ -163,3 +163,5 @@ if __name__ == "__main__":
     test_user_initialization()  # Test if users are initialized correctly
     test_transaction_creation()  # Test transaction creation for users
     test_simulate_pbs()  # Test the simulation of PBS
+
+    simulate_pbs()

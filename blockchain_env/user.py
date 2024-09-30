@@ -11,6 +11,7 @@ class User:
         self.is_attacker = is_attacker
         # Initialize visible builders, which is 80% of the total builders
         self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
+        self.balance = 0
 
     def create_transactions(self, block_num):
         # Create a normal transaction with random gas fee and mev potential from the sample list
@@ -43,17 +44,14 @@ class User:
                     break
 
             # Determine attack type (front, back, sandwich) and adjust the gas fee accordingly
-            attack_type = random.choice(['front', 'back', 'sandwich'])
+            attack_type = random.choice(['front', 'back'])
             if attack_type == 'front':
                 gas_fee = target_tx.gas_fee + 1
                 return Transaction(gas_fee, 0, self.id, block_num, target_tx)  # Front-run attack
             elif attack_type == 'back':
                 gas_fee = target_tx.gas_fee - 1
                 return Transaction(gas_fee, 0, self.id, block_num, target_tx)  # Back-run attack
-            elif attack_type == 'sandwich':
-                gas_fee = target_tx.gas_fee + 1
-                return Transaction(gas_fee, 0, self.id, block_num, target_tx)  # Sandwich attack
-
+            
         # If no profitable transaction is found, create a benign transaction
         return self.create_transactions(block_num)
 
