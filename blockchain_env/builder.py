@@ -10,6 +10,7 @@ class Builder:
         self.balance = balance
         self.mempool = []
         self.selected_transactions = []
+        
     def launch_attack(self, block_num, target_transaction, attack_type):
         # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
         mev_potential = 0

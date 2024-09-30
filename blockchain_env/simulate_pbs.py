@@ -89,13 +89,11 @@ def simulate_pbs():
                 builder.balance += reward
 
                 for tx in block_content["transactions"]:
-                    if tx['creator_id'] == builder.id and tx['target_tx'] and tx['mev_potential'] > 0:
+                    if tx.creator_id == builder.id and tx.target_tx and tx.mev_potential > 0:
                         # If the builder successfully initiated and included an MEV transaction
-                        target_tx = next((t for t in block_content["transactions"] if t['id'] == tx['target_tx']), None)
+                        target_tx = next((t for t in builder.mempool if t.id == tx.target_tx), None)
                         if target_tx:
-                            builder.balance += target_tx['mev_potential']  # Add MEV potential as reward
-                        else:
-                            print(f"Warning: Target transaction {tx['target_tx']} not found in block")
+                            builder.balance += target_tx.mev_potential
 
 
         # Calculate rewards for users based on successful transactions
