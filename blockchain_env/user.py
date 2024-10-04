@@ -2,6 +2,7 @@ import random
 from copy import deepcopy
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
+from blockchain_env.builder import Builder
 
 random.seed(16)
 
@@ -59,3 +60,57 @@ class User:
         # Broadcast transactions to all visible builders
         for builder in self.visible_builders:
             builder.receive_transaction(transaction)
+
+    @classmethod
+    def test_create_transactions(cls):
+        builders = [Builder(i, False) for i in range(10)]
+        user = cls(0, False, builders)
+        tx = user.create_transactions(1)
+        
+        assert isinstance(tx, Transaction), "Created object is not a Transaction"
+        assert tx.gas_fee in SAMPLE_GAS_FEES, "Gas fee not in SAMPLE_GAS_FEES"
+        assert tx.mev_potential in MEV_POTENTIALS, "MEV potential not in MEV_POTENTIALS"
+        assert tx.creator_id == user.id, "Creator ID mismatch"
+        assert tx.created_at == 1, "Created_at block number mismatch"
+        assert tx.target_tx is None, "Target transaction should be None for normal transaction"
+        
+        print("test_create_transactions passed!")
+
+    @classmethod
+    def test_launch_attack(cls):
+        builders = [Builder(i, False) for i in range(10)]
+        user = cls(1, True, builders)
+        
+        # Populate builders' mempools with some transactions
+        for builder in builders:
+            builder.receive_transaction(Transaction(10, 5, 2, 1, None))
+            builder.receive_transaction(Transaction(15, 10, 3, 1, None))
+
+        tx = user.launch_attack(1)
+        
+        assert isinstance(tx, Transaction), "Created object is not a Transaction"
+        assert tx.gas_fee in [9, 11, 14, 16], "Gas fee not as expected for an attack"
+        assert tx.mev_potential == 0, "MEV potential should be 0 for an attack"
+        assert tx.creator_id == user.id, "Creator ID mismatch"
+        assert tx.created_at == 1, "Created_at block number mismatch"
+        assert tx.target_tx is not None, "Target transaction should not be None for an attack"
+        
+        print("test_launch_attack passed!")
+
+    @classmethod
+    def test_broadcast_transactions(cls):
+        builders = [Builder(i, False) for i in range(10)]
+        user = cls(0, False, builders)
+        tx = user.create_transactions(1)
+        user.broadcast_transactions(tx)
+        
+        for builder in user.visible_builders:
+            assert tx in builder.get_mempool(), "Transaction not found in builder's mempool"
+        
+        print("test_broadcast_transactions passed!")
+
+# Run tests
+if __name__ == "__main__":
+    User.test_create_transactions()
+    User.test_launch_attack()
+    User.test_broadcast_transactions()

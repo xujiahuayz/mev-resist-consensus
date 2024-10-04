@@ -4,13 +4,13 @@ from blockchain_env.transaction import Transaction
 BLOCK_CAP = 100
 
 class Builder:
-    def __init__(self, builder_id, is_attacker, balance):
+    def __init__(self, builder_id, is_attacker):
         self.id = builder_id
         self.is_attacker = is_attacker
-        self.balance = balance
+        self.balance = 0
         self.mempool = []
         self.selected_transactions = []
-        
+
     def launch_attack(self, block_num, target_transaction, attack_type):
         # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
         mev_potential = 0

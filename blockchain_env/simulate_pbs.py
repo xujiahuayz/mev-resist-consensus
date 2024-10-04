@@ -3,6 +3,7 @@ from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
 import random
+import csv
 
 random.seed(16)
 
@@ -41,7 +42,7 @@ def transaction_number():
 
 def simulate_pbs():
     blocks = []
-
+    all_transactions = []
     for block_num in range(BLOCKNUM):
         # Normal users create transactions first
         for user in users:
@@ -110,8 +111,22 @@ def simulate_pbs():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
-    return blocks  # Return the list of blocks for further analysis
+    with open('transactions.csv', 'w', newline='') as f:
+        # Flatten the transactions from all blocks
+        all_transactions = [tx for block in blocks for tx in block['transactions']]
+        
+        if not all_transactions:
+            print("No transactions were created during the simulation.")
+            return blocks
 
+        fieldnames = all_transactions[0].keys()
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        for tx in all_transactions:
+            writer.writerow(tx)
+            
+    return blocks
 
 
 
