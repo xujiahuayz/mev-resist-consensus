@@ -16,7 +16,7 @@ BUILDERNUM = 20
 builders = []
 for i in range(BUILDERNUM):
     is_attacker = i < (BUILDERNUM // 2)  # First half are attackers, second half are non-attackers
-    builder = Builder(f"builder_{i}", is_attacker, balance=1000)
+    builder = Builder(f"builder_{i}", is_attacker)
     builders.append(builder)
 
 # Initialize users: half are attackers
@@ -51,8 +51,7 @@ def simulate_pbs():
                 for _ in range(num_transactions):
                     tx = user.create_transactions(block_num)
                     user.broadcast_transactions(tx)
-        
-        # Attacker users create transactions after normal users
+                # Attacker users create transactions after normal users
         for user in users:
             if user.is_attacker:
                 num_transactions = transaction_number()
@@ -111,7 +110,7 @@ def simulate_pbs():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
-    with open('transactions.csv', 'w', newline='') as f:
+    with open('data/transactions.csv', 'w', newline='') as f:
         # Flatten the transactions from all blocks
         all_transactions = [tx for block in blocks for tx in block['transactions']]
         
@@ -125,7 +124,7 @@ def simulate_pbs():
         writer.writeheader()
         for tx in all_transactions:
             writer.writerow(tx)
-            
+
     return blocks
 
 
@@ -174,9 +173,5 @@ def test_simulate_pbs():
 
 # --- Run Tests ---
 if __name__ == "__main__":
-    test_builder_initialization()  # Test if builders are initialized correctly
-    test_user_initialization()  # Test if users are initialized correctly
-    test_transaction_creation()
-    test_simulate_pbs()  # Test transaction creation for users
 
     simulate_pbs()
