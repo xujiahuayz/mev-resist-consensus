@@ -12,20 +12,6 @@ BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
 
-# Initialize builders: half are attackers
-builders = []
-for i in range(BUILDERNUM):
-    is_attacker = i < (BUILDERNUM // 2)  # First half are attackers, second half are non-attackers
-    builder = Builder(f"builder_{i}", is_attacker)
-    builders.append(builder)
-
-# Initialize users: half are attackers
-users = []
-for i in range(USERNUM):
-    is_attacker = i < (USERNUM // 2)  # First half are attackers, second half are non-attackers
-    user = User(f"user_{i}", is_attacker, builders)
-    users.append(user)
-
 # Helper function to determine the number of transactions a user creates
 def transaction_number():
     random_number = random.randint(0, 100)
@@ -48,10 +34,14 @@ def simulate_pbs():
         for user in users:
             if not user.is_attacker:
                 num_transactions = transaction_number()
+                print(f"User {user.id} created {num_transactions} transactions")
                 for _ in range(num_transactions):
                     tx = user.create_transactions(block_num)
+                    print(f"User {user.id} created transaction: {tx}")
                     user.broadcast_transactions(tx)
-                # Attacker users create transactions after normal users
+        for builder in builders:
+            print(f"Builder mempool is {builder.mempool}")
+        # Attacker users create transactions after normal users
         for user in users:
             if user.is_attacker:
                 num_transactions = transaction_number()
@@ -78,7 +68,7 @@ def simulate_pbs():
         }
         
         # Add the block content to the list of blocks
-        blocks.append(block_content)
+        blocks.append(deepcopy(block_content))
 
         # Calculate rewards for the winning builder and participating users
         for builder in builders:
@@ -94,7 +84,6 @@ def simulate_pbs():
                         target_tx = next((t for t in builder.mempool if t.id == tx.target_tx), None)
                         if target_tx:
                             builder.balance += target_tx.mev_potential
-
 
         # Calculate rewards for users based on successful transactions
         for user in users:
@@ -171,7 +160,23 @@ def test_simulate_pbs():
     assert any_broadcast, "No transactions were broadcast to the builders' mempools"
     print("test_simulate_pbs passed!")
 
+
 # --- Run Tests ---
 if __name__ == "__main__":
+    # global variables
+
+    # Initialize builders: half are attackers
+    builders = []
+    for i in range(BUILDERNUM):
+        is_attacker = i < (BUILDERNUM // 2)  # First half are attackers, second half are non-attackers
+        builder = Builder(f"builder_{i}", is_attacker)
+        builders.append(builder)
+
+    # Initialize users: half are attackers
+    users = []
+    for i in range(USERNUM):
+        is_attacker = i < (USERNUM // 2)  # First half are attackers, second half are non-attackers
+        user = User(f"user_{i}", is_attacker, builders)
+        users.append(user)
 
     simulate_pbs()
