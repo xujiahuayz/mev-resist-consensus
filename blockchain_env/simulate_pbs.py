@@ -37,7 +37,7 @@ def simulate_pbs():
                 print(f"User {user.id} created {num_transactions} transactions")
                 for _ in range(num_transactions):
                     tx = user.create_transactions(block_num)
-                    print(f"User {user.id} created transaction: {tx}")
+                    print(f"User {user.id} created transaction: {tx.id}")
                     user.broadcast_transactions(tx)
         for builder in builders:
             print(f"Builder mempool is {builder.mempool}")

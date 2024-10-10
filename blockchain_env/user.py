@@ -3,6 +3,7 @@ from copy import deepcopy
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
 from blockchain_env.builder import Builder
+import uuid
 
 random.seed(16)
 

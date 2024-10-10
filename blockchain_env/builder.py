@@ -1,5 +1,6 @@
 import random
 from blockchain_env.transaction import Transaction
+from copy import deepcopy
 
 BLOCK_CAP = 100
 
@@ -31,7 +32,7 @@ class Builder:
 
     def receive_transaction(self, transaction):
         # Builder receives transaction and adds to mempool
-        self.mempool.append(transaction)
+        self.mempool.append(deepcopy(transaction))
 
     def select_transactions(self, block_num):
         selected_transactions = []
