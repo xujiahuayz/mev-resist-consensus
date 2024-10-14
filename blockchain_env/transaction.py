@@ -18,3 +18,13 @@ class Transaction:
         self.included_at = None
         self.target_tx = target_tx
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "gas_fee": self.gas_fee,
+            "mev_potential": self.mev_potential,
+            "creator_id": self.creator_id,
+            "created_at": self.created_at,
+            "included_at": self.included_at,
+            "target_tx": self.target_tx.id if self.target_tx else None
+        }
