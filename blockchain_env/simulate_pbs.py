@@ -87,7 +87,7 @@ def simulate_pbs():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
-    with open('data/transactions.csv', 'w', newline='') as f:
+    with open('data/same_seed/pbs_transactions.csv', 'w', newline='') as f:
         if not all_transactions:
             return blocks
 
