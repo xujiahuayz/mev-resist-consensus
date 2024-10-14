@@ -1,65 +1,71 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 import random
+from blockchain_env.transaction import Transaction
+from copy import deepcopy
 
-from blockchain_env.account import Account
-from blockchain_env.block import Block
+BLOCK_CAP = 100
 
-class Blockpool:
-    # block should consist of a list of transactions
-    # blockpool should be a list of blocks
-    def __init__(self, address=None) -> None:
-        self.blocks = []
-        # here, the address is the address of the proposer
-        self.address = address
-
-    def add_block(self, block: Block, select_time) -> None:
-        self.blocks.append(block)
-        for transaction in block.transactions:
-            transaction.enter_blockpool(proposer_address=self.address,
-                                        selected_timestamp=select_time)
-
-    def remove_block(self, block) -> None:
-        if block in self.blocks:
-            self.blocks.remove(block)
 
 class Proposer(Account):
-    def __init__(self,
-                 address, balance: float,
-                 proposer_strategy: str = "greedy",
-                 blockpool: Blockpool | None = None
-    ):
-        if blockpool is None:
-            self.blockpool = Blockpool()
+    def __init__(self, proposer_id, is_attacker):
+        self.id = proposer_id
+        self.is_attacker = is_attacker
+        self.balance = 0
+        self.mempool = []
+        self.selected_transactions = []
+
+    def launch_attack(self, block_num, target_transaction, attack_type):
+        # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
+        mev_potential = 0
+        gas_fee = target_transaction.gas_fee
+        if attack_type == 'front':
+            gas_fee += 1
+        elif attack_type == 'back':
+            gas_fee -= 1
+
+        creator_id = self.id
+        created_at = block_num
+        target_tx = target_transaction
+
+        # Create the attack transaction
+        attack_transaction = Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
+        attack_transaction.attack_type = attack_type
+        return attack_transaction
+    
+    def receive_transaction(self, transaction):
+        # Builder receives transaction and adds to mempool
+        self.mempool.append(deepcopy(transaction))
+
+    def select_transactions(self, block_num):
+        selected_transactions = []
+        if self.is_attacker:
+            # Sort transactions by mev potential + gas fee for attackers
+            self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
+            for transaction in self.mempool:
+                if len(selected_transactions) < BLOCK_CAP:
+                    if transaction.mev_potential > 0:
+                        attack_type = random.choice(['front', 'back'])
+                        attack_transaction = self.launch_attack(block_num, transaction, attack_type)
+
+                        if attack_type == 'front':
+                            selected_transactions.append(attack_transaction)
+                            selected_transactions.append(transaction)
+                        elif attack_type == 'back':
+                            selected_transactions.append(transaction)
+                            selected_transactions.append(attack_transaction)
+
+                        if len(selected_transactions) > BLOCK_CAP:
+                            selected_transactions.pop()
+                    else:
+                        selected_transactions.append(transaction)
         else:
-            self.blockpool = blockpool
-        super().__init__(address, balance)
-        self.proposer_strategy = proposer_strategy
+            # Sort transactions by gas fee for non-attackers
+            self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
+            for transaction in self.mempool:
+                if len(selected_transactions) < BLOCK_CAP:
+                    selected_transactions.append(transaction)
 
-    def select_block(self) -> Block | None:
-        if self.proposer_strategy == "greedy":
-            if not self.blockpool.blocks:
-                return None
+        return selected_transactions
 
-            # Select the block with the highest bid
-            selected_block = max(self.blockpool.blocks, key=lambda block: block.bid, default=None)
-            return selected_block
-
-        elif self.proposer_strategy == "random":
-            # Choose a block randomly from the blockpool
-            if not self.blockpool:
-                return None
-            selected_block = random.choice(list(self.blockpool.blocks()))
-            return selected_block
-
-        elif self.proposer_strategy == "cheap":
-            # Select the block with the lowest bid price
-            if not self.blockpool:
-                return None
-            selected_block = min(self.blockpool.blocks(), key=lambda x: x.bid)
-            return selected_block
-
-        else:
-            raise ValueError("Invalid proposer_strategy")
-
-    def clear_blockpool(self):
-        self.blockpool = Blockpool()
+    def get_mempool(self):
+        return self.mempool
