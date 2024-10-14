@@ -6,7 +6,7 @@ from copy import deepcopy
 BLOCK_CAP = 100
 
 
-class Proposer(Account):
+class Proposer:
     def __init__(self, proposer_id, is_attacker):
         self.id = proposer_id
         self.is_attacker = is_attacker
