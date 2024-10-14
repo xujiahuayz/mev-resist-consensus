@@ -57,6 +57,10 @@ def simulate_pbs():
         # Select the block with the highest bid
         highest_bid_builder = max(builders, key=lambda b: b.bid_value)
 
+        # alter the included time of the selected transactions
+        for tx in highest_bid_builder.selected_transactions:
+            tx.included_at = block_num
+
         # Prepare the full block content
         block_content = {
             "block_num": block_num,
