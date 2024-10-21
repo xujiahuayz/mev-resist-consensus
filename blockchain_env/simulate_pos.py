@@ -7,7 +7,7 @@ import csv
 
 random.seed(16)
 
-BLOCKNUM = 5
+BLOCKNUM = 50
 BLOCK_CAP = 100
 USERNUM = 50
 PROPNUM = 10
@@ -52,6 +52,8 @@ def simulate_pos():
 
         # Select transactions for the block
         validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
+        for tx in validator.selected_transactions:
+            tx.included_at = block_num
 
         # Prepare the full block content
         block_content = {
