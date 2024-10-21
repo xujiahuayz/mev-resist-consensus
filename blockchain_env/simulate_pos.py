@@ -26,7 +26,7 @@ def transaction_number():
 
     return num_transactions
 
-def simulate_pbs():
+def simulate_pos():
     blocks = []
     all_transactions = []
     for block_num in range(BLOCKNUM):
@@ -48,16 +48,16 @@ def simulate_pbs():
                         user.broadcast_transactions(tx)
 
         # randomlly select a proposer
-        proposer = random.choice(proposers)
+        validator = random.choice(validators)
 
-
+        # Select transactions for the block
+        validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
 
         # Prepare the full block content
         block_content = {
             "block_num": block_num,
-            "builder_id": highest_bid_builder.id,
-            "bid_value": highest_bid_builder.bid_value,
-            "transactions": highest_bid_builder.selected_transactions
+            "builder_id": validator.id,
+            "transactions": validator.selected_transactions
         }
 
         # Add the block content to the list of blocks
@@ -67,8 +67,8 @@ def simulate_pbs():
         # Calculate rewards for users based on successful transactions
         for user in users:
             user_profit = 0
-            for builder in builders:
-                for tx in builder.mempool:
+            for validator in validators:
+                for tx in validator.mempool:
                     if tx.creator_id == user.id:
                         if tx.target_tx and tx.mev_potential > 0:
                             # Attacker user who successfully captured MEV
@@ -78,7 +78,7 @@ def simulate_pbs():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
-    with open('data/same_seed/pbs_transactions.csv', 'w', newline='') as f:
+    with open('data/same_seed/pos_transactions.csv', 'w', newline='') as f:
         if not all_transactions:
             return blocks
 
@@ -98,17 +98,17 @@ if __name__ == "__main__":
     # global variables
 
     # Initialize builders: half are attackers
-    builders = []
+    validators = []
     for i in range(PROPNUM):
         is_attacker = i < (PROPNUM // 2)  # First half are attackers, second half are non-attackers
-        builder = Builder(f"builder_{i}", is_attacker)
-        builders.append(builder)
+        validator = Builder(f"builder_{i}", is_attacker)
+        validators.append(validator)
 
     # Initialize users: half are attackers
     users = []
     for i in range(USERNUM):
         is_attacker = i < (USERNUM // 2)  # First half are attackers, second half are non-attackers
-        user = User(f"user_{i}", is_attacker, builders)
+        user = User(f"user_{i}", is_attacker, validators)
         users.append(user)
 
-    simulate_pbs()
+    simulate_pos()
