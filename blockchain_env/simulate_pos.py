@@ -29,6 +29,8 @@ def transaction_number():
 def simulate_pos():
     blocks = []
     all_transactions = []
+    block_data = []
+    
     for block_num in range(BLOCKNUM):
         # Normal users create transactions first
         for user in users:
@@ -47,13 +49,17 @@ def simulate_pos():
                     if tx:
                         user.broadcast_transactions(tx)
 
-        # randomlly select a proposer
+        # Randomly select a proposer
         validator = random.choice(validators)
 
         # Select transactions for the block
         validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
         for tx in validator.selected_transactions:
             tx.included_at = block_num
+
+        # Calculate total gas fee and total MEV for the block
+        total_gas_fee = sum(tx.gas_fee for tx in validator.selected_transactions)
+        total_mev = sum(tx.mev_potential for tx in validator.selected_transactions)
 
         # Prepare the full block content
         block_content = {
@@ -65,6 +71,14 @@ def simulate_pos():
         # Add the block content to the list of blocks
         blocks.append(deepcopy(block_content))
         all_transactions.extend(deepcopy(block_content["transactions"]))
+
+        # Record block data for CSV export
+        block_data.append({
+            "block_num": block_num,
+            "validator_id": validator.id,
+            "total_gas_fee": total_gas_fee,
+            "total_mev_available": total_mev
+        })
 
         # Calculate rewards for users based on successful transactions
         for user in users:
@@ -80,6 +94,7 @@ def simulate_pos():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
+    # Save transaction data to CSV
     with open('data/same_seed/pos_transactions.csv', 'w', newline='') as f:
         if not all_transactions:
             return blocks
@@ -94,7 +109,19 @@ def simulate_pos():
         for tx in all_transactions:
             writer.writerow(tx.to_dict())
 
+    # Save block data to a separate CSV
+    with open('data/same_seed/pos_block_data.csv', 'w', newline='') as f:
+        fieldnames = ['block_num', 'validator_id', 'total_gas_fee', 'total_mev_available']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        
+        # Write each block's data
+        for block in block_data:
+            writer.writerow(block)
+
     return blocks
+
 
 if __name__ == "__main__":
     # global variables

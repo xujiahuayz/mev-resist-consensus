@@ -15,11 +15,7 @@ class Builder:
     def launch_attack(self, block_num, target_transaction, attack_type):
         # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
         mev_potential = 0
-        gas_fee = target_transaction.gas_fee
-        if attack_type == 'front':
-            gas_fee += 1
-        elif attack_type == 'back':
-            gas_fee -= 1
+        gas_fee = 0
 
         creator_id = self.id
         created_at = block_num
