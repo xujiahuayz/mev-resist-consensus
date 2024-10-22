@@ -85,5 +85,10 @@ class Builder:
 
     def get_mempool(self):
         return self.mempool
+    
+    def clear_mempool(self, block_num):
+        # clear any transsaction that is already included onchain, and also clear pending transactions that has been in mempool for too long
+        timer = block_num - 5
+        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
 
 

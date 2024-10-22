@@ -7,7 +7,7 @@ import csv
 
 random.seed(16)
 
-BLOCKNUM = 50
+BLOCKNUM = 1000
 BLOCK_CAP = 100
 USERNUM = 50
 PROPNUM = 20
@@ -57,6 +57,10 @@ def simulate_pos():
         for tx in validator.selected_transactions:
             tx.included_at = block_num
 
+        # clear validator's mempool
+        for validator in validators:
+            validator.clear_mempool(block_num)
+
         # Calculate total gas fee and total MEV for the block
         total_gas_fee = sum(tx.gas_fee for tx in validator.selected_transactions)
         total_mev = sum(tx.mev_potential for tx in validator.selected_transactions)
@@ -79,20 +83,6 @@ def simulate_pos():
             "total_gas_fee": total_gas_fee,
             "total_mev_available": total_mev
         })
-
-        # Calculate rewards for users based on successful transactions
-        for user in users:
-            user_profit = 0
-            for validator in validators:
-                for tx in validator.mempool:
-                    if tx.creator_id == user.id:
-                        if tx.target_tx and tx.mev_potential > 0:
-                            # Attacker user who successfully captured MEV
-                            user_profit += tx.mev_potential - tx.gas_fee
-                        else:
-                            # Normal transaction (benign or attacker transaction without MEV)
-                            user_profit -= tx.gas_fee
-            user.balance += user_profit  # Update the user's balance with their profit/loss
 
     # Save transaction data to CSV
     with open('data/same_seed/pos_transactions.csv', 'w', newline='') as f:
@@ -137,6 +127,7 @@ if __name__ == "__main__":
     users = []
     for i in range(USERNUM):
         is_attacker = i < (USERNUM // 2)  # First half are attackers, second half are non-attackers
+        # is_attacker = None   # testing
         user = User(f"user_{i}", is_attacker, validators)
         users.append(user)
 

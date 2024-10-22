@@ -36,6 +36,7 @@ class User:
         if profitable_txs:
             # Sort by highest MEV potential
             profitable_txs.sort(key=lambda x: x.mev_potential, reverse=True)
+            
             for i in range(min(len(profitable_txs), 5)):  # Limit to 5 attempts or less
                 target_tx = profitable_txs[i]
                 # Look for existing attacks by comparing gas fees
