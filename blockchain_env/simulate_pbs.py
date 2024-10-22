@@ -7,7 +7,7 @@ import csv
 
 random.seed(16)
 
-BLOCKNUM = 5
+BLOCKNUM = 50
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
@@ -29,6 +29,8 @@ def transaction_number():
 def simulate_pbs():
     blocks = []
     all_transactions = []
+    block_data = []  # Store block data for CSV export
+
     for block_num in range(BLOCKNUM):
         # Normal users create transactions first
         for user in users:
@@ -57,9 +59,13 @@ def simulate_pbs():
         # Select the block with the highest bid
         highest_bid_builder = max(builders, key=lambda b: b.bid_value)
 
-        # alter the included time of the selected transactions
+        # Set the included time for the selected transactions
         for tx in highest_bid_builder.selected_transactions:
             tx.included_at = block_num
+
+        # Calculate total gas fee and total MEV for the block
+        total_gas_fee = sum(tx.gas_fee for tx in highest_bid_builder.selected_transactions)
+        total_mev = sum(tx.mev_potential for tx in highest_bid_builder.selected_transactions)
 
         # Prepare the full block content
         block_content = {
@@ -72,6 +78,14 @@ def simulate_pbs():
         # Add the block content to the list of blocks
         blocks.append(deepcopy(block_content))
         all_transactions.extend(deepcopy(block_content["transactions"]))
+
+        # Record block data for CSV export
+        block_data.append({
+            "block_num": block_num,
+            "builder_id": highest_bid_builder.id,
+            "total_gas_fee": total_gas_fee,
+            "total_mev_available": total_mev
+        })
 
         # Calculate rewards for users based on successful transactions
         for user in users:
@@ -87,6 +101,7 @@ def simulate_pbs():
                             user_profit -= tx.gas_fee
             user.balance += user_profit  # Update the user's balance with their profit/loss
 
+    # Save transaction data to CSV
     with open('data/same_seed/pbs_transactions.csv', 'w', newline='') as f:
         if not all_transactions:
             return blocks
@@ -100,6 +115,17 @@ def simulate_pbs():
         # Write each transaction after converting it to a dictionary
         for tx in all_transactions:
             writer.writerow(tx.to_dict())
+
+    # Save block data to a separate CSV
+    with open('data/same_seed/pbs_block_data.csv', 'w', newline='') as f:
+        fieldnames = ['block_num', 'builder_id', 'total_gas_fee', 'total_mev_available']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        
+        # Write each block's data
+        for block in block_data:
+            writer.writerow(block)
 
     return blocks
 

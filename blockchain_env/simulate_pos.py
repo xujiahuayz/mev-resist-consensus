@@ -10,7 +10,7 @@ random.seed(16)
 BLOCKNUM = 50
 BLOCK_CAP = 100
 USERNUM = 50
-PROPNUM = 10
+PROPNUM = 20
 
 # Helper function to determine the number of transactions a user creates
 def transaction_number():
@@ -30,7 +30,7 @@ def simulate_pos():
     blocks = []
     all_transactions = []
     block_data = []
-    
+
     for block_num in range(BLOCKNUM):
         # Normal users create transactions first
         for user in users:
