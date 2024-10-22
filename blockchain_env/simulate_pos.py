@@ -68,7 +68,7 @@ def simulate_pos():
         # Prepare the full block content
         block_content = {
             "block_num": block_num,
-            "builder_id": validator.id,
+            "validator_id": validator.id,
             "transactions": validator.selected_transactions
         }
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     validators = []
     for i in range(PROPNUM):
         is_attacker = i < (PROPNUM // 2)  # First half are attackers, second half are non-attackers
-        validator = Builder(f"builder_{i}", is_attacker)
+        validator = Builder(f"validator_{i}", is_attacker)
         validators.append(validator)
 
     # Initialize users: half are attackers
