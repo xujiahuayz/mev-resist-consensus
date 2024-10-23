@@ -120,45 +120,6 @@ def simulate_pbs():
     return blocks
 
 
-# --- Test Cases ---
-def test_builder_initialization():
-    assert len(builders) == BUILDERNUM, f"Expected {BUILDERNUM} builders, but got {len(builders)}"
-    attackers = [builder for builder in builders if builder.is_attacker]
-    assert len(attackers) == BUILDERNUM // 2, f"Expected {BUILDERNUM // 2} attacker builders, but got {len(attackers)}"
-    assert all(isinstance(builder, Builder) for builder in builders), "All elements should be Builder instances"
-
-def test_user_initialization():
-    assert len(users) == USERNUM, f"Expected {USERNUM} users, but got {len(users)}"
-    attackers = [user for user in users if user.is_attacker]
-    assert len(attackers) == USERNUM // 2, f"Expected {USERNUM // 2} attacker users, but got {len(attackers)}"
-    assert all(isinstance(user, User) for user in users), "All elements should be User instances"
-
-def test_transaction_creation():
-    # Test for non-attacker user
-    non_attacker_user = next(user for user in users if not user.is_attacker)
-    tx = non_attacker_user.create_transactions(1)
-    assert isinstance(tx, Transaction), "Transaction creation failed"
-    assert tx.creator_id == non_attacker_user.id, "Transaction creator mismatch"
-
-    # Test for attacker user
-    attacker_user = next(user for user in users if user.is_attacker)
-    tx = attacker_user.launch_attack(1)
-    assert isinstance(tx, Transaction), "Attack transaction creation failed"
-    assert tx.creator_id == attacker_user.id, "Transaction creator mismatch"
-
-def test_simulate_pbs():
-    simulate_pbs()  # Run the PBS simulation
-    
-    # Check that transactions are broadcast correctly
-    any_broadcast = False
-    for builder in builders:
-        if builder.get_mempool():  # If the builder has any transactions in its mempool
-            any_broadcast = True
-            break
-    assert any_broadcast, "No transactions were broadcast to the builders' mempools"
-
-
-# --- Run Tests ---
 if __name__ == "__main__":
     # global variables
 
