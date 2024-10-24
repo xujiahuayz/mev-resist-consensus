@@ -51,15 +51,16 @@ def simulate_pos():
 
         # Randomly select a proposer
         validator = random.choice(validators)
+        # print(f"Block {block_num}: Chosen validator - {validator.id}")  # Print the chosen validator
 
         # Select transactions for the block
         validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
         for tx in validator.selected_transactions:
             tx.included_at = block_num
 
-        # clear validator's mempool
-        for validator in validators:
-            validator.clear_mempool(block_num)
+        # Clear validators' mempools (using a different variable name to avoid overwriting 'validator')
+        for v in validators:
+            v.clear_mempool(block_num)
 
         # Calculate total gas fee and total MEV for the block
         total_gas_fee = sum(tx.gas_fee for tx in validator.selected_transactions)
@@ -68,7 +69,7 @@ def simulate_pos():
         # Prepare the full block content
         block_content = {
             "block_num": block_num,
-            "validator_id": validator.id,
+            "validator_id": validator.id,  # Use the original 'validator' variable
             "transactions": validator.selected_transactions
         }
 
@@ -79,7 +80,7 @@ def simulate_pos():
         # Record block data for CSV export
         block_data.append({
             "block_num": block_num,
-            "validator_id": validator.id,
+            "validator_id": validator.id,  # Use the original 'validator' variable
             "total_gas_fee": total_gas_fee,
             "total_mev_available": total_mev
         })
