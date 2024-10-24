@@ -33,13 +33,11 @@ def plot_validator_selections(validator_counts):
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
 
-    # Save the plot as a PNG file
     plt.savefig('figures/ss/validator_selection_plot.png')
 
     # Show the plot
     plt.show()
-
-
+    
 if __name__ == "__main__":
     # Define the file path of the CSV file
     csv_file_path = 'data/same_seed/pos_block_data.csv'
