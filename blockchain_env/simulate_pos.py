@@ -66,7 +66,8 @@ def simulate_pos():
 
             # Select transactions for the block
             validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
-            for tx in validator.selected_transactions:
+            for position, tx in enumerate(validator.selected_transactions):
+                tx.position = position
                 tx.included_at = block_num
 
             # Clear validators' mempools
@@ -76,6 +77,19 @@ def simulate_pos():
             # Calculate total gas fee and total MEV for the block
             total_gas_fee = sum(tx.gas_fee for tx in validator.selected_transactions)
             total_mev = sum(tx.mev_potential for tx in validator.selected_transactions)
+
+
+            # Process MEV targets
+            mev_targets = [tx for tx in validator.selected_transactions if tx.mev_potential > 0]
+            for targeted_tx in mev_targets:
+                targeting_txs = [tx for tx in validator.selected_transactions if tx.target_tx == targeted_tx.id]
+                if targeting_txs:
+                    closest_tx = min(targeting_txs, key=lambda tx: abs(tx.position - targeted_tx.position))
+                    attacker = next((user for user in users if user.id == closest_tx.sender), None)
+                    if not attacker:
+                        attacker = next((v for v in validators if v.id == closest_tx.sender), None)
+                    if attacker:
+                        attacker.balance += targeted_tx.mev_potential
 
             # Prepare the full block content
             block_content = {
