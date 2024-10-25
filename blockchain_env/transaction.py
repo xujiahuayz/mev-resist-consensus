@@ -17,6 +17,7 @@ class Transaction:
         self.created_at = created_at
         self.included_at = None
         self.target_tx = target_tx
+        self.position = None 
 
     def to_dict(self):
         return {

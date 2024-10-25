@@ -36,13 +36,13 @@ class User:
         if profitable_txs:
             # Sort by highest MEV potential
             profitable_txs.sort(key=lambda x: x.mev_potential, reverse=True)
-            
+
             for i in range(min(len(profitable_txs), 5)):  # Limit to 5 attempts or less
                 target_tx = profitable_txs[i]
                 # Look for existing attacks by comparing gas fees
                 existing_attacks = [tx for tx in mempool_content if tx.gas_fee - 2 <= target_tx.gas_fee <= tx.gas_fee + 2]
                 # Calculate switch probability based on the number of existing attacks
-                switch_prob = min(0.9, len(existing_attacks) / 10)
+                switch_prob = min(0.9, len(existing_attacks) / 5)
                 if random.random() >= switch_prob:
                     break
 

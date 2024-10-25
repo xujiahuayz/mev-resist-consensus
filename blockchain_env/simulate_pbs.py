@@ -4,6 +4,7 @@ from blockchain_env.transaction import Transaction
 from copy import deepcopy
 import random
 import csv
+import time
 
 random.seed(16)
 
@@ -59,8 +60,8 @@ def simulate_pbs():
         # Select the block with the highest bid
         highest_bid_builder = max(builders, key=lambda b: b.bid_value)
 
-        # Set the included time for the selected transactions
-        for tx in highest_bid_builder.selected_transactions:
+        for position, tx in enumerate(highest_bid_builder.selected_transactions):
+            tx.position = position
             tx.included_at = block_num
 
         # clear builder mempool
@@ -70,6 +71,19 @@ def simulate_pbs():
         # Calculate total gas fee and total MEV for the block
         total_gas_fee = sum(tx.gas_fee for tx in highest_bid_builder.selected_transactions)
         total_mev = sum(tx.mev_potential for tx in highest_bid_builder.selected_transactions)
+
+        # identify the closest attack and give profit
+        mev_targets = [tx for tx in highest_bid_builder.selected_transactions if tx.mev_potential > 0]
+        for targeted_tx in mev_targets:
+            targeting_txs = [tx for tx in highest_bid_builder.selected_transactions if tx.target_tx == targeted_tx.id]
+            if targeting_txs:
+                closest_tx = min(targeting_txs, key=lambda tx: abs(tx.position - targeted_tx.position))
+                # Find the attacker (could be a user or a builder)
+                attacker = next((user for user in users if user.id == closest_tx.sender), None)
+                if not attacker:
+                    attacker = next((builder for builder in builders if builder.id == closest_tx.sender), None)
+                if attacker:
+                    attacker.balance += targeted_tx.mev_potential
 
         # Prepare the full block content
         block_content = {
@@ -90,6 +104,7 @@ def simulate_pbs():
             "total_gas_fee": total_gas_fee,
             "total_mev_available": total_mev
         })
+
 
     # Save transaction data to CSV
     with open('data/same_seed/pbs_transactions.csv', 'w', newline='') as f:
@@ -122,6 +137,7 @@ def simulate_pbs():
 
 if __name__ == "__main__":
     # global variables
+    start_time = time.time()
 
     # Initialize builders: half are attackers
     builders = []
@@ -138,3 +154,7 @@ if __name__ == "__main__":
         users.append(user)
 
     simulate_pbs()
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Simulation completed in {execution_time:.2f} seconds")

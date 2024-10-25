@@ -113,7 +113,6 @@ def simulate_pos():
 
     return blocks
 
-
 if __name__ == "__main__":
     # global variables
 
