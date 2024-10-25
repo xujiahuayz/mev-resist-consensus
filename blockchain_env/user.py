@@ -29,7 +29,7 @@ class User:
         # Get the mempool content from the visible builders
         mempool_content = []
         for builder in self.visible_builders:
-            mempool_content.extend(deepcopy(builder.get_mempool())) 
+            mempool_content.extend(deepcopy(builder.get_mempool()))
 
         # Filter for transactions with MEV potential greater than zero
         profitable_txs = [tx for tx in mempool_content if tx.mev_potential > 0]

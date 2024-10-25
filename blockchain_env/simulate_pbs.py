@@ -5,6 +5,7 @@ from copy import deepcopy
 import random
 import csv
 import time
+import multiprocessing as mp
 
 random.seed(16)
 
@@ -20,91 +21,101 @@ def transaction_number():
         num_transactions = 1
     elif random_number < 80:  # 30% chance for 0 transactions
         num_transactions = 0
-    elif random_number < 95:  # 15% chance for 2 transactions
+    elif random_number < 95:   # 15% chance for 2 transactions
         num_transactions = 2
     else:  # 5% chance for 3 or more transactions
         num_transactions = random.randint(3, 5)
 
     return num_transactions
 
+def process_user(user, block_num, is_attacker):
+    transactions = []
+    num_transactions = transaction_number()
+    for _ in range(num_transactions):
+        if is_attacker:
+            tx = user.launch_attack(block_num)
+        else:
+            tx = user.create_transactions(block_num)
+        if tx:
+            transactions.append(tx)
+    return transactions
+
+def process_builder(builder, block_num):
+    selected_transactions = deepcopy(builder.select_transactions(block_num))
+    bid_value = builder.bid(selected_transactions)
+    return builder.id, selected_transactions, bid_value
+
 def simulate_pbs():
     blocks = []
     all_transactions = []
     block_data = []  # Store block data for CSV export
 
-    for block_num in range(BLOCKNUM):
-        # Normal users create transactions first
-        for user in users:
-            if not user.is_attacker:
-                num_transactions = transaction_number()
-                for _ in range(num_transactions):
-                    tx = user.create_transactions(block_num)
-                    user.broadcast_transactions(tx)
+    with mp.Pool() as pool:
+        for block_num in range(BLOCKNUM):
+            # Process normal users in parallel
+            normal_user_transactions = pool.starmap(process_user, [(user, block_num, False) for user in users if not user.is_attacker])
+            
+            # Process attacker users in parallel
+            attacker_user_transactions = pool.starmap(process_user, [(user, block_num, True) for user in users if user.is_attacker])
+            
+            # Flatten the list of transactions
+            all_block_transactions = [tx for user_txs in normal_user_transactions + attacker_user_transactions for tx in user_txs]
+            
+            # Broadcast transactions to builders
+            for builder in builders:
+                for tx in all_block_transactions:
+                    builder.receive_transaction(tx)
 
-        # Attacker users create transactions after normal users
-        for user in users:
-            if user.is_attacker:
-                num_transactions = transaction_number()
-                for _ in range(num_transactions):
-                    tx = user.launch_attack(block_num)
-                    if tx:
-                        user.broadcast_transactions(tx)
+            # Process builders in parallel
+            builder_results = pool.starmap(process_builder, [(builder, block_num) for builder in builders])
 
-        # Builders select transactions and calculate bids
-        for builder in builders:
-            selected_transactions = deepcopy(builder.select_transactions(block_num))
-            builder.selected_transactions = selected_transactions
-            bid_value = builder.bid(selected_transactions)
-            builder.bid_value = bid_value
+            # Select the block with the highest bid
+            highest_bid_builder_id, highest_bid_transactions, highest_bid_value = max(builder_results, key=lambda x: x[2])
+            highest_bid_builder = next(b for b in builders if b.id == highest_bid_builder_id)
 
-        # Select the block with the highest bid
-        highest_bid_builder = max(builders, key=lambda b: b.bid_value)
+            for position, tx in enumerate(highest_bid_transactions):
+                tx.position = position
+                tx.included_at = block_num
 
-        for position, tx in enumerate(highest_bid_builder.selected_transactions):
-            tx.position = position
-            tx.included_at = block_num
+            # Clear builder mempools
+            for builder in builders:
+                builder.clear_mempool(block_num)
 
-        # clear builder mempool
-        for builder in builders:
-            builder.clear_mempool(block_num)
+            # Calculate total gas fee and total MEV for the block
+            total_gas_fee = sum(tx.gas_fee for tx in highest_bid_transactions)
+            total_mev = sum(tx.mev_potential for tx in highest_bid_transactions)
 
-        # Calculate total gas fee and total MEV for the block
-        total_gas_fee = sum(tx.gas_fee for tx in highest_bid_builder.selected_transactions)
-        total_mev = sum(tx.mev_potential for tx in highest_bid_builder.selected_transactions)
+            # Process MEV targets
+            mev_targets = [tx for tx in highest_bid_transactions if tx.mev_potential > 0]
+            for targeted_tx in mev_targets:
+                targeting_txs = [tx for tx in highest_bid_transactions if tx.target_tx == targeted_tx.id]
+                if targeting_txs:
+                    closest_tx = min(targeting_txs, key=lambda tx: abs(tx.position - targeted_tx.position))
+                    attacker = next((user for user in users if user.id == closest_tx.sender), None)
+                    if not attacker:
+                        attacker = next((builder for builder in builders if builder.id == closest_tx.sender), None)
+                    if attacker:
+                        attacker.balance += targeted_tx.mev_potential
 
-        # identify the closest attack and give profit
-        mev_targets = [tx for tx in highest_bid_builder.selected_transactions if tx.mev_potential > 0]
-        for targeted_tx in mev_targets:
-            targeting_txs = [tx for tx in highest_bid_builder.selected_transactions if tx.target_tx == targeted_tx.id]
-            if targeting_txs:
-                closest_tx = min(targeting_txs, key=lambda tx: abs(tx.position - targeted_tx.position))
-                # Find the attacker (could be a user or a builder)
-                attacker = next((user for user in users if user.id == closest_tx.sender), None)
-                if not attacker:
-                    attacker = next((builder for builder in builders if builder.id == closest_tx.sender), None)
-                if attacker:
-                    attacker.balance += targeted_tx.mev_potential
+            # Prepare the full block content
+            block_content = {
+                "block_num": block_num,
+                "builder_id": highest_bid_builder.id,
+                "bid_value": highest_bid_value,
+                "transactions": highest_bid_transactions
+            }
 
-        # Prepare the full block content
-        block_content = {
-            "block_num": block_num,
-            "builder_id": highest_bid_builder.id,
-            "bid_value": highest_bid_builder.bid_value,
-            "transactions": highest_bid_builder.selected_transactions
-        }
+            # Add the block content to the list of blocks
+            blocks.append(deepcopy(block_content))
+            all_transactions.extend(deepcopy(block_content["transactions"]))
 
-        # Add the block content to the list of blocks
-        blocks.append(deepcopy(block_content))
-        all_transactions.extend(deepcopy(block_content["transactions"]))
-
-        # Record block data for CSV export
-        block_data.append({
-            "block_num": block_num,
-            "builder_id": highest_bid_builder.id,
-            "total_gas_fee": total_gas_fee,
-            "total_mev_available": total_mev
-        })
-
+            # Record block data for CSV export
+            block_data.append({
+                "block_num": block_num,
+                "builder_id": highest_bid_builder.id,
+                "total_gas_fee": total_gas_fee,
+                "total_mev_available": total_mev
+            })
 
     # Save transaction data to CSV
     with open('data/same_seed/pbs_transactions.csv', 'w', newline='') as f:

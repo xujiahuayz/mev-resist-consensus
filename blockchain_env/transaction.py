@@ -22,6 +22,7 @@ class Transaction:
     def to_dict(self):
         return {
             "id": self.id,
+            "position": self.position,
             "gas_fee": self.gas_fee,
             "mev_potential": self.mev_potential,
             "creator_id": self.creator_id,
