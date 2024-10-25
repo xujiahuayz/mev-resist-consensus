@@ -1,8 +1,8 @@
+import random
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
-import random
 import csv
 import time
 import multiprocessing as mp
@@ -39,19 +39,21 @@ def process_block(block_num, users, builders):
             if tx:
                 all_block_transactions.append(tx)
                 user.broadcast_transactions(tx)
-
+    
     builder_results = []
     for builder in builders:
         selected_transactions = builder.select_transactions(block_num)
         bid_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, selected_transactions, bid_value))
-
+    
     highest_bid_builder_id, highest_bid_transactions, highest_bid_value = max(builder_results, key=lambda x: x[2])
     highest_bid_builder = next(b for b in builders if b.id == highest_bid_builder_id)
-
+    
     for position, tx in enumerate(highest_bid_transactions):
         tx.position = position
         tx.included_at = block_num
+    
+    all_block_transactions.extend(highest_bid_transactions)
 
     total_gas_fee = sum(tx.gas_fee for tx in highest_bid_transactions)
     total_mev = sum(tx.mev_potential for tx in highest_bid_transactions)
