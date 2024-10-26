@@ -11,7 +11,6 @@ BLOCKNUM = 1000
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
-VISIBLE_PERCENT = 80
 
 # Seed for reproducibility
 random.seed(16)
@@ -58,16 +57,17 @@ def process_block(block_num, users, builders):
     total_gas_fee = sum(tx.gas_fee for tx in highest_bid[1])
     total_mev = sum(tx.mev_potential for tx in highest_bid[1])
 
-    block_content = {
+    block_data = {
         "block_num": block_num,
         "builder_id": highest_bid_builder.id,
-        "transactions": highest_bid[1]
+        "total_gas_fee": total_gas_fee,
+        "total_mev": total_mev
     }
 
     for builder in builders:
         builder.clear_mempool(block_num)
 
-    return block_content, all_block_transactions
+    return block_data, all_block_transactions
 
 def simulate_pbs(num_attacker_builders, num_attacker_users):
     builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
@@ -76,13 +76,13 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
     with mp.Pool(processes=num_processes) as pool:
         results = pool.starmap(process_block, [(block_num, users, builders) for block_num in range(BLOCKNUM)])
     
-    blocks, all_transactions = zip(*results)
+    block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
-    # Save data to CSV
-    filename = f"data/same_seed/visible80/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'w', newline='') as f:
+    # Save transaction data to CSV
+    transaction_filename = f"data/same_seed/visible80/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
+    with open(transaction_filename, 'w', newline='') as f:
         if all_transactions:
             fieldnames = all_transactions[0].to_dict().keys()
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -90,7 +90,16 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
             for tx in all_transactions:
                 writer.writerow(tx.to_dict())
 
-    return blocks
+    # Save block data to a separate CSV
+    block_filename = f"data/same_seed/visible80/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    with open(block_filename, 'w', newline='') as f:
+        fieldnames = ['block_num', 'builder_id', 'total_gas_fee', 'total_mev']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for block_data in block_data_list:
+            writer.writerow(block_data)
+
+    return block_data_list
 
 if __name__ == "__main__":
     start_time = time.time()
