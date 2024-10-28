@@ -13,7 +13,7 @@ USERNUM = 50
 BUILDERNUM = 20
 
 # Seed for reproducibility
-random.seed(21)
+random.seed(16)
 
 # Determine the number of CPU cores and set the number of processes
 num_cores = os.cpu_count()
