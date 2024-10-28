@@ -40,7 +40,7 @@ def plot_validator_selections(validator_counts):
     
 if __name__ == "__main__":
     # Define the file path of the CSV file
-    csv_file_path = 'data/same_seed/pbs_visible80/pbs_block_data_builders20_users50.csv'
+    csv_file_path = 'data/same_seed/pbs_visible80/pbs_block_data_builders10_users30.csv'
 
     # Call the function to read data from CSV and plot
     plot_validator_selection_from_csv(csv_file_path)

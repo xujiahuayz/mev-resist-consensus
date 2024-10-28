@@ -63,22 +63,39 @@ class Builder:
 
     def bid(self, selected_transactions):
         total_gas_fee = sum(tx.gas_fee for tx in selected_transactions)
-        block_value = total_gas_fee  # Assuming block value is based on total gas fee
+        
+        # Initial block value is based on total gas fee
+        block_value = total_gas_fee
+        
+        # Check if the builder is an attacker and has launched any attack
+        if self.is_attacker:
+            # Sum the MEV potential of targeted transactions if any attacks are launched
+            mev_gain = sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
+            block_value += mev_gain  # Add MEV profit to block value for attackers
 
-        # Initial bid is 50% of block value
+        # Initial bid is 50% of the adjusted block value
         bid = 0.5 * block_value
 
         # Reactive strategy over 5 rounds of bidding
         for _ in range(5):
-            # Get current highest bid from history
-            highest_bid = max([tx.gas_fee for tx in self.mempool])
+            # Get current highest bid from history in the builder's mempool
+            gas_fees = [tx.gas_fee for tx in self.mempool]
+            if len(gas_fees) == 0:
+                break  # If no transactions in the mempool, exit the loop
+
+            highest_bid = max(gas_fees)
+            
             if highest_bid > bid:
                 # Increase bid by 0.1 times the highest bid
                 bid = min(highest_bid, bid + 0.1 * highest_bid)
             else:
-                # Get the second highest bid
-                second_highest_bid = sorted([tx.gas_fee for tx in self.mempool], reverse=True)[1]
-                bid = max(0.5 * (highest_bid + second_highest_bid), bid)
+                # Get the second highest bid if possible, else use the current bid
+                sorted_bids = sorted(gas_fees, reverse=True)
+                if len(sorted_bids) > 1:
+                    second_highest_bid = sorted_bids[1]
+                    bid = max(0.5 * (highest_bid + second_highest_bid), bid)
+                else:
+                    bid = max(0.5 * highest_bid, bid)
 
         # Return the final bid for this builder
         return bid
