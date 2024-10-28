@@ -32,6 +32,9 @@ def transaction_number():
         return random.randint(3, 5)
 
 def process_block(block_num, users, validators):
+    # Pre-sample validators for each block using `random.choices`
+    selected_validators = random.choices(validators, k=BLOCKNUM)
+
     all_block_transactions = []
     for user in users:
         num_transactions = transaction_number()
@@ -40,18 +43,16 @@ def process_block(block_num, users, validators):
             if tx:
                 user.broadcast_transactions(tx)
 
-    # Broadcast transactions to validators
-    for validator in validators:
-         validator.mempool.extend(deepcopy(all_block_transactions))
-
     # Randomly select a proposer
-    selected_validator = random.choice(validators)
+    selected_validator = selected_validators[block_num]
     selected_validator.selected_transactions = selected_validator.select_transactions(BLOCK_CAP)
     
     # Assign transaction positions and inclusion times
     for position, tx in enumerate(selected_validator.selected_transactions):
         tx.position = position
         tx.included_at = block_num
+
+    all_block_transactions.extend(selected_validator.selected_transactions)
 
     # Clear validators' mempools
     for validator in validators:
@@ -104,11 +105,15 @@ def simulate_pos(num_attacker_validators, num_attacker_users):
     return block_data_list
 
 if __name__ == "__main__":
-    start_time = time.time()
 
     for num_attacker_validators in range(PROPNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
+            start_time = time.time()
+            
+            # Run the simulation for the current parameter set
             simulate_pos(num_attacker_validators, num_attacker_users)
-
-    end_time = time.time()
-    print(f"Simulation completed in {end_time - start_time:.2f} seconds")
+            
+            # Calculate and print the time taken for this round
+            end_time = time.time()
+            round_time = end_time - start_time
+            print(f"Simulation with {num_attacker_validators} attacker validators and {num_attacker_users} attacker users completed in {round_time:.2f} seconds")
