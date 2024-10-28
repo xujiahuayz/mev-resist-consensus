@@ -101,11 +101,12 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
     return block_data_list
 
 if __name__ == "__main__":
-    start_time = time.time()
 
     for num_attacker_builders in range(BUILDERNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
+            start_time = time.time()
             simulate_pbs(num_attacker_builders, num_attacker_users)
-
-    end_time = time.time()
-    print(f"Simulation completed in {end_time - start_time:.2f} seconds")
+            end_time = time.time()
+            round_time = end_time - start_time
+            print(f"Simulation with {num_attacker_builders} attacker validators and
+                {num_attacker_users} attacker users completed in {round_time:.2f} seconds")
