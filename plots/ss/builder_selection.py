@@ -9,7 +9,7 @@ def plot_validator_selection_from_csv(file_path):
     with open(file_path, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            validator_id = row['validator_id']
+            validator_id = row['builder_id']
             # Increment the count for the validator
             if validator_id in validator_counts:
                 validator_counts[validator_id] += 1
@@ -40,7 +40,7 @@ def plot_validator_selections(validator_counts):
     
 if __name__ == "__main__":
     # Define the file path of the CSV file
-    csv_file_path = 'data/same_seed/pos_visible80/pos_block_data_validators0_users6.csv'
+    csv_file_path = 'data/same_seed/pbs_visible80/pbs_block_data_builders20_users50.csv'
 
     # Call the function to read data from CSV and plot
     plot_validator_selection_from_csv(csv_file_path)
