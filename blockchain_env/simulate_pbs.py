@@ -79,7 +79,7 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
     # Save transaction data to CSV
-    transaction_filename = f"data/same_seed/visible80/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    transaction_filename = f"data/same_seed/pbs_visible80/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
     with open(transaction_filename, 'w', newline='') as f:
         if all_transactions:
@@ -90,7 +90,7 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
                 writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    block_filename = f"data/same_seed/visible80/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    block_filename = f"data/same_seed/pbs_visible80/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     with open(block_filename, 'w', newline='') as f:
         fieldnames = ['block_num', 'builder_id', 'total_gas_fee', 'total_mev']
         writer = csv.DictWriter(f, fieldnames=fieldnames)

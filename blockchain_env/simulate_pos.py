@@ -1,162 +1,114 @@
-from blockchain_env.user import User
-from blockchain_env.builder import Builder
-from blockchain_env.transaction import Transaction
-from copy import deepcopy
 import random
+import os
 import csv
 import time
 import multiprocessing as mp
+from blockchain_env.user import User
+from blockchain_env.builder import Builder
+from copy import deepcopy
 
-random.seed(16)
-
+# Constants
 BLOCKNUM = 1000
 BLOCK_CAP = 100
 USERNUM = 50
 PROPNUM = 20
 
-# Helper function to determine the number of transactions a user creates
+# Seed for reproducibility
+random.seed(21)
+
+# Determine the number of CPU cores and set the number of processes
+num_cores = os.cpu_count()
+num_processes = max(num_cores - 1, 1)  # Use all cores except one, but at least one
+
 def transaction_number():
     random_number = random.randint(0, 100)
-    if random_number < 50:  # 50% chance for 1 transaction
-        num_transactions = 1
-    elif random_number < 80:  # 30% chance for 0 transactions
-        num_transactions = 0
-    elif random_number < 95:  # 15% chance for 2 transactions
-        num_transactions = 2
-    else:  # 5% chance for 3 or more transactions
-        num_transactions = random.randint(3, 5)
+    if random_number < 50:
+        return 1
+    elif random_number < 80:
+        return 0
+    elif random_number < 95:
+        return 2
+    else:
+        return random.randint(3, 5)
 
-    return num_transactions
+def process_block(block_num, users, validators):
+    all_block_transactions = []
+    for user in users:
+        num_transactions = transaction_number()
+        for _ in range(num_transactions):
+            tx = user.launch_attack(block_num) if user.is_attacker else user.create_transactions(block_num)
+            if tx:
+                user.broadcast_transactions(tx)
 
-def process_user(user, block_num, is_attacker):
-    transactions = []
-    num_transactions = transaction_number()
-    for _ in range(num_transactions):
-        if is_attacker:
-            tx = user.launch_attack(block_num)
-        else:
-            tx = user.create_transactions(block_num)
-        if tx:
-            transactions.append(tx)
-    return transactions
+    # Broadcast transactions to validators
+    for validator in validators:
+         validator.mempool.extend(deepcopy(all_block_transactions))
 
-def simulate_pos():
-    blocks = []
-    all_transactions = []
-    block_data = []
+    # Randomly select a proposer
+    selected_validator = random.choice(validators)
+    selected_validator.selected_transactions = selected_validator.select_transactions(BLOCK_CAP)
+    
+    # Assign transaction positions and inclusion times
+    for position, tx in enumerate(selected_validator.selected_transactions):
+        tx.position = position
+        tx.included_at = block_num
 
-    with mp.Pool() as pool:
-        for block_num in range(BLOCKNUM):
-            # Process normal users in parallel
-            normal_user_transactions = pool.starmap(process_user, [(user, block_num, False) for user in users if not user.is_attacker])
-            
-            # Process attacker users in parallel
-            attacker_user_transactions = pool.starmap(process_user, [(user, block_num, True) for user in users if user.is_attacker])
-            
-            # Flatten the list of transactions
-            all_block_transactions = [tx for user_txs in normal_user_transactions + attacker_user_transactions for tx in user_txs]
-            
-            # Broadcast transactions to validators
-            for validator in validators:
-                for tx in all_block_transactions:
-                    validator.receive_transaction(tx)
+    # Clear validators' mempools
+    for validator in validators:
+        validator.clear_mempool(block_num)
 
-            # Randomly select a proposer
-            validator = random.choice(validators)
+    total_gas_fee = sum(tx.gas_fee for tx in selected_validator.selected_transactions)
+    total_mev = sum(tx.mev_potential for tx in selected_validator.selected_transactions)
 
-            # Select transactions for the block
-            validator.selected_transactions = validator.select_transactions(BLOCK_CAP)
-            for position, tx in enumerate(validator.selected_transactions):
-                tx.position = position
-                tx.included_at = block_num
+    block_data = {
+        "block_num": block_num,
+        "validator_id": selected_validator.id,
+        "total_gas_fee": total_gas_fee,
+        "total_mev_available": total_mev
+    }
 
-            # Clear validators' mempools
-            for v in validators:
-                v.clear_mempool(block_num)
+    return block_data, selected_validator.selected_transactions
 
-            # Calculate total gas fee and total MEV for the block
-            total_gas_fee = sum(tx.gas_fee for tx in validator.selected_transactions)
-            total_mev = sum(tx.mev_potential for tx in validator.selected_transactions)
+def simulate_pos(num_attacker_validators, num_attacker_users):
+    validators = [Builder(f"validator_{i}", i < num_attacker_validators) for i in range(PROPNUM)]
+    users = [User(f"user_{i}", i < num_attacker_users, validators) for i in range(USERNUM)]
 
+    with mp.Pool(processes=num_processes) as pool:
+        results = pool.starmap(process_block, [(block_num, users, validators) for block_num in range(BLOCKNUM)])
 
-            # Process MEV targets
-            mev_targets = [tx for tx in validator.selected_transactions if tx.mev_potential > 0]
-            for targeted_tx in mev_targets:
-                targeting_txs = [tx for tx in validator.selected_transactions if tx.target_tx == targeted_tx.id]
-                if targeting_txs:
-                    closest_tx = min(targeting_txs, key=lambda tx: abs(tx.position - targeted_tx.position))
-                    attacker = next((user for user in users if user.id == closest_tx.sender), None)
-                    if not attacker:
-                        attacker = next((v for v in validators if v.id == closest_tx.sender), None)
-                    if attacker:
-                        attacker.balance += targeted_tx.mev_potential
+    block_data_list, all_transactions = zip(*results)
+    all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
-            # Prepare the full block content
-            block_content = {
-                "block_num": block_num,
-                "validator_id": validator.id,
-                "transactions": validator.selected_transactions
-            }
-
-            # Add the block content to the list of blocks
-            blocks.append(deepcopy(block_content))
-            all_transactions.extend(deepcopy(block_content["transactions"]))
-
-            # Record block data for CSV export
-            block_data.append({
-                "block_num": block_num,
-                "validator_id": validator.id,
-                "total_gas_fee": total_gas_fee,
-                "total_mev_available": total_mev
-            })
+    # Define dynamic filenames
+    transaction_filename = f"data/same_seed/pos_visible80/pos_transactions_validators{num_attacker_validators}_users{num_attacker_users}.csv"
+    block_filename = f"data/same_seed/pos_visible80/pos_block_data_validators{num_attacker_validators}_users{num_attacker_users}.csv"
+    os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
 
     # Save transaction data to CSV
-    with open('data/same_seed/pos_transactions.csv', 'w', newline='') as f:
-        if not all_transactions:
-            return blocks
-
-        # Convert the first transaction to a dictionary to get the field names
-        fieldnames = all_transactions[0].to_dict().keys()
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        
-        writer.writeheader()
-        
-        # Write each transaction after converting it to a dictionary
-        for tx in all_transactions:
-            writer.writerow(tx.to_dict())
+    with open(transaction_filename, 'w', newline='') as f:
+        if all_transactions:
+            fieldnames = all_transactions[0].to_dict().keys()
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for tx in all_transactions:
+                writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    with open('data/same_seed/pos_block_data.csv', 'w', newline='') as f:
+    with open(block_filename, 'w', newline='') as f:
         fieldnames = ['block_num', 'validator_id', 'total_gas_fee', 'total_mev_available']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
-        
         writer.writeheader()
-        
-        # Write each block's data
-        for block in block_data:
-            writer.writerow(block)
+        for block_data in block_data_list:
+            writer.writerow(block_data)
 
-    return blocks
+    return block_data_list
 
 if __name__ == "__main__":
     start_time = time.time()
 
-    # Initialize validators: half are attackers
-    validators = []
-    for i in range(PROPNUM):
-        is_attacker = i < (PROPNUM // 2)  # First half are attackers, second half are non-attackers
-        validator = Builder(f"validator_{i}", is_attacker)
-        validators.append(validator)
-
-    # Initialize users: half are attackers
-    users = []
-    for i in range(USERNUM):
-        is_attacker = i < (USERNUM // 2)  # First half are attackers, second half are non-attackers
-        user = User(f"user_{i}", is_attacker, validators)
-        users.append(user)
-
-    simulate_pos()
+    for num_attacker_validators in range(PROPNUM + 1):
+        for num_attacker_users in range(USERNUM + 1):
+            simulate_pos(num_attacker_validators, num_attacker_users)
 
     end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"Simulation completed in {execution_time:.2f} seconds")
+    print(f"Simulation completed in {end_time - start_time:.2f} seconds")
