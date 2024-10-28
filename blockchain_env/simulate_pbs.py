@@ -108,5 +108,4 @@ if __name__ == "__main__":
             simulate_pbs(num_attacker_builders, num_attacker_users)
             end_time = time.time()
             round_time = end_time - start_time
-            print(f"Simulation with {num_attacker_builders} attacker validators and
-                {num_attacker_users} attacker users completed in {round_time:.2f} seconds")
+            print(f"Simulation with {num_attacker_builders} attacker validators and {num_attacker_users} attacker users completed in {round_time:.2f} seconds")
