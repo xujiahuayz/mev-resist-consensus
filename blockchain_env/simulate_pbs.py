@@ -13,7 +13,7 @@ USERNUM = 50
 BUILDERNUM = 20
 
 # Seed for reproducibility
-random.seed(16)
+random.seed(21)
 
 # Determine the number of CPU cores and set the number of processes
 num_cores = os.cpu_count()
@@ -37,7 +37,6 @@ def process_block(block_num, users, builders):
         for _ in range(num_transactions):
             tx = user.create_transactions(block_num)
             if tx:
-                all_block_transactions.append(tx)
                 user.broadcast_transactions(tx)
     
     builder_results = []
