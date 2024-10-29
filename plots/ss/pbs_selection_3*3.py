@@ -56,9 +56,16 @@ def parse_filename(filename):
     return None, None
 
 def plot_cumulative_selections_over_blocks(data_folder, configs):
-    """Plot cumulative selections over blocks for specified builder and user attack configurations."""
-    plt.figure(figsize=(15, 10))
-    
+    """Plot cumulative selections over blocks for specified builder and user attack configurations as a 3x3 grid."""
+    # Ensure the output directory exists
+    output_dir = 'figures/ss'
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Set up the 3x3 grid
+    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+    y_limit = 1000  # Set common y-axis limit for consistency across plots
+    font_size = 12  # Set the font size for titles, labels, and legend
+
     for i, (builder_attack_count, user_attack_count) in enumerate(configs):
         filename = f"pbs_block_data_builders{builder_attack_count}_users{user_attack_count}.csv"
         file_path = os.path.join(data_folder, filename)
@@ -70,17 +77,24 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         attacking_counts, non_attacking_counts = get_builder_counts_by_block(file_path, builder_attack_count)
         block_numbers = list(range(len(attacking_counts)))
 
-        # Plotting the cumulative selections for this configuration
-        plt.subplot(3, 3, i + 1)
-        plt.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Builders', color='red')
-        plt.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Builders', color='blue')
-        plt.xlabel('Block Number')
-        plt.ylabel('Cumulative Selections')
-        plt.title(f'Builders {builder_attack_count}, Users {user_attack_count}')
-        plt.legend()
+        # Locate subplot position
+        ax = axes[i // 3, i % 3]
+        
+        # Plot cumulative selections
+        ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Builders', color='red', alpha=0.5)
+        ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Builders', color='blue', alpha=0.5)
+        ax.set_xlabel('Block Number', fontsize=font_size)
+        ax.set_ylabel('Cumulative Selections', fontsize=font_size)
+        ax.set_title(f'Attacking Builder Number = {builder_attack_count}\nAttacking User Number = {user_attack_count}', fontsize=font_size + 2)
+        ax.set_ylim(0, y_limit)
+        ax.legend(loc='upper left', fontsize=font_size)
 
     plt.tight_layout()
-    plt.show()
+    output_path = os.path.join(output_dir, 'pbs_cumulative_selection_3x3_grid.png')
+    plt.savefig(output_path, dpi=300)
+    plt.close()
+
+    print(f"3x3 grid plot saved to {output_path}")
 
 if __name__ == "__main__":
     data_folder = 'data/same_seed/pbs_visible80'
