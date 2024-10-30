@@ -80,17 +80,28 @@ def process_all_transactions(data_folder, user_attack_count):
     return aggregated_data
 
 def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
-    """Plot MEV distribution for different attacking builder configurations."""
+    """Plot MEV distribution for different attacking builder configurations as percentages and print exact Gwei values."""
     builder_counts = sorted(aggregated_data.keys())
     builder_mev = [aggregated_data[count]["builders_mev"] for count in builder_counts]
     user_mev = [aggregated_data[count]["users_mev"] for count in builder_counts]
     total_mev = [aggregated_data[count]["total_mev"] for count in builder_counts]
     uncaptured_mev = [total - builder - user for total, builder, user in zip(total_mev, builder_mev, user_mev)]
 
+    # Calculate percentages for the stack plot
+    builder_mev_percent = [100 * b / t if t > 0 else 0 for b, t in zip(builder_mev, total_mev)]
+    user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
+    uncaptured_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(uncaptured_mev, total_mev)]
+
+    # Print exact Gwei values
+    for count, total, builder, user, uncaptured in zip(builder_counts, total_mev, builder_mev, user_mev, uncaptured_mev):
+        print(f"Attack Builders: {count}, Total MEV: {total} Gwei, Builders MEV: {builder} Gwei, Users MEV: {user} Gwei, Uncaptured MEV: {uncaptured} Gwei")
+
+    # Plot as percentages
     plt.figure(figsize=(12, 6))
-    plt.stackplot(builder_counts, user_mev, builder_mev, uncaptured_mev, labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
+    plt.stackplot(builder_counts, user_mev_percent, builder_mev_percent, uncaptured_mev_percent,
+                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
     plt.xlabel("Number of Attacking Builders")
-    plt.ylabel("MEV Distribution (Gwei)")
+    plt.ylabel("MEV Distribution (%)")
     plt.title(f"MEV Distribution with User Attack Count: {user_attack_count}")
     plt.legend(loc="upper left")
     plt.tight_layout()
