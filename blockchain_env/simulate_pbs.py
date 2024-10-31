@@ -5,6 +5,8 @@ import time
 import multiprocessing as mp
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
+import gc  # for garbage collection
+import tracemalloc  # for memory profiling if needed
 
 # Constants
 BLOCKNUM = 1000
@@ -35,9 +37,14 @@ def process_block(block_num, users, builders):
     for user in users:
         num_transactions = transaction_number()
         for _ in range(num_transactions):
-            tx = user.create_transactions(block_num)
+            if not user.is_attacker:
+                tx = user.create_transactions(block_num)
+            else:
+                tx = user.launch_attack(block_num)
+            
             if tx:
                 user.broadcast_transactions(tx)
+
     
     builder_results = []
     for builder in builders:
@@ -72,9 +79,11 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
     builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
     users = [User(f"user_{i}", i < num_attacker_users, builders) for i in range(USERNUM)]
 
+    # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:
         results = pool.starmap(process_block, [(block_num, users, builders) for block_num in range(BLOCKNUM)])
     
+    # Gather results
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
@@ -98,14 +107,30 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
         for block_data in block_data_list:
             writer.writerow(block_data)
 
+    # Run garbage collection to clear memory
+    gc.collect()
+
     return block_data_list
 
+def run_simulation_in_process(num_attacker_builders, num_attacker_users):
+    """Run each simulation in a separate process to avoid state leakage."""
+    process = mp.Process(target=simulate_pbs, args=(num_attacker_builders, num_attacker_users))
+    process.start()
+    process.join()  # Wait for the process to complete
+
 if __name__ == "__main__":
+    tracemalloc.start()  # Start tracking memory usage, for diagnostic purposes
 
     for num_attacker_builders in range(BUILDERNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
             start_time = time.time()
-            simulate_pbs(num_attacker_builders, num_attacker_users)
+            run_simulation_in_process(num_attacker_builders, num_attacker_users)
             end_time = time.time()
-            round_time = end_time - start_time
-            print(f"Simulation with {num_attacker_builders} attacker validators and {num_attacker_users} attacker users completed in {round_time:.2f} seconds")
+            print(f"Simulation with {num_attacker_builders} attacker builders and {num_attacker_users} attacker users completed in {end_time - start_time:.2f} seconds")
+
+    # Optional: Print memory usage statistics after the simulation
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+    print("\n[Top 10 lines by memory usage]")
+    for stat in top_stats[:10]:
+        print(stat)
