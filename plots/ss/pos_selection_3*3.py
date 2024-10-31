@@ -64,7 +64,12 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Set up the 3x3 grid
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
     y_limit = 1000  # Set common y-axis limit for consistency across plots
-    font_size = 12  # Set the font size for titles, labels, and legend
+
+    # Updated font sizes for better readability
+    title_font_size = 20  # Larger font for titles
+    label_font_size = 18  # Larger font for axis labels
+    legend_font_size = 14  # Larger font for legend
+    tick_label_font_size = 14  # Larger font for axis tick labels
 
     for i, (validator_attack_count, user_attack_count) in enumerate(configs):
         filename = f"pos_block_data_validators{validator_attack_count}_users{user_attack_count}.csv"
@@ -83,11 +88,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         # Plot cumulative selections
         ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Validators', color='red', alpha=0.5)
         ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Validators', color='blue', alpha=0.5)
-        ax.set_xlabel('Block Number', fontsize=font_size)
-        ax.set_ylabel('Cumulative Selections', fontsize=font_size)
-        ax.set_title(f'Attacking Validator Number = {validator_attack_count}\nAttacking User Number = {user_attack_count}', fontsize=font_size + 2)
+        ax.set_xlabel('Block Number', fontsize=label_font_size)
+        ax.set_ylabel('Cumulative Selections', fontsize=label_font_size)
+        ax.set_title(f'Attacking Validator Number = {validator_attack_count}\nAttacking User Number = {user_attack_count}', fontsize=title_font_size)
         ax.set_ylim(0, y_limit)
-        ax.legend(loc='upper left', fontsize=font_size)
+        ax.legend(loc='upper left', fontsize=legend_font_size)
+        
+        # Set tick label font size for both x and y axes
+        ax.tick_params(axis='both', labelsize=tick_label_font_size)
 
     plt.tight_layout()
     output_path = os.path.join(output_dir, 'pos_cumulative_selection_3x3_grid.png')
