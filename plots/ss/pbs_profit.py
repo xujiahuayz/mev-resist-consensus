@@ -3,7 +3,6 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
-import json
 
 def calculate_mev_distribution_from_transactions(file_path):
     """Calculate MEV distribution among builders and users from a single transaction CSV file."""
@@ -13,7 +12,6 @@ def calculate_mev_distribution_from_transactions(file_path):
         reader = csv.DictReader(f)
         fieldnames = set(reader.fieldnames)
         
-        # Skip file if required fields are missing
         if not required_fields.issubset(fieldnames):
             print(f"Skipping file {file_path} due to missing fields.")
             return None
@@ -29,8 +27,6 @@ def calculate_mev_distribution_from_transactions(file_path):
                 
                 if mev_potential > 0:
                     mev_data["total_mev"] += mev_potential
-                    
-                    # Find transactions targeting this one
                     targeting_txs = [
                         t for t in transactions if t.get('target_tx') == tx['id']
                     ]
@@ -39,7 +35,6 @@ def calculate_mev_distribution_from_transactions(file_path):
                         min_distance = min(abs(int(t['position']) - int(tx['position'])) for t in targeting_txs)
                         closest_txs = [t for t in targeting_txs if abs(int(t['position']) - int(tx['position'])) == min_distance]
 
-                        # Distribute MEV potential among closest attackers
                         share = mev_potential / len(closest_txs)
                         for closest_tx in closest_txs:
                             if 'builder' in closest_tx['creator_id']:
@@ -51,13 +46,8 @@ def calculate_mev_distribution_from_transactions(file_path):
 
     return mev_data
 
-def process_all_transactions(data_folder, user_attack_count, cache_file):
+def process_all_transactions(data_folder, user_attack_count):
     """Process all transaction files in a folder and aggregate MEV distribution data by attacking builder count."""
-    # Load from cache if available
-    if os.path.exists(cache_file):
-        with open(cache_file, 'r') as f:
-            return json.load(f)
-
     aggregated_data = defaultdict(lambda: {"total_mev": 0, "builders_mev": 0, "users_mev": 0})
 
     for filename in os.listdir(data_folder):
@@ -75,10 +65,6 @@ def process_all_transactions(data_folder, user_attack_count, cache_file):
                 for key in file_data:
                     aggregated_data[builder_attack_count][key] += file_data[key]
 
-    # Save to cache
-    with open(cache_file, 'w') as f:
-        json.dump(aggregated_data, f)
-
     return aggregated_data
 
 def smooth_data(data, window_size=3):
@@ -93,24 +79,21 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     total_mev = [aggregated_data[count]["total_mev"] for count in builder_counts]
     uncaptured_mev = [total - builder - user for total, builder, user in zip(total_mev, builder_mev, user_mev)]
 
-    # Calculate percentages
     builder_mev_percent = [100 * b / t if t > 0 else 0 for b, t in zip(builder_mev, total_mev)]
     user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
     uncaptured_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(uncaptured_mev, total_mev)]
 
-    # Smooth data for plotting
     smooth_builder_mev = smooth_data(builder_mev_percent)
     smooth_user_mev = smooth_data(user_mev_percent)
     smooth_uncaptured_mev = smooth_data(uncaptured_mev_percent)
 
-    # Print exact Gwei values
     print("Exact Gwei Values:")
     for count, total, builder, user, uncaptured in zip(builder_counts, total_mev, builder_mev, user_mev, uncaptured_mev):
         print(f"Attack Builders: {count}, Total MEV: {total} Gwei, Builders MEV: {builder} Gwei, Users MEV: {user} Gwei, Uncaptured MEV: {uncaptured} Gwei")
 
     plt.figure(figsize=(12, 6))
     plt.stackplot(builder_counts[len(builder_counts) - len(smooth_user_mev):], smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
+                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)m
     plt.xlabel("Number of Attacking Builders")
     plt.ylabel("MEV Distribution (%)")
     plt.title(f"MEV Distribution with User Attack Count: {user_attack_count}")
@@ -128,7 +111,6 @@ if __name__ == "__main__":
     user_attack_counts = [0, 12, 24, 50]  # Adjusted to reflect correct user attack numbers
 
     for user_count in user_attack_counts:
-        cache_file = f"{output_folder}/mev_distribution_user_attack_{user_count}.json"
-        aggregated_data = process_all_transactions(data_folder, user_count, cache_file)
+        aggregated_data = process_all_transactions(data_folder, user_count)
         save_path = os.path.join(output_folder, f"mev_distribution_user_attack_{user_count}.png")
         plot_mev_distribution(aggregated_data, user_count, save_path)
