@@ -121,7 +121,7 @@ def run_simulation_in_process(num_attacker_builders, num_attacker_users):
 if __name__ == "__main__":
     tracemalloc.start()  # Start tracking memory usage, for diagnostic purposes
 
-    for num_attacker_builders in range(BUILDERNUM + 1):
+    for num_attacker_builders in range(1, BUILDERNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
             start_time = time.time()
             run_simulation_in_process(num_attacker_builders, num_attacker_users)
