@@ -10,9 +10,8 @@ def calculate_mev_distribution_from_transactions(file_path):
     
     with open(file_path, 'r') as f:
         reader = csv.DictReader(f)
-        fieldnames = set(reader.fieldnames)
         
-        if not required_fields.issubset(fieldnames):
+        if not required_fields.issubset(reader.fieldnames):
             print(f"Skipping file {file_path} due to missing fields.")
             return None
 
@@ -83,17 +82,24 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
     uncaptured_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(uncaptured_mev, total_mev)]
 
-    smooth_builder_mev = smooth_data(builder_mev_percent)
-    smooth_user_mev = smooth_data(user_mev_percent)
-    smooth_uncaptured_mev = smooth_data(uncaptured_mev_percent)
+    # Apply additional smoothing if user_attack_count is 50
+    if user_attack_count == 50:
+        smooth_builder_mev = smooth_data(smooth_data(builder_mev_percent))
+        smooth_user_mev = smooth_data(smooth_data(user_mev_percent))
+        smooth_uncaptured_mev = smooth_data(smooth_data(uncaptured_mev_percent))
+        builder_counts = builder_counts[len(builder_counts) - len(smooth_user_mev):]
+    else:
+        smooth_builder_mev = builder_mev_percent
+        smooth_user_mev = user_mev_percent
+        smooth_uncaptured_mev = uncaptured_mev_percent
 
     print("Exact Gwei Values:")
     for count, total, builder, user, uncaptured in zip(builder_counts, total_mev, builder_mev, user_mev, uncaptured_mev):
         print(f"Attack Builders: {count}, Total MEV: {total} Gwei, Builders MEV: {builder} Gwei, Users MEV: {user} Gwei, Uncaptured MEV: {uncaptured} Gwei")
 
     plt.figure(figsize=(12, 6))
-    plt.stackplot(builder_counts[len(builder_counts) - len(smooth_user_mev):], smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)m
+    plt.stackplot(builder_counts, smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
+                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
     plt.xlabel("Number of Attacking Builders")
     plt.ylabel("MEV Distribution (%)")
     plt.title(f"MEV Distribution with User Attack Count: {user_attack_count}")
