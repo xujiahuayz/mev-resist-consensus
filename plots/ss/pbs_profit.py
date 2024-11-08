@@ -1,5 +1,6 @@
 import csv
 import os
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
@@ -45,8 +46,13 @@ def calculate_mev_distribution_from_transactions(file_path):
 
     return mev_data
 
-def process_all_transactions(data_folder, user_attack_count):
+def process_all_transactions(data_folder, user_attack_count, cache_file):
     """Process all transaction files in a folder and aggregate MEV distribution data by attacking builder count."""
+    # Load from cache if available
+    if os.path.exists(cache_file):
+        with open(cache_file, 'r') as f:
+            return json.load(f)
+
     aggregated_data = defaultdict(lambda: {"total_mev": 0, "builders_mev": 0, "users_mev": 0})
 
     for filename in os.listdir(data_folder):
@@ -64,6 +70,10 @@ def process_all_transactions(data_folder, user_attack_count):
                 for key in file_data:
                     aggregated_data[builder_attack_count][key] += file_data[key]
 
+    # Save results to cache for future use
+    with open(cache_file, 'w') as f:
+        json.dump(aggregated_data, f)
+
     return aggregated_data
 
 def smooth_data(data, window_size=3):
@@ -72,6 +82,11 @@ def smooth_data(data, window_size=3):
 
 def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     """Plot MEV distribution for different attacking builder configurations as percentages and print exact Gwei values."""
+    title_font_size = 22  # Larger font for titles
+    label_font_size = 20  # Larger font for axis labels
+    legend_font_size = 16  # Larger font for legend
+    tick_label_font_size = 16  # Larger font for axis tick labels
+
     builder_counts = sorted(aggregated_data.keys())
     builder_mev = [aggregated_data[count]["builders_mev"] for count in builder_counts]
     user_mev = [aggregated_data[count]["users_mev"] for count in builder_counts]
@@ -97,15 +112,18 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     for count, total, builder, user, uncaptured in zip(builder_counts, total_mev, builder_mev, user_mev, uncaptured_mev):
         print(f"Attack Builders: {count}, Total MEV: {total} Gwei, Builders MEV: {builder} Gwei, Users MEV: {user} Gwei, Uncaptured MEV: {uncaptured} Gwei")
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(10, 8))
     plt.stackplot(builder_counts, smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
                   labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
-    plt.xlabel("Number of Attacking Builders")
-    plt.ylabel("MEV Distribution (%)")
-    plt.title(f"MEV Distribution with User Attack Count: {user_attack_count}")
-    plt.legend(loc="upper left")
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
+    plt.xlabel("Number of Attacking Builders", fontsize=label_font_size)
+    plt.ylabel("MEV Profit Distribution (%)", fontsize=label_font_size)
+    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=title_font_size)
+    plt.legend(loc="upper right", fontsize=legend_font_size)
+    plt.xticks(fontsize=tick_label_font_size)
+    plt.yticks(fontsize=tick_label_font_size)
+    plt.margins(x=0, y=0)
+    plt.tight_layout(pad=1.0)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     print(f"Plot saved to {save_path}")
@@ -114,9 +132,10 @@ if __name__ == "__main__":
     data_folder = 'data/same_seed/pbs_visible80'
     output_folder = 'figures/ss'
     os.makedirs(output_folder, exist_ok=True)
-    user_attack_counts = [0, 12, 24, 50]  # Adjusted to reflect correct user attack numbers
+    user_attack_counts = [0, 12, 24, 50]
 
     for user_count in user_attack_counts:
-        aggregated_data = process_all_transactions(data_folder, user_count)
+        cache_file = os.path.join(output_folder, f"aggregated_data_user_attack_{user_count}.json")
+        aggregated_data = process_all_transactions(data_folder, user_count, cache_file)
         save_path = os.path.join(output_folder, f"mev_distribution_user_attack_{user_count}.png")
         plot_mev_distribution(aggregated_data, user_count, save_path)
