@@ -62,47 +62,57 @@ def process_all_transactions_for_cdf(data_folder, builder_attack_count, user_att
 
     return total_validators_mev, total_builders_mev
 
-def calculate_cdf(data):
-    """Calculate the CDF for a given data list."""
-    sorted_data = np.sort(data)
-    cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
-    return sorted_data, cdf
+def calculate_pdf(data, bins=50):
+    """Calculate the PDF of a given data set."""
+    density, bin_edges = np.histogram(data, bins=bins, density=True)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+    return bin_centers, density
 
-def plot_mev_cdf(data_folder, output_folder, user_attack_count):
-    """Plot the CDFs for MEV profit distribution between validators and builders under different conditions."""
+def plot_mev_pdf(data_folder, output_folder, user_attack_count):
+    """Plot the PDFs for MEV profit distribution between validators and builders under different conditions."""
     os.makedirs(output_folder, exist_ok=True)
     plt.figure(figsize=(10, 8))
 
     # Define different attack configurations to plot
     builder_counts = [0, 10, 20]
     
-    for builder_attack_count in builder_counts:
+    # Define colors and line styles for clear distinction
+    colors = ['blue', 'orange', 'green', 'purple', 'red', 'brown']
+    linestyles = ['--', '-', '--', '-', '--', '-']
+    labels = [
+        'PBS - Builders 0 Attackers', 'PoS - Validators 0 Attackers',
+        'PBS - Builders 10 Attackers', 'PoS - Validators 10 Attackers',
+        'PBS - Builders 20 Attackers', 'PoS - Validators 20 Attackers'
+    ]
+    
+    for idx, builder_attack_count in enumerate(builder_counts):
         validators_mev, builders_mev = process_all_transactions_for_cdf(data_folder, builder_attack_count, user_attack_count)
         
-        # Calculate CDFs
-        validators_mev_sorted, validators_cdf = calculate_cdf(validators_mev)
-        builders_mev_sorted, builders_cdf = calculate_cdf(builders_mev)
+        # Calculate PDFs
+        builders_bin_centers, builders_pdf = calculate_pdf(builders_mev)
+        validators_bin_centers, validators_pdf = calculate_pdf(validators_mev)
         
-        # Plot CDFs
-        plt.plot(builders_mev_sorted, builders_cdf, label=f'PBS - Builders {builder_attack_count} Attackers', linestyle='--')
-        plt.plot(validators_mev_sorted, validators_cdf, label=f'PoS - Validators {builder_attack_count} Attackers', linestyle='-')
+        # Plot PDFs with improved differentiation
+        plt.plot(builders_bin_centers, builders_pdf, label=labels[idx*2], color=colors[idx*2], linestyle=linestyles[idx*2], linewidth=1.5)
+        plt.plot(validators_bin_centers, validators_pdf, label=labels[idx*2 + 1], color=colors[idx*2 + 1], linestyle=linestyles[idx*2 + 1], linewidth=1.5)
 
     plt.xlabel("MEV Profit (Gwei)", fontsize=16)
-    plt.ylabel("Cumulative Distribution Function (CDF)", fontsize=16)
-    plt.legend(loc="lower right", fontsize=12)
+    plt.ylabel("Probability Density", fontsize=16)
+    plt.legend(loc="upper right", fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.margins(x=0, y=0)
     plt.tight_layout()
     
     # Save and display plot
-    output_path = os.path.join(output_folder, "mev_profit_distribution_cdf.png")
+    output_path = os.path.join(output_folder, "mev_profit_distribution_pdf.png")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"CDF plot saved to {output_path}")
+    print(f"PDF plot saved to {output_path}")
 
 if __name__ == "__main__":
     data_folder = 'data/same_seed/pbs_visible80'
     output_folder = 'figures/ss'
-    user_attack_count = 25  # Fixed 25 user attackers as specified
+    os.makedirs(output_folder, exist_ok=True)
+    user_attack_count = 25  # Fixed user attackers as per requirement
 
-    plot_mev_cdf(data_folder, output_folder, user_attack_count)
+    plot_mev_pdf(data_folder, output_folder, user_attack_count)
