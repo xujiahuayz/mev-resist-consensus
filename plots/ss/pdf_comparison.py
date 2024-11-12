@@ -98,8 +98,9 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
 
     plt.xlabel("MEV Profit (Gwei)", fontsize=16)
     plt.ylabel("Probability Density", fontsize=16)
+    plt.yscale('log')  # Set y-axis to logarithmic scale for exponential scaling
     plt.legend(loc="upper right", fontsize=12)
-    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.grid(True, linestyle='--', alpha=0.4)
     plt.margins(x=0, y=0)
     plt.tight_layout()
     
