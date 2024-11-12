@@ -82,7 +82,6 @@ def process_file(file_path):
     
     # Compute inversion count
     inversion_count = calculate_inversion_count(sorted_blocks)
-    print(f"File: {file_path} -> Inversion Count: {inversion_count}")  # Debug print to verify results
     return inversion_count
 
 def process_all_files(data_folder):
@@ -115,43 +114,40 @@ def process_all_files(data_folder):
 
     return results
 
-def print_results(results, label):
+def plot_heatmap(results, title, vmin, vmax, output_folder):
     """
-    Print inversion counts for each configuration.
-    """
-    print(f"Inversion Counts ({label}):")
-    for user_attack_count, builders in results.items():
-        for builder_attack_count, inversions in builders.items():
-            print(f"Users: {user_attack_count}, Builders/Validators: {builder_attack_count} -> Inversions: {inversions}")
-
-def plot_heatmap(results, title):
-    """
-    Plot a heatmap of inversion counts for each user and builder configuration.
+    Plot a heatmap of inversion counts for each user and builder configuration with the same color scale.
     """
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(df, annot=True, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"})
-    plt.title(title)
+    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
     plt.xlabel("Number of Attacking Builders/Validators")
     plt.ylabel("Number of Attacking Users")
     plt.tight_layout()
-    plt.show()
+    
+    output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Heatmap saved to {output_path}")
 
 if __name__ == "__main__":
-    pos_data_folder = 'data/same_seed/pos_visible80'  # Path to PoS data folder
-    pbs_data_folder = 'data/same_seed/pbs_visible80'  # Path to PBS data folder
+    pos_data_folder = 'data/same_seed/pos_visible80'
+    pbs_data_folder = 'data/same_seed/pbs_visible80'
+    output_folder = 'figures/ss'
+    os.makedirs(output_folder, exist_ok=True)
     
     # Calculate inversion counts for each configuration for PoS and PBS
     pos_results = process_all_files(pos_data_folder)
     pbs_results = process_all_files(pbs_data_folder)
     
-    # Print the results for each system
-    print_results(pos_results, "PoS")
-    print_results(pbs_results, "PBS")
-    
+    # Determine shared color scale limits
+    all_inversion_counts = [count for user_counts in pos_results.values() for count in user_counts.values()]
+    all_inversion_counts += [count for user_counts in pbs_results.values() for count in user_counts.values()]
+    vmin, vmax = min(all_inversion_counts), max(all_inversion_counts)
+
     # Plot heatmap of results for PoS
-    plot_heatmap(pos_results, "Inversion Counts for PoS")
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder)
 
     # Plot heatmap of results for PBS
-    plot_heatmap(pbs_results, "Inversion Counts for PBS")
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder)
