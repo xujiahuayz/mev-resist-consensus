@@ -1,46 +1,69 @@
 import os
 import csv
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
+def inversionen(arr):
+    """
+    Divide and conquer function to count inversions in the array.
+    """
+    m = len(arr)
+    if m < 2:
+        return arr, 0
+
+    # Divide
+    x1 = arr[:m // 2]
+    x2 = arr[m // 2:]
+
+    # Conquer (recursively count inversions in both halves)
+    l1, invs1 = inversionen(x1)
+    l2, invs2 = inversionen(x2)
+
+    # Combine with modified merge to count cross inversions
+    merged, cross_inversions = modified_merge(l1, l2)
+    return merged, invs1 + invs2 + cross_inversions
+
+def modified_merge(l1, l2):
+    """
+    Merge two sorted lists and count cross inversions.
+    """
+    m1, m2 = len(l1), len(l2)
+    merged = []
+    i, j = 0, 0
+    cross_inversions = 0
+    
+    while i < m1 and j < m2:
+        if l1[i] <= l2[j]:
+            merged.append(l1[i])
+            i += 1
+        else:
+            merged.append(l2[j])
+            cross_inversions += m1 - i  # Count inversions
+            j += 1
+
+    # Append remaining elements
+    merged.extend(l1[i:])
+    merged.extend(l2[j:])
+    return merged, cross_inversions
+
 def calculate_inversion_count(transactions_by_block):
     """
-    Calculate the inversion count for transaction order and cumulative position.
+    Calculate the inversion count for transaction IDs compared to a perfectly ordered list.
     """
-    cumulative_position = 0
     ids = []
-    absolute_positions = []
     
     for block_transactions in transactions_by_block:
         for tx in block_transactions:
             tx_id = int(tx['id'])
-            position_in_block = int(tx['position'])
-            absolute_position = cumulative_position + position_in_block
-
             ids.append(tx_id)
-            absolute_positions.append(absolute_position)
-        
-        cumulative_position += len(block_transactions)
-
-    # Calculate inversion count
-    inversion_count = count_inversions(ids, absolute_positions)
-    return inversion_count
-
-def count_inversions(ids, positions):
-    """
-    Count inversions in the list of positions.
-    """
-    inversion_count = 0
-    n = len(ids)
     
-    for i in range(n):
-        for j in range(i + 1, n):
-            if positions[i] > positions[j]:  # An inversion is found
-                inversion_count += 1
-    
+    # Generate the ordered list for comparison
+    ordered_list = list(range(len(ids)))
+
+    # Use inversionen function to calculate inversion count between ids and ordered_list
+    _, inversion_count = inversionen(ids)
     return inversion_count
 
 def process_file(file_path):
@@ -59,7 +82,7 @@ def process_file(file_path):
     
     # Compute inversion count
     inversion_count = calculate_inversion_count(sorted_blocks)
-    
+    print(f"File: {file_path} -> Inversion Count: {inversion_count}")  # Debug print to verify results
     return inversion_count
 
 def process_all_files(data_folder):
