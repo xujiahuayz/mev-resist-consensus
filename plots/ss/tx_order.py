@@ -114,7 +114,7 @@ def process_all_files(data_folder):
 
     return results
 
-def plot_heatmap(results, title, vmin, vmax, output_folder):
+def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     """
     Plot a heatmap of inversion counts for each user and builder configuration with the same color scale.
     """
@@ -122,7 +122,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder):
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
-    plt.xlabel("Number of Attacking Builders/Validators")
+    plt.xlabel(x_label)
     plt.ylabel("Number of Attacking Users")
     plt.tight_layout()
     
@@ -146,8 +146,8 @@ if __name__ == "__main__":
     all_inversion_counts += [count for user_counts in pbs_results.values() for count in user_counts.values()]
     vmin, vmax = min(all_inversion_counts), max(all_inversion_counts)
 
-    # Plot heatmap of results for PoS
-    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder)
+    # Plot heatmap of results for PoS with "Validators" as x-axis label
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder, "Number of Attacking Validators")
 
-    # Plot heatmap of results for PBS
-    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder)
+    # Plot heatmap of results for PBS with "Builders" as x-axis label
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder, "Number of Attacking Builders")
