@@ -81,8 +81,7 @@ def process_file(file_path):
     sorted_blocks = [transactions_by_block[block] for block in sorted(transactions_by_block.keys())]
     
     # Compute inversion count
-    inversion_count = calculate_inversion_count(sorted_blocks)
-    return inversion_count
+    return calculate_inversion_count(sorted_blocks)
 
 def process_all_files(data_folder):
     """
@@ -122,8 +121,10 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
-    plt.xlabel(x_label)
-    plt.ylabel("Number of Attacking Users")
+    plt.xlabel(x_label, fontsize=16)
+    plt.ylabel("Number of Attacking Users", fontsize=16)
+    plt.xticks([0, 5, 10, 20], fontsize=14)
+    plt.yticks([0, 10, 20], fontsize=14)
     plt.tight_layout()
     
     output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
