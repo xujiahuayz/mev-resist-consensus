@@ -53,47 +53,54 @@ def create_meshgrid_interpolated(data, value, sigma=2):
     return xi, yi, zi
 
 def create_3d_plot(x, y, z, xlabel, ylabel, zlabel, filename=None):
-    fig = plt.figure(figsize=(12, 10))
+    figsize = (12, 10)  # Large figure size to fill space with plot
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(x, y, z, cmap='viridis', alpha=0.8)
-    ax.set_xlabel(xlabel, labelpad=20, fontsize=20)
-    ax.set_ylabel(ylabel, labelpad=20, fontsize=20)
-    ax.set_zlabel(zlabel, labelpad=20, fontsize=20)
-    plt.subplots_adjust(left=0.2, right=0.95, top=0.9, bottom=0.2)
+    
+    # Set axis labels with slight padding for readability
+    ax.set_xlabel(xlabel, labelpad=10, fontsize=18)
+    ax.set_ylabel(ylabel, labelpad=10, fontsize=18)
+    ax.set_zlabel(zlabel, labelpad=10, fontsize=18)
+
+    # Adjust margins to nearly eliminate whitespace
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    
+    # Save the figure with minimal padding around the image
     if filename:
-        plt.savefig(filename, bbox_inches='tight', pad_inches=1, dpi=300)
+        plt.savefig(filename, pad_inches=0, dpi=300)
     plt.close(fig)
 
 def plot_total_block_value(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'total_block_value')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'Total Block Value', 
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'Total Block Value', 
                    os.path.join(save_dir, 'total_block_value.png'))
 
 def plot_block_bid(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'block_bid')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'Winning Block Bid', 
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'Winning Block Bid', 
                    os.path.join(save_dir, 'block_bid.png'))
 
 def plot_gas_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'gas_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'Gas Captured', 
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'Gas Captured', 
                    os.path.join(save_dir, 'gas_captured.png'))
 
 def plot_mev_captured(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'mev_captured')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'MEV Captured', 
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'MEV Captured', 
                    os.path.join(save_dir, 'mev_captured.png'))
 
 def plot_reward(grouped_data, save_dir):
     x, y, z = create_meshgrid_interpolated(grouped_data, 'reward')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'Reward', 
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'Reward', 
                    os.path.join(save_dir, 'reward.png'))
 
 def plot_last_1000_bid_percentage(data, save_dir):
     data = data.groupby(['mev_builders', 'characteristic']).tail(1000).reset_index()
     data['bid_percentage'] = (data['block_bid'] / data['total_block_value']) * 100
     x, y, z = create_meshgrid_interpolated(data, 'bid_percentage')
-    create_3d_plot(x, y, z, 'MEV Builders', 'Connectivity', 'Last 1000 Bid Percentage of Block Value',
+    create_3d_plot(x, y, z, 'MEV Builders', 'Visible Nodes', 'Last 1000 Bid %',
                    os.path.join(save_dir, 'last_1000_bid_percentage.png'))
 
 if __name__ == '__main__':
