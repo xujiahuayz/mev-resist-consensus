@@ -81,7 +81,8 @@ def process_file(file_path):
     sorted_blocks = [transactions_by_block[block] for block in sorted(transactions_by_block.keys())]
     
     # Compute inversion count
-    return calculate_inversion_count(sorted_blocks)
+    inversion_count = calculate_inversion_count(sorted_blocks)
+    return inversion_count
 
 def process_all_files(data_folder):
     """
@@ -121,10 +122,16 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
-    plt.xlabel(x_label, fontsize=16)
-    plt.ylabel("Number of Attacking Users", fontsize=16)
-    plt.xticks([0, 5, 10, 20], fontsize=14)
-    plt.yticks([0, 10, 20], fontsize=14)
+    plt.xlabel(x_label, fontsize=20)
+    plt.ylabel("Number of Attacking Users", fontsize=20)
+    plt.xticks([0, 5, 10, 20], fontsize=16)
+    plt.yticks([0, 10, 20], fontsize=16)
+    
+    # Increase font size of color bar label and ticks
+    cbar = plt.gca().collections[0].colorbar
+    cbar.set_label("Inversion Count", size=20)
+    cbar.ax.tick_params(labelsize=14)
+
     plt.tight_layout()
     
     output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
@@ -137,11 +144,11 @@ if __name__ == "__main__":
     pbs_data_folder = 'data/same_seed/pbs_visible80'
     output_folder = 'figures/ss'
     os.makedirs(output_folder, exist_ok=True)
-    
+
     # Calculate inversion counts for each configuration for PoS and PBS
     pos_results = process_all_files(pos_data_folder)
     pbs_results = process_all_files(pbs_data_folder)
-    
+
     # Determine shared color scale limits
     all_inversion_counts = [count for user_counts in pos_results.values() for count in user_counts.values()]
     all_inversion_counts += [count for user_counts in pbs_results.values() for count in user_counts.values()]
