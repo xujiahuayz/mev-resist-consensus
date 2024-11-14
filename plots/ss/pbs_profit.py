@@ -127,7 +127,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     
     plt.xlabel("Number of Attacking Builders", fontsize=axis_font_size)
     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
-    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=title_font_size)
+    plt.title(f"User Attacker Number: {user_attack_count}", fontsize=title_font_size)
     plt.legend(loc="upper right", fontsize=tick_font_size)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=tick_font_size)
     plt.yticks(fontsize=tick_font_size)
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     data_folder = 'data/same_seed/pbs_visible80'
     output_folder = 'figures/ss'
     os.makedirs(output_folder, exist_ok=True)
-    user_attack_counts = [0, 12, 24]
+    user_attack_counts = [0, 12, 24, 50]
 
     for user_count in user_attack_counts:
         cache_file = os.path.join(output_folder, f"pbs_aggregated_data_user_attack_{user_count}.json")
