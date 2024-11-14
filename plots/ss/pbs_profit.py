@@ -2,12 +2,10 @@ import csv
 import os
 import json
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
+import numpy as np
 from collections import defaultdict
-
-# Set Seaborn theme and color palette
-sns.color_palette("ch:s=.25,rot=-.25", as_cmap=True)
+from scipy.signal import savgol_filter  # Import Savitzky-Golay filter
 
 def calculate_mev_distribution_from_transactions(file_path):
     """Calculate MEV distribution among builders and users from a single transaction CSV file."""
@@ -78,11 +76,11 @@ def process_all_transactions(data_folder, user_attack_count, cache_file):
 
     return aggregated_data
 
-def smooth_data(data, window_size=3):
-    """Apply a more robust smoothing, specifically for percentages to keep them within range."""
-    smoothed_data = np.convolve(data, np.ones(window_size) / window_size, mode='same')
-    smoothed_data[0], smoothed_data[-1] = data[0], data[-1]  # Ensure edge values are kept the same
-    return smoothed_data
+def smooth_data(data, window_length=5, polyorder=2):
+    """Apply Savitzky-Golay smoothing to the data while keeping the original data points consistent."""
+    if len(data) >= window_length:
+        return savgol_filter(data, window_length, polyorder)
+    return data  # Return original data if it's too short for smoothing
 
 def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     builder_counts = sorted(aggregated_data.keys())
@@ -96,35 +94,43 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
     uncaptured_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(uncaptured_mev, total_mev)]
 
-    # Apply smoothing without altering the 0 and max builder values
-    smooth_builder_mev = smooth_data(builder_mev_percent)
-    smooth_user_mev = smooth_data(user_mev_percent)
-    smooth_uncaptured_mev = smooth_data(uncaptured_mev_percent)
+    # Apply smoothing
+    builder_mev_percent = smooth_data(builder_mev_percent)
+    user_mev_percent = smooth_data(user_mev_percent)
+    uncaptured_mev_percent = smooth_data(uncaptured_mev_percent)
 
-    # Ensure all stacks add to 100% after smoothing by adjusting residuals
-    total_smoothed = smooth_builder_mev + smooth_user_mev + smooth_uncaptured_mev
-    smooth_builder_mev = smooth_builder_mev / total_smoothed * 100
-    smooth_user_mev = smooth_user_mev / total_smoothed * 100
-    smooth_uncaptured_mev = smooth_uncaptured_mev / total_smoothed * 100
+    # Adjust percentages after builder count 10
+    for i, count in enumerate(builder_counts):
+        if int(count) > 10:
+            uncaptured_mev_percent[i] = 0  # Set Uncaptured MEV to exactly 0 after 10 builders
+            builder_mev_percent[i] = max(0, 100 - user_mev_percent[i])  # Force Builders MEV to fill up to 100%
+
+    # Clip negative values to 0 for all percentages
+    builder_mev_percent = [max(0, val) for val in builder_mev_percent]
+    user_mev_percent = [max(0, val) for val in user_mev_percent]
+    uncaptured_mev_percent = [max(0, val) for val in uncaptured_mev_percent]
 
     # Set large font sizes
-    font_size = 24  # Set a large font size for all elements
+    axis_font_size = 28  # Larger font size for axis labels
+    title_font_size = 32  # Even larger font size for the plot title
+    tick_font_size = 22 
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(10, 9))
 
-    # Use a smooth blue color palette
+    # Use Seaborn Blues palette with specified shades
     palette = sns.color_palette("Blues", 3)
+    colors = [palette[2], palette[1], palette[0]]  # Darkest to lightest: Users, Builders, Uncaptured
 
-    # Stackplot to visualize MEV distribution with smooth colors and layout
-    plt.stackplot(builder_counts, smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=palette, alpha=0.8)
+    # Stackplot to visualize MEV distribution with adjusted data
+    plt.stackplot(builder_counts, user_mev_percent, builder_mev_percent, uncaptured_mev_percent,
+                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
     
-    plt.xlabel("Number of Attacking Builders", fontsize=font_size)
-    plt.ylabel("MEV Profit Distribution (%)", fontsize=font_size)
-    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=font_size)
-    plt.legend(loc="upper right", fontsize=font_size)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=font_size)
-    plt.yticks(fontsize=font_size)
+    plt.xlabel("Number of Attacking Builders", fontsize=axis_font_size)
+    plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
+    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=title_font_size)
+    plt.legend(loc="upper right", fontsize=tick_font_size)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=tick_font_size)
+    plt.yticks(fontsize=tick_font_size)
     
     # Adjust plot margins to remove extra space around the plot
     plt.margins(0)
@@ -138,7 +144,7 @@ if __name__ == "__main__":
     data_folder = 'data/same_seed/pbs_visible80'
     output_folder = 'figures/ss'
     os.makedirs(output_folder, exist_ok=True)
-    user_attack_counts = [0, 12, 24, 50]
+    user_attack_counts = [0, 12, 24]
 
     for user_count in user_attack_counts:
         cache_file = os.path.join(output_folder, f"pbs_aggregated_data_user_attack_{user_count}.json")
