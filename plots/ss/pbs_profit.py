@@ -3,7 +3,11 @@ import os
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from collections import defaultdict
+
+# Set Seaborn theme and color palette
+sns.color_palette("ch:s=.25,rot=-.25", as_cmap=True)
 
 def calculate_mev_distribution_from_transactions(file_path):
     """Calculate MEV distribution among builders and users from a single transaction CSV file."""
@@ -103,21 +107,29 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     smooth_user_mev = smooth_user_mev / total_smoothed * 100
     smooth_uncaptured_mev = smooth_uncaptured_mev / total_smoothed * 100
 
-    plt.figure(figsize=(12, 12))  # Make the plot square
+    # Set large font sizes
+    font_size = 24  # Set a large font size for all elements
 
-    # Stackplot to visualize MEV distribution
+    plt.figure(figsize=(10, 10))
+
+    # Use a smooth blue color palette
+    palette = sns.color_palette("Blues", 3)
+
+    # Stackplot to visualize MEV distribution with smooth colors and layout
     plt.stackplot(builder_counts, smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
+                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=palette, alpha=0.8)
     
-    plt.xlabel("Number of Attacking Builders", fontsize=20)
-    plt.ylabel("MEV Profit Distribution (%)", fontsize=20)
-    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=24)
-    plt.legend(loc="upper right", fontsize=14)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.margins(0)  # Remove extra space around the plot
-    plt.tight_layout(pad=0)  # Ensure the plot fills the space
-    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)  # Remove extra space in the saved image
+    plt.xlabel("Number of Attacking Builders", fontsize=font_size)
+    plt.ylabel("MEV Profit Distribution (%)", fontsize=font_size)
+    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=font_size)
+    plt.legend(loc="upper right", fontsize=font_size)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=font_size)
+    plt.yticks(fontsize=font_size)
+    
+    # Adjust plot margins to remove extra space around the plot
+    plt.margins(0)
+    plt.tight_layout(pad=0)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
     plt.close()
 
     print(f"Plot saved to {save_path}")
@@ -129,7 +141,7 @@ if __name__ == "__main__":
     user_attack_counts = [0, 12, 24, 50]
 
     for user_count in user_attack_counts:
-        cache_file = os.path.join(output_folder, f"aggregated_data_user_attack_{user_count}.json")
+        cache_file = os.path.join(output_folder, f"pbs_aggregated_data_user_attack_{user_count}.json")
         aggregated_data = process_all_transactions(data_folder, user_count, cache_file)
-        save_path = os.path.join(output_folder, f"mev_distribution_user_attack_{user_count}.png")
+        save_path = os.path.join(output_folder, f"pbs_mev_distribution_user_attack_{user_count}.png")
         plot_mev_distribution(aggregated_data, user_count, save_path)
