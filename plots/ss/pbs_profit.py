@@ -103,7 +103,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     smooth_user_mev = smooth_user_mev / total_smoothed * 100
     smooth_uncaptured_mev = smooth_uncaptured_mev / total_smoothed * 100
 
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(12, 12))  # Make the plot square
 
     # Stackplot to visualize MEV distribution
     plt.stackplot(builder_counts, smooth_user_mev, smooth_builder_mev, smooth_uncaptured_mev,
@@ -115,8 +115,9 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     plt.legend(loc="upper right", fontsize=14)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=14)
     plt.yticks(fontsize=14)
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.margins(0)  # Remove extra space around the plot
+    plt.tight_layout(pad=0)  # Ensure the plot fills the space
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)  # Remove extra space in the saved image
     plt.close()
 
     print(f"Plot saved to {save_path}")
