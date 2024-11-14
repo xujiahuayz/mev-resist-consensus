@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import matplotlib.ticker as ticker
 
 def inversionen(arr):
     """
@@ -122,15 +123,21 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
 
     plt.figure(figsize=(12, 10))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
-    plt.xlabel(x_label, fontsize=24)
-    plt.ylabel("Number of Attacking Users", fontsize=24)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=20)
-    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 10, 20, 30, 40, 50], fontsize=20)
+    plt.xlabel(x_label, fontsize=30)
+    plt.ylabel("Number of Attacking Users", fontsize=30)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=26)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 10, 20, 30, 40, 50], fontsize=26)
+
+    plt.gca().invert_yaxis()
     
-    # Increase font size of color bar label and ticks
+    # Access the color bar and customize its label and tick size
     cbar = plt.gca().collections[0].colorbar
-    cbar.set_label("Inversion Count", size=24)
-    cbar.ax.tick_params(labelsize=20)
+    cbar.set_label("Inversion Count", size=26)
+    cbar.ax.tick_params(labelsize=24)
+
+    # Format the color bar tick labels to make them more readable, e.g., from 1e8 to 100M
+    cbar.formatter = ticker.FuncFormatter(lambda x, _: f'{int(x / 1e6):,}M')
+    cbar.update_ticks()
 
     plt.tight_layout()
     
