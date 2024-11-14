@@ -120,17 +120,17 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     """
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
 
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(12, 10))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
-    plt.xlabel(x_label, fontsize=20)
-    plt.ylabel("Number of Attacking Users", fontsize=20)
-    plt.xticks([0, 5, 10, 20], fontsize=16)
-    plt.yticks([0, 10, 20], fontsize=16)
+    plt.xlabel(x_label, fontsize=24)
+    plt.ylabel("Number of Attacking Users", fontsize=24)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=20)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 10, 20, 30, 40, 50], fontsize=20)
     
     # Increase font size of color bar label and ticks
     cbar = plt.gca().collections[0].colorbar
-    cbar.set_label("Inversion Count", size=20)
-    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label("Inversion Count", size=24)
+    cbar.ax.tick_params(labelsize=20)
 
     plt.tight_layout()
     
