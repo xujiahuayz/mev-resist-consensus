@@ -162,9 +162,9 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
 
     # Stackplot to visualize MEV distribution with adjusted data
     plt.stackplot(validator_counts, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
+                  labels=["Users MEV", "Validators MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
     
-    plt.xlabel("Number of Attacking Builders", fontsize=axis_font_size)
+    plt.xlabel("Number of Attacking Validators", fontsize=axis_font_size)
     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
     plt.title(f"User Attacker Number: {user_attack_count}", fontsize=title_font_size)
     plt.legend(loc="upper right", fontsize=tick_font_size)
