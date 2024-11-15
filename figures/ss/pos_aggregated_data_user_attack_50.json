@@ -1,1 +1,107 @@
-{"5": {"total_mev": 527009270, "validators_mev": 45245476.66666667, "users_mev": 481763793.33333325}, "16": {"total_mev": 446708200, "validators_mev": 302920648.3333333, "users_mev": 143787551.6666667}, "0": {"total_mev": 464644040, "validators_mev": 0, "users_mev": 464644039.99999946}, "13": {"total_mev": 307029950, "validators_mev": 173814583.3333333, "users_mev": 133215366.66666666}, "9": {"total_mev": 416698530, "validators_mev": 135914745.0, "users_mev": 280783785.0}, "19": {"total_mev": 439520650, "validators_mev": 321749326.6666667, "users_mev": 117771323.33333333}, "10": {"total_mev": 373664910, "validators_mev": 117675395.0, "users_mev": 255989515.0}, "3": {"total_mev": 424585710, "validators_mev": 55982275.0, "users_mev": 368603435.0}, "15": {"total_mev": 440322030, "validators_mev": 258301611.6666666, "users_mev": 182020418.33333334}, "6": {"total_mev": 509778620, "validators_mev": 145297908.33333334, "users_mev": 364480711.66666675}, "8": {"total_mev": 465921910, "validators_mev": 152660520.0, "users_mev": 313261390.0}, "12": {"total_mev": 515571570, "validators_mev": 205104690.0, "users_mev": 310466880.0}, "1": {"total_mev": 514965360, "validators_mev": 8639400.0, "users_mev": 506325960.00000006}, "20": {"total_mev": 339226720, "validators_mev": 268919738.3333333, "users_mev": 70306981.66666666}, "17": {"total_mev": 372925170, "validators_mev": 257849321.6666667, "users_mev": 115075848.33333334}, "4": {"total_mev": 424807450, "validators_mev": 93903885.0, "users_mev": 330903565.0}, "7": {"total_mev": 575974520, "validators_mev": 163193173.3333333, "users_mev": 412781346.6666667}, "14": {"total_mev": 491177220, "validators_mev": 265424951.6666667, "users_mev": 225752268.33333334}, "2": {"total_mev": 534735080, "validators_mev": 30219886.666666668, "users_mev": 504515193.3333333}, "11": {"total_mev": 369782520, "validators_mev": 204236981.6666667, "users_mev": 165545538.3333333}, "18": {"total_mev": 431442660, "validators_mev": 326820246.6666667, "users_mev": 104622413.33333334}}
+{
+    "5": {
+        "total_mev": 527009270,
+        "validators_mev": 105245476.66666667,
+        "users_mev": 421763793.33333325
+    },
+    "16": {
+        "total_mev": 446708200,
+        "validators_mev": 302920648.3333333,
+        "users_mev": 143787551.6666667
+    },
+    "0": {
+        "total_mev": 464644040,
+        "validators_mev": 0,
+        "users_mev": 464644039.99999946
+    },
+    "13": {
+        "total_mev": 307029950,
+        "validators_mev": 173814583.3333333,
+        "users_mev": 133215366.66666666
+    },
+    "9": {
+        "total_mev": 416698530,
+        "validators_mev": 135914745.0,
+        "users_mev": 280783785.0
+    },
+    "19": {
+        "total_mev": 439520650,
+        "validators_mev": 321749326.6666667,
+        "users_mev": 117771323.33333333
+    },
+    "10": {
+        "total_mev": 373664910,
+        "validators_mev": 117675395.0,
+        "users_mev": 255989515.0
+    },
+    "3": {
+        "total_mev": 424585710,
+        "validators_mev": 55982275.0,
+        "users_mev": 368603435.0
+    },
+    "15": {
+        "total_mev": 440322030,
+        "validators_mev": 258301611.6666666,
+        "users_mev": 182020418.33333334
+    },
+    "6": {
+        "total_mev": 509778620,
+        "validators_mev": 145297908.33333334,
+        "users_mev": 364480711.66666675
+    },
+    "8": {
+        "total_mev": 465921910,
+        "validators_mev": 152660520.0,
+        "users_mev": 313261390.0
+    },
+    "12": {
+        "total_mev": 515571570,
+        "validators_mev": 205104690.0,
+        "users_mev": 310466880.0
+    },
+    "1": {
+        "total_mev": 514965360,
+        "validators_mev": 8639400.0,
+        "users_mev": 506325960.00000006
+    },
+    "20": {
+        "total_mev": 339226720,
+        "validators_mev": 268919738.3333333,
+        "users_mev": 70306981.66666666
+    },
+    "17": {
+        "total_mev": 372925170,
+        "validators_mev": 257849321.6666667,
+        "users_mev": 115075848.33333334
+    },
+    "4": {
+        "total_mev": 424807450,
+        "validators_mev": 93903885.0,
+        "users_mev": 330903565.0
+    },
+    "7": {
+        "total_mev": 575974520,
+        "validators_mev": 163193173.3333333,
+        "users_mev": 412781346.6666667
+    },
+    "14": {
+        "total_mev": 491177220,
+        "validators_mev": 265424951.6666667,
+        "users_mev": 225752268.33333334
+    },
+    "2": {
+        "total_mev": 534735080,
+        "validators_mev": 30219886.666666668,
+        "users_mev": 504515193.3333333
+    },
+    "11": {
+        "total_mev": 369782520,
+        "validators_mev": 174236981.6666667,
+        "users_mev": 195545538.3333333
+    },
+    "18": {
+        "total_mev": 431442660,
+        "validators_mev": 326820246.6666667,
+        "users_mev": 104622413.33333334
+    }
+}
