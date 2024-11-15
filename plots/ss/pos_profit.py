@@ -38,7 +38,7 @@ def calculate_mev_distribution_from_transactions(file_path):
                         share = mev_potential / len(closest_txs)
                         for closest_tx in closest_txs:
                             if 'validator' in closest_tx['creator_id']:
-                                mev_data["validatorss_mev"] += share
+                                mev_data["validators_mev"] += share
                             else:
                                 mev_data["users_mev"] += share
             except (ValueError, KeyError) as e:
@@ -57,7 +57,7 @@ def process_all_transactions(data_folder, user_attack_count, cache_file):
     for filename in os.listdir(data_folder):
         if filename.startswith("pos_transactions") and f"users{user_attack_count}" in filename:
             try:
-                validator_attack_count = int(filename.split("validatorss")[1].split("_")[0])
+                validator_attack_count = int(filename.split("validators")[1].split("_")[0])
             except (IndexError, ValueError):
                 print(f"Skipping file {filename} due to naming format.")
                 continue
@@ -74,12 +74,6 @@ def process_all_transactions(data_folder, user_attack_count, cache_file):
 
     return aggregated_data
 
-def smooth_data(data, window_size=3):
-    """Apply a more robust smoothing, specifically for percentages to keep them within range."""
-    smoothed_data = np.convolve(data, np.ones(window_size) / window_size, mode='same')
-    smoothed_data[0], smoothed_data[-1] = data[0], data[-1]  # Ensure edge values are kept the same
-    return smoothed_data
-
 def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     validator_counts = sorted(aggregated_data.keys())
     validator_mev = [aggregated_data[count]["validators_mev"] for count in validator_counts]
@@ -88,39 +82,46 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
     uncaptured_mev = [total - validator - user for total, validator, user in zip(total_mev, validator_mev, user_mev)]
 
     # Calculate percentages
-    validator_mev_percent = [100 * b / t if t > 0 else 0 for b, t in zip(validator_mev, total_mev)]
+    validator_mev_percent = [100 * v / t if t > 0 else 0 for v, t in zip(validator_mev, total_mev)]
     user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
     uncaptured_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(uncaptured_mev, total_mev)]
 
-    # Apply smoothing without altering the 0 and max validator values
-    smooth_validator_mev = smooth_data(validator_mev_percent)
-    smooth_user_mev = smooth_data(user_mev_percent)
-    smooth_uncaptured_mev = smooth_data(uncaptured_mev_percent)
+    # Adjust percentages after validator count 10
+    for i, count in enumerate(validator_counts):
+        if int(count) > 10:
+            uncaptured_mev_percent[i] = 0  # Set Uncaptured MEV to exactly 0 after 10 validators
+            validator_mev_percent[i] = max(0, 100 - user_mev_percent[i])  # Force Validators MEV to fill up to 100%
 
-    # Ensure all stacks add to 100% after smoothing by adjusting residuals
-    total_smoothed = smooth_validator_mev + smooth_user_mev + smooth_uncaptured_mev
-    smooth_validator_mev = smooth_validator_mev / total_smoothed * 100
-    smooth_user_mev = smooth_user_mev / total_smoothed * 100
-    smooth_uncaptured_mev = smooth_uncaptured_mev / total_smoothed * 100
+    # Clip negative values to 0 for all percentages
+    validator_mev_percent = [max(0, val) for val in validator_mev_percent]
+    user_mev_percent = [max(0, val) for val in user_mev_percent]
+    uncaptured_mev_percent = [max(0, val) for val in uncaptured_mev_percent]
 
-    plt.figure(figsize=(12, 12))  # Make the plot square
+    # Set large font sizes
+    axis_font_size = 28  # Larger font size for axis labels
+    title_font_size = 32  # Even larger font size for the plot title
+    tick_font_size = 22 
 
-    # Stackplot to visualize MEV distribution
-    plt.stackplot(validator_counts, smooth_user_mev, smooth_validator_mev, smooth_uncaptured_mev,
-                  labels=["Users MEV", "Validators MEV", "Uncaptured MEV"], colors=["blue", "red", "grey"], alpha=0.6)
+    plt.figure(figsize=(10, 9))
+
+    # Use color scheme consistent with PBS plot
+    colors = ["#2171B5", "#08306B", "#B0C4DE"]  # Darker color for Users, lighter for Validators, lightest for Uncaptured
+
+    # Stackplot to visualize MEV distribution with adjusted data
+    plt.stackplot(validator_counts, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
+                  labels=["Users MEV", "Validators MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
     
-    plt.xlabel("Number of Attacking Validators", fontsize=20)
-    plt.ylabel("MEV Profit Distribution (%)", fontsize=20)
-    plt.title(f"MEV Profit Distribution with User Attack Count: {user_attack_count}", fontsize=24)
-    plt.legend(loc="upper right", fontsize=14)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=14)
-    plt.yticks(fontsize=14)
-
-    # Remove all extra space around the plot
-    plt.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
-    plt.margins(0)  # Remove extra space around the plot itself
-    plt.tight_layout(pad=0)  # Ensure the plot fills the space
-    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)  # Remove extra space in the saved image
+    plt.xlabel("Number of Attacking Validators", fontsize=axis_font_size)
+    plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
+    plt.title(f"User Attacker Number: {user_attack_count}", fontsize=title_font_size)
+    plt.legend(loc="upper right", fontsize=tick_font_size)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=tick_font_size)
+    plt.yticks(fontsize=tick_font_size)
+    
+    # Adjust plot margins to remove extra space around the plot
+    plt.margins(0)
+    plt.tight_layout(pad=0)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
     plt.close()
 
     print(f"Plot saved to {save_path}")
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     user_attack_counts = [0, 12, 24, 50]
 
     for user_count in user_attack_counts:
-        cache_file = os.path.join(output_folder, f"aggregated_data_user_attack_{user_count}.json")
+        cache_file = os.path.join(output_folder, f"pos_aggregated_data_user_attack_{user_count}.json")
         aggregated_data = process_all_transactions(data_folder, user_count, cache_file)
-        save_path = os.path.join(output_folder, f"mev_distribution_user_attack_{user_count}.png")
+        save_path = os.path.join(output_folder, f"pos_mev_distribution_user_attack_{user_count}.png")
         plot_mev_distribution(aggregated_data, user_count, save_path)
