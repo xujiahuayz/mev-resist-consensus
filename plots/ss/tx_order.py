@@ -124,7 +124,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     plt.figure(figsize=(12, 10))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
     plt.xlabel(x_label, fontsize=30)
-    plt.ylabel("Number of Attacking Users", fontsize=30)
+    plt.ylabel("Percentage of Attacking Users", fontsize=30)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=26)
     plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=26)
 
