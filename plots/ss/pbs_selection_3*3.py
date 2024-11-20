@@ -41,63 +41,90 @@ def get_builder_counts_by_block(file_path, builder_attack_count):
 
     return attacking_counts, non_attacking_counts
 
-def parse_filename(filename):
-    """Parse the filename to extract builder and user attack counts."""
-    match = re.search(r'builders(\d+)_users(\d+)', filename)
-    if match:
-        try:
-            builder_attack_count = int(match.group(1))
-            user_attack_count = int(match.group(2))
-            return builder_attack_count, user_attack_count
-        except ValueError:
-            print(f"Could not parse builder or user attack counts from filename: {filename}")
-    else:
-        print(f"Skipping file with unexpected format: {filename}")
-    return None, None
-
 def plot_cumulative_selections_over_blocks(data_folder, configs):
-    """Plot cumulative selections over blocks for specified builder and user attack configurations as a 3x3 grid."""
+    """Plot cumulative selections over blocks for specified builder and user attack configurations in a 3x3 grid."""
     # Ensure the output directory exists
     output_dir = 'figures/ss'
     os.makedirs(output_dir, exist_ok=True)
 
-    # Set up the 3x3 grid
-    fig, axes = plt.subplots(3, 3, figsize=(15, 15))
+    # Extract unique counts of builders and users for row/column labels
+    builder_counts = sorted(set(config[0] for config in configs))
+    user_counts = sorted(set(config[1] for config in configs))
+
+    # Adjust figsize to maintain square subplots
+    fig, axes = plt.subplots(len(user_counts), len(builder_counts), figsize=(9.5, 9), squeeze=False)
     y_limit = 1000  # Set common y-axis limit for consistency across plots
-    
-    # Updated font sizes
-    title_font_size = 20  # Larger font for titles
-    label_font_size = 18  # Larger font for axis labels
-    legend_font_size = 14  # Larger font for legend
-    tick_label_font_size = 14  # Larger font for axis tick labels
+
+    # Font sizes for readability
+    label_font_size = 12
+    tick_label_font_size = 12
+    outer_label_font_size = 16
+
+    # Create handles for a unified legend
+    handles = []
+    labels = []
 
     for i, (builder_attack_count, user_attack_count) in enumerate(configs):
         filename = f"pbs_block_data_builders{builder_attack_count}_users{user_attack_count}.csv"
         file_path = os.path.join(data_folder, filename)
+
+        row = user_counts.index(user_attack_count)
+        col = builder_counts.index(builder_attack_count)
+        ax = axes[row, col]
         
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
+            ax.text(0.5, 0.5, "File Not Found", ha='center', va='center', fontsize=label_font_size)
+            ax.set_axis_off()
             continue
         
         attacking_counts, non_attacking_counts = get_builder_counts_by_block(file_path, builder_attack_count)
         block_numbers = list(range(len(attacking_counts)))
 
-        # Locate subplot position
-        ax = axes[i // 3, i % 3]
-        
-        # Plot cumulative selections
-        ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Builders', color='red', alpha=0.5)
-        ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Builders', color='blue', alpha=0.5)
-        ax.set_xlabel('Block Number', fontsize=label_font_size)
-        ax.set_ylabel('Cumulative Selections', fontsize=label_font_size)
-        ax.set_title(f'Attacking Builder Number = {builder_attack_count}\nAttacking User Number = {user_attack_count}', fontsize=title_font_size)
+        # Plot cumulative selections without subplot titles
+        line1, = ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Builders', color='red', alpha=0.5)
+        line2, = ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Builders', color='blue', alpha=0.5)
         ax.set_ylim(0, y_limit)
-        ax.legend(loc='upper left', fontsize=legend_font_size)
         
-        # Set tick label font size for both x and y axes
+        # Add handles and labels for the legend
+        if not handles:
+            handles.extend([line1, line2])
+            labels.extend(['Attacking Builders', 'Non-Attacking Builders'])
+        
+        if row != len(user_counts) - 1:  # Not bottom row
+            ax.tick_params(axis='x', labelbottom=False)  # Hide x-axis labels but keep tick marks
+        if col != 0:  # Not leftmost column
+            ax.tick_params(axis='y', labelleft=False)  # Hide y-axis labels but keep tick marks
+
+        # Set axis labels only for edge subplots
+        if row == len(user_counts) - 1:
+            ax.set_xlabel('Block Number', fontsize=label_font_size)
+        
+        # Set tick label font size
         ax.tick_params(axis='both', labelsize=tick_label_font_size)
 
-    plt.tight_layout()
+    # Add outer titles for rows and columns
+    for ax, col_val in zip(axes[0], builder_counts):
+        ax.set_title(f'Attacking Builders: {col_val}', fontsize=outer_label_font_size, pad=20)
+    
+    for ax, row_val in zip(axes[:, 0], user_counts):
+        ax.annotate(
+            f'Attacking Users: {row_val}', 
+            xy=(0, 0.5), xytext=(-0.4, 0.5),
+            textcoords='axes fraction', ha='center', va='center',
+            fontsize=outer_label_font_size, rotation=90, annotation_clip=False
+        )
+        ax.annotate(
+            "Cumulative Selections", 
+            xy=(0, 0.5), xytext=(-0.25, 0.5),
+            textcoords='axes fraction', ha='center', va='center',
+            fontsize=label_font_size, rotation=90, annotation_clip=False
+        )
+
+    # Add a single legend to the bottom right
+    fig.legend(handles, labels, loc='lower right', fontsize=12, frameon=False)
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])  # Adjust layout to fit the legend
     output_path = os.path.join(output_dir, 'pbs_cumulative_selection_3x3_grid.png')
     plt.savefig(output_path, dpi=300)
     plt.close()

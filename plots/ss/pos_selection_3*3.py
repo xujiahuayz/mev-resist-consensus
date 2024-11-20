@@ -42,7 +42,6 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
     return attacking_counts, non_attacking_counts
 
 def plot_cumulative_selections_over_blocks(data_folder, configs):
-    """Plot cumulative selections over blocks for specified validator and user attack configurations in a 3x3 grid."""
     # Ensure the output directory exists
     output_dir = 'figures/ss'
     os.makedirs(output_dir, exist_ok=True)
@@ -52,7 +51,7 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     user_counts = sorted(set(config[1] for config in configs))
 
     # Adjust figsize to maintain square subplots
-    fig, axes = plt.subplots(len(user_counts), len(validator_counts), figsize=(10, 9), squeeze=False)
+    fig, axes = plt.subplots(len(user_counts), len(validator_counts), figsize=(9.5, 9), squeeze=False)
     y_limit = 1000  # Set common y-axis limit for consistency across plots
 
     # Font sizes for readability
@@ -91,11 +90,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
             handles.extend([line1, line2])
             labels.extend(['Attacking Validators', 'Non-Attacking Validators'])
         
+        if row != len(user_counts) - 1:  # Not bottom row
+            ax.tick_params(axis='x', labelbottom=False)  # Hide x-axis labels but keep tick marks
+        if col != 0:  # Not leftmost column
+            ax.tick_params(axis='y', labelleft=False)  # Hide y-axis labels but keep tick marks
+
         # Set axis labels only for edge subplots
         if row == len(user_counts) - 1:
             ax.set_xlabel('Block Number', fontsize=label_font_size)
-        if col == 0:
-            ax.set_ylabel('Cumulative Selections', fontsize=label_font_size)
         
         # Set tick label font size
         ax.tick_params(axis='both', labelsize=tick_label_font_size)
@@ -105,7 +107,18 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         ax.set_title(f'Attacking Validators: {col_val}', fontsize=outer_label_font_size, pad=20)
     
     for ax, row_val in zip(axes[:, 0], user_counts):
-        ax.set_ylabel(f'Attacking Users: {row_val}\nCumulative Selections', fontsize=outer_label_font_size, labelpad=10)
+        ax.annotate(
+            f'Attacking Users: {row_val}', 
+            xy=(0, 0.5), xytext=(-0.4, 0.5),
+            textcoords='axes fraction', ha='center', va='center',
+            fontsize=outer_label_font_size, rotation=90, annotation_clip=False
+        )
+        ax.annotate(
+            "Cumulative Selections", 
+            xy=(0, 0.5), xytext=(-0.25, 0.5),
+            textcoords='axes fraction', ha='center', va='center',
+            fontsize=label_font_size, rotation=90, annotation_clip=False
+        )
 
     # Add a single legend to the bottom right
     fig.legend(handles, labels, loc='lower right', fontsize=12, frameon=False)
