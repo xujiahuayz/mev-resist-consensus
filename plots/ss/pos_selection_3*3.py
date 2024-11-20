@@ -51,14 +51,18 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     validator_counts = sorted(set(config[0] for config in configs))
     user_counts = sorted(set(config[1] for config in configs))
 
-    fig, axes = plt.subplots(len(user_counts), len(validator_counts), figsize=(15, 15), squeeze=False)
+    # Adjust figsize to maintain square subplots
+    fig, axes = plt.subplots(len(user_counts), len(validator_counts), figsize=(10, 9), squeeze=False)
     y_limit = 1000  # Set common y-axis limit for consistency across plots
 
     # Font sizes for readability
-    label_font_size = 18
-    legend_font_size = 14
-    tick_label_font_size = 14
-    title_font_size = 22
+    label_font_size = 12
+    tick_label_font_size = 12
+    outer_label_font_size = 16
+
+    # Create handles for a unified legend
+    handles = []
+    labels = []
 
     for i, (validator_attack_count, user_attack_count) in enumerate(configs):
         filename = f"pos_block_data_validators{validator_attack_count}_users{user_attack_count}.csv"
@@ -78,10 +82,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         block_numbers = list(range(len(attacking_counts)))
 
         # Plot cumulative selections without subplot titles
-        ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Validators', color='red', alpha=0.5)
-        ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Validators', color='blue', alpha=0.5)
+        line1, = ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Validators', color='red', alpha=0.5)
+        line2, = ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Validators', color='blue', alpha=0.5)
         ax.set_ylim(0, y_limit)
-        ax.legend(loc='upper left', fontsize=legend_font_size)
+        
+        # Add handles and labels for the legend
+        if not handles:
+            handles.extend([line1, line2])
+            labels.extend(['Attacking Validators', 'Non-Attacking Validators'])
         
         # Set axis labels only for edge subplots
         if row == len(user_counts) - 1:
@@ -92,15 +100,18 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         # Set tick label font size
         ax.tick_params(axis='both', labelsize=tick_label_font_size)
 
-    # Add outer titles for rows and columns
+    # Add outer titles for rows and columns without "Number"
     for ax, col_val in zip(axes[0], validator_counts):
-        ax.set_title(f'Attacking Validator Number = {col_val}', fontsize=title_font_size, pad=20)
+        ax.set_title(f'Attacking Validators: {col_val}', fontsize=outer_label_font_size, pad=20)
     
-    for ax, row_val in zip(axes[:,0], user_counts):
-        ax.set_ylabel(f'Attacking User Number = {row_val}\nCumulative Selections', fontsize=label_font_size, labelpad=40)
+    for ax, row_val in zip(axes[:, 0], user_counts):
+        ax.set_ylabel(f'Attacking Users: {row_val}\nCumulative Selections', fontsize=outer_label_font_size, labelpad=10)
 
-    plt.tight_layout()
-    output_path = os.path.join(output_dir, 'pos_cumulative_selection_3x3_grid_with_outer_titles.png')
+    # Add a single legend to the bottom right
+    fig.legend(handles, labels, loc='lower right', fontsize=12, frameon=False)
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])  # Adjust layout to fit the legend
+    output_path = os.path.join(output_dir, 'pos_cumulative_selection_3x3_grid.png')
     plt.savefig(output_path, dpi=300)
     plt.close()
 
