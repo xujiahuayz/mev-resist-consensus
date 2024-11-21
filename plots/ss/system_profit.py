@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from matplotlib import ticker
 
 def calculate_mev_from_transactions(file_path):
     """
@@ -130,7 +131,6 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     plt.close()
     print(f"Heatmap saved to {output_path}")
 
-
 if __name__ == "__main__":
     # Define input and output folders
     pbs_folder = 'data/same_seed/pbs_visible80'
@@ -148,8 +148,10 @@ if __name__ == "__main__":
     pos_profit.to_csv(os.path.join(output_folder, "pos_profit.csv"))
     profit_difference.to_csv(os.path.join(output_folder, "profit_difference.csv"))
 
+    # Determine vmin and vmax for heatmap color scale
+    vmin = profit_difference.min().min()
+    vmax = profit_difference.max().max()
+
     # Plot heatmap
     heatmap_path = os.path.join(output_folder, "profit_difference_heatmap.png")
-    plot_heatmap(profit_difference, "PBS-PoS Profit Difference Heatmap", heatmap_path)
-
-
+    plot_heatmap(profit_difference, "PBS-PoS Profit Difference Heatmap", vmin, vmax, output_folder, "Percentage of Attacking Entities")
