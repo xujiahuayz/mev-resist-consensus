@@ -1,24 +1,16 @@
-"""We simulate only the bidding with 24 rounds in this file"""
-
 import random
 import os
 import csv
-import time
-import multiprocessing as mp
-from blockchain_env.user import User
 from blockchain_env.transaction import Transaction
+from blockchain_env.user import User
 from copy import deepcopy
 
-# Constants
-BLOCKNUM = 100
 BLOCK_CAP = 100
+BLOCK_NUM = 100
 USERNUM = 50
 BUILDERNUM = 20
 
-# Seed for reproducibility
-random.seed(16)
-
-class Builder:
+class ModifiedBuilder:
     def __init__(self, builder_id, is_attacker):
         self.id = builder_id
         self.is_attacker = is_attacker
@@ -27,7 +19,6 @@ class Builder:
         self.selected_transactions = []
 
     def launch_attack(self, block_num, target_transaction, attack_type):
-        # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
         mev_potential = 0
         gas_fee = 0
 
@@ -35,19 +26,16 @@ class Builder:
         created_at = block_num
         target_tx = target_transaction
 
-        # Create the attack transaction
         attack_transaction = Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
         attack_transaction.attack_type = attack_type
         return attack_transaction
 
     def receive_transaction(self, transaction):
-        # Builder receives transaction and adds to mempool
         self.mempool.append(deepcopy(transaction))
 
     def select_transactions(self, block_num):
         selected_transactions = []
         if self.is_attacker:
-            # Sort transactions by mev potential + gas fee for attackers
             self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
             for transaction in self.mempool:
                 if len(selected_transactions) < BLOCK_CAP:
@@ -67,7 +55,6 @@ class Builder:
                     else:
                         selected_transactions.append(transaction)
         else:
-            # Sort transactions by gas fee for non-attackers
             self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
             for transaction in self.mempool:
                 if len(selected_transactions) < BLOCK_CAP:
@@ -77,33 +64,26 @@ class Builder:
 
     def bid(self, selected_transactions):
         total_gas_fee = sum(tx.gas_fee for tx in selected_transactions)
-        
-        # Initial block value is based on total gas fee
         block_value = total_gas_fee
-        
-        # Check if the builder is an attacker and has launched any attack
-        if self.is_attacker:
-            # Sum the MEV potential of targeted transactions if any attacks are launched
-            mev_gain = sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
-            block_value += mev_gain  # Add MEV profit to block value for attackers
 
-        # Initial bid is 50% of the adjusted block value
+        if self.is_attacker:
+            mev_gain = sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
+            block_value += mev_gain
+
         bid = 0.5 * block_value
 
-        # Reactive strategy over 5 rounds of bidding
+        bid_values = []
         for _ in range(24):
-            # Get current highest bid from history in the builder's mempool
             gas_fees = [tx.gas_fee for tx in self.mempool]
-            if len(gas_fees) == 0:
-                break  # If no transactions in the mempool, exit the loop
+            if not gas_fees:
+                bid_values.append(bid)
+                continue
 
             highest_bid = max(gas_fees)
-            
+
             if highest_bid > bid:
-                # Increase bid by 0.1 times the highest bid
                 bid = min(highest_bid, bid + 0.1 * highest_bid)
             else:
-                # Get the second highest bid if possible, else use the current bid
                 sorted_bids = sorted(gas_fees, reverse=True)
                 if len(sorted_bids) > 1:
                     second_highest_bid = sorted_bids[1]
@@ -111,14 +91,14 @@ class Builder:
                 else:
                     bid = max(0.5 * highest_bid, bid)
 
-        # Return the final bid for this builder
-        return bid
+            bid_values.append(bid)
+
+        return bid_values, block_value
 
     def get_mempool(self):
         return self.mempool
-    
+
     def clear_mempool(self, block_num):
-        # clear any transsaction that is already included onchain, and also clear pending transactions that has been in mempool for too long
         timer = block_num - 5
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
 
@@ -150,37 +130,34 @@ def process_block(block_num, users, builders):
     for builder in builders:
         selected_transactions = builder.select_transactions(block_num)
         bid_values, block_value = builder.bid(selected_transactions)
-        builder_results.append((builder.id, selected_transactions, bid_values, block_value))
+        builder_results.append((builder.id, bid_values, block_value))
 
-    highest_bid = max(builder_results, key=lambda x: x[3])
-    highest_bid_builder = next(b for b in builders if b.id == highest_bid[0])
-
-    for position, tx in enumerate(highest_bid[1]):
-        tx.position = position
-        tx.included_at = block_num
-
-    all_block_transactions.extend(highest_bid[1])
-    total_gas_fee = sum(tx.gas_fee for tx in highest_bid[1])
-    total_mev = sum(tx.mev_potential for tx in highest_bid[1])
-
-    block_data = {
-        "block_num": block_num,
-        "builder_id": highest_bid_builder.id,
-        "total_gas_fee": total_gas_fee,
-        "total_mev": total_mev
-    }
+    highest_bid = max(builder_results, key=lambda x: x[2])
 
     for builder in builders:
         builder.clear_mempool(block_num)
 
-    return block_data, all_block_transactions
+    return builder_results
 
-def simulate_pbs(num_attacker_builders, num_attacker_users):
-    builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
-    users = [User(f"user_{i}", i < num_attacker_users, builders) for i in range(USERNUM)]
+def simulate_pbs():
+    attack_variants = [0, 5, 10, 15, 20]
 
-    for block_num in range(BLOCKNUM):
-        block_data, all_block_transactions = process_block(block_num, users, builders)
+    for num_attack_builders in attack_variants:
+        builders = [ModifiedBuilder(f"builder_{i}", i < num_attack_builders) for i in range(BUILDERNUM)]
+        users = [User(f"user_{i}", i < USERNUM // 2, builders) for i in range(USERNUM)]
+
+        output_file = f"data/same_seed/bid_builder{num_attack_builders}.csv"
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+        with open(output_file, mode="w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["block_num", "builder_id", "bid_round", "bid_value", "block_value"])
+
+            for block_num in range(BLOCK_NUM):
+                builder_results = process_block(block_num, users, builders)
+                for builder_id, bid_values, block_value in builder_results:
+                    for bid_round, bid_value in enumerate(bid_values):
+                        writer.writerow([block_num, builder_id, bid_round, bid_value, block_value])
 
 if __name__ == "__main__":
-    simulate_pbs(num_attacker_builders=5, num_attacker_users=USERNUM // 2)
+    simulate_pbs()
