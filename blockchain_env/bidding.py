@@ -6,12 +6,11 @@ import csv
 import time
 import multiprocessing as mp
 from blockchain_env.user import User
-# from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
 
 # Constants
-BLOCKNUM = 1000
+BLOCKNUM = 100
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
@@ -92,7 +91,7 @@ class Builder:
         bid = 0.5 * block_value
 
         # Reactive strategy over 5 rounds of bidding
-        for _ in range(5):
+        for _ in range(24):
             # Get current highest bid from history in the builder's mempool
             gas_fees = [tx.gas_fee for tx in self.mempool]
             if len(gas_fees) == 0:
@@ -123,8 +122,6 @@ class Builder:
         timer = block_num - 5
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
 
-
-
 def transaction_number():
     random_number = random.randint(0, 100)
     if random_number < 50:
@@ -138,6 +135,7 @@ def transaction_number():
 
 def process_block(block_num, users, builders):
     all_block_transactions = []
+
     for user in users:
         num_transactions = transaction_number()
         for _ in range(num_transactions):
@@ -145,24 +143,22 @@ def process_block(block_num, users, builders):
                 tx = user.create_transactions(block_num)
             else:
                 tx = user.launch_attack(block_num)
-            
             if tx:
                 user.broadcast_transactions(tx)
 
     builder_results = []
-    bid_values = []
     for builder in builders:
         selected_transactions = builder.select_transactions(block_num)
-        bid_value = builder.bid(selected_transactions)
-        builder_results.append((builder.id, selected_transactions, bid_value))
-    
-    highest_bid = max(builder_results, key=lambda x: x[2])
+        bid_values, block_value = builder.bid(selected_transactions)
+        builder_results.append((builder.id, selected_transactions, bid_values, block_value))
+
+    highest_bid = max(builder_results, key=lambda x: x[3])
     highest_bid_builder = next(b for b in builders if b.id == highest_bid[0])
-    
+
     for position, tx in enumerate(highest_bid[1]):
         tx.position = position
         tx.included_at = block_num
-    
+
     all_block_transactions.extend(highest_bid[1])
     total_gas_fee = sum(tx.gas_fee for tx in highest_bid[1])
     total_mev = sum(tx.mev_potential for tx in highest_bid[1])
@@ -183,10 +179,8 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
     builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
     users = [User(f"user_{i}", i < num_attacker_users, builders) for i in range(USERNUM)]
 
-    # Initialize a fresh pool for each simulation run
-    with mp.Pool(processes=num_processes) as pool:
-        results = pool.starmap(process_block, [(block_num, users, builders) for block_num in range(BLOCKNUM)])
-    
+    for block_num in range(BLOCKNUM):
+        block_data, all_block_transactions = process_block(block_num, users, builders)
 
 if __name__ == "__main__":
-    pass
+    simulate_pbs(num_attacker_builders=5, num_attacker_users=USERNUM // 2)
