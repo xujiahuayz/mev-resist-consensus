@@ -129,10 +129,16 @@ def process_block(block_num, users, builders):
     builder_results = []
     for builder in builders:
         selected_transactions = builder.select_transactions(block_num)
-        bid_values, block_value = builder.bid(selected_transactions)
+        bid_values = []
+        block_value = 0
+        for round_num in range(24):
+            # Recalculate bids for each round
+            bid, current_block_value = builder.bid(selected_transactions)
+            bid_values.append(bid)
+            block_value = current_block_value  # The block value remains constant within a block
         builder_results.append((builder.id, bid_values, block_value))
 
-    highest_bid = max(builder_results, key=lambda x: x[2])
+    highest_bid = max(builder_results, key=lambda x: x[1][-1])  # Compare the final round bid for each builder
 
     for builder in builders:
         builder.clear_mempool(block_num)
