@@ -116,30 +116,34 @@ def transaction_number():
 def process_block(block_num, users, builders):
     all_block_transactions = []
 
+    # Broadcast user transactions
     for user in users:
         num_transactions = transaction_number()
         for _ in range(num_transactions):
-            if not user.is_attacker:
-                tx = user.create_transactions(block_num)
-            else:
-                tx = user.launch_attack(block_num)
+            tx = user.launch_attack(block_num) if user.is_attacker else user.create_transactions(block_num)
             if tx:
                 user.broadcast_transactions(tx)
 
     builder_results = []
     for builder in builders:
+        # Select transactions for the block
         selected_transactions = builder.select_transactions(block_num)
-        bid_values = []
-        block_value = 0
-        for round_num in range(24):
-            # Recalculate bids for each round
-            bid, current_block_value = builder.bid(selected_transactions)
-            bid_values.append(bid)
-            block_value = current_block_value  # The block value remains constant within a block
+        
+        # Simulate bidding across rounds
+        block_value = sum(tx.gas_fee for tx in selected_transactions)  # Calculate block value
+        if builder.is_attacker:
+            block_value += sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
+        
+        bid_values = []  # Store individual bids per round
+        current_bid = 0.5 * block_value  # Initial bid
+        for _ in range(24):  # 24 bidding rounds
+            highest_gas_fee = max([tx.gas_fee for tx in builder.mempool], default=0)
+            current_bid = max(current_bid, 0.5 * (highest_gas_fee + current_bid))
+            bid_values.append(current_bid)  # Record bid for the round
+        
         builder_results.append((builder.id, bid_values, block_value))
 
-    highest_bid = max(builder_results, key=lambda x: x[1][-1])  # Compare the final round bid for each builder
-
+    # Clear old transactions from mempools
     for builder in builders:
         builder.clear_mempool(block_num)
 
@@ -163,6 +167,7 @@ def simulate_pbs():
                 builder_results = process_block(block_num, users, builders)
                 for builder_id, bid_values, block_value in builder_results:
                     for bid_round, bid_value in enumerate(bid_values):
+                        # Record a single bid value for each round
                         writer.writerow([block_num, builder_id, bid_round, bid_value, block_value])
 
 if __name__ == "__main__":
