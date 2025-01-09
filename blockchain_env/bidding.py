@@ -71,9 +71,10 @@ class ModifiedBuilder:
             block_value += mev_gain
 
         bid = 0.5 * block_value
-
         bid_values = []
-        for _ in range(24):
+
+        for round_number in range(24):  # 24 bidding rounds
+            # Dynamically adjust the mempool by removing transactions after they are "included" in bids
             gas_fees = [tx.gas_fee for tx in self.mempool]
             if not gas_fees:
                 bid_values.append(bid)
@@ -90,6 +91,9 @@ class ModifiedBuilder:
                     bid = max(0.5 * (highest_bid + second_highest_bid), bid)
                 else:
                     bid = max(0.5 * highest_bid, bid)
+
+            # Remove the transaction corresponding to the highest bid from the mempool
+            self.mempool = [tx for tx in self.mempool if tx.gas_fee != highest_bid]
 
             bid_values.append(bid)
 
@@ -128,19 +132,9 @@ def process_block(block_num, users, builders):
     for builder in builders:
         # Select transactions for the block
         selected_transactions = builder.select_transactions(block_num)
-        
+
         # Simulate bidding across rounds
-        block_value = sum(tx.gas_fee for tx in selected_transactions)  # Calculate block value
-        if builder.is_attacker:
-            block_value += sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
-        
-        bid_values = []  # Store individual bids per round
-        current_bid = 0.5 * block_value  # Initial bid
-        for _ in range(24):  # 24 bidding rounds
-            highest_gas_fee = max([tx.gas_fee for tx in builder.mempool], default=0)
-            current_bid = max(current_bid, 0.5 * (highest_gas_fee + current_bid))
-            bid_values.append(current_bid)  # Record bid for the round
-        
+        bid_values, block_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, bid_values, block_value))
 
     # Clear old transactions from mempools
