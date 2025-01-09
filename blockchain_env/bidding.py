@@ -62,7 +62,7 @@ class ModifiedBuilder:
 
         return selected_transactions
 
-    def bid(self, selected_transactions):
+    def bid(self, selected_transactions, all_bids):
         total_gas_fee = sum(tx.gas_fee for tx in selected_transactions)
         block_value = total_gas_fee
 
@@ -71,31 +71,29 @@ class ModifiedBuilder:
             block_value += mev_gain
 
         bid = 0.5 * block_value
-        bid_values = []
 
-        for round_number in range(24):  # 24 bidding rounds
-            # Dynamically adjust the mempool by removing transactions after they are "included" in bids
+        bid_values = []
+        for round_number in range(24):
+            # Get current highest and second-highest bids from all_bids
+            round_bids = [bids[round_number] for bids in all_bids.values() if len(bids) > round_number]
+            current_highest_bid = max(round_bids, default=0)
+            second_highest_bid = sorted(round_bids, reverse=True)[1] if len(round_bids) > 1 else 0
+
             gas_fees = [tx.gas_fee for tx in self.mempool]
             if not gas_fees:
                 bid_values.append(bid)
+                print(f"Builder {self.id}, Round {round_number}: Bid recorded as {bid}")
                 continue
 
-            highest_bid = max(gas_fees)
-
-            if highest_bid > bid:
-                bid = min(highest_bid, bid + 0.1 * highest_bid)
+            if current_highest_bid > bid:
+                # Increase bid to compete
+                bid = min(current_highest_bid, bid + 0.1 * current_highest_bid)
             else:
-                sorted_bids = sorted(gas_fees, reverse=True)
-                if len(sorted_bids) > 1:
-                    second_highest_bid = sorted_bids[1]
-                    bid = max(0.5 * (highest_bid + second_highest_bid), bid)
-                else:
-                    bid = max(0.5 * highest_bid, bid)
-
-            # Remove the transaction corresponding to the highest bid from the mempool
-            self.mempool = [tx for tx in self.mempool if tx.gas_fee != highest_bid]
+                # Adjust based on second-highest bid
+                bid = max(second_highest_bid + 0.5 * (current_highest_bid - second_highest_bid), bid)
 
             bid_values.append(bid)
+            print(f"Builder {self.id}, Round {round_number}: Bid recorded as {bid}")
 
         return bid_values, block_value
 
@@ -119,6 +117,7 @@ def transaction_number():
 
 def process_block(block_num, users, builders):
     all_block_transactions = []
+    all_bids = {builder.id: [] for builder in builders}  # Initialize empty bids for all builders
 
     # Broadcast user transactions
     for user in users:
@@ -134,7 +133,8 @@ def process_block(block_num, users, builders):
         selected_transactions = builder.select_transactions(block_num)
 
         # Simulate bidding across rounds
-        bid_values, block_value = builder.bid(selected_transactions)
+        bid_values, block_value = builder.bid(selected_transactions, all_bids)
+        all_bids[builder.id] = bid_values  # Update all_bids with the current builder's bids
         builder_results.append((builder.id, bid_values, block_value))
 
     # Clear old transactions from mempools
