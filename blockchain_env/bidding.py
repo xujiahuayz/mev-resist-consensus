@@ -88,9 +88,10 @@ class ModifiedBuilder:
             if current_highest_bid > bid:
                 # Increase bid to compete
                 bid = min(current_highest_bid, bid + 0.1 * current_highest_bid)
-            else:
+            elif current_highest_bid < bid:
                 # Adjust based on second-highest bid
                 bid = max(second_highest_bid + 0.5 * (current_highest_bid - second_highest_bid), bid)
+            # elif current highest bid == bid:
 
             bid_values.append(bid)
             print(f"Builder {self.id}, Round {round_number}: Bid recorded as {bid}")
