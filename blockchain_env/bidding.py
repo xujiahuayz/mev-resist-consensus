@@ -1,169 +1,112 @@
 import random
-import os
 import csv
+from copy import deepcopy
 from blockchain_env.transaction import Transaction
 from blockchain_env.user import User
-from copy import deepcopy
 
 BLOCK_CAP = 100
-BLOCK_NUM = 100
-USERNUM = 50
-BUILDERNUM = 20
+MAX_ROUNDS = 24
+BUILDER_COUNT = 20
 
 class ModifiedBuilder:
-    def __init__(self, builder_id, is_attacker):
+    def __init__(self, builder_id, strategy="reactive"):
         self.id = builder_id
-        self.is_attacker = is_attacker
-        self.balance = 0
+        self.strategy = strategy
         self.mempool = []
         self.selected_transactions = []
-
-    def launch_attack(self, block_num, target_transaction, attack_type):
-        mev_potential = 0
-        gas_fee = 0
-
-        creator_id = self.id
-        created_at = block_num
-        target_tx = target_transaction
-
-        attack_transaction = Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
-        attack_transaction.attack_type = attack_type
-        return attack_transaction
+        self.bid_history = []  # Stores bids for historical rounds
 
     def receive_transaction(self, transaction):
         self.mempool.append(deepcopy(transaction))
 
-    def select_transactions(self, block_num):
-        selected_transactions = []
-        if self.is_attacker:
-            self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
-            for transaction in self.mempool:
-                if len(selected_transactions) < BLOCK_CAP:
-                    if transaction.mev_potential > 0:
-                        attack_type = random.choice(['front', 'back'])
-                        attack_transaction = self.launch_attack(block_num, transaction, attack_type)
+    def select_transactions(self):
+        self.mempool.sort(key=lambda tx: tx.mev_potential + tx.gas_fee, reverse=True)
+        self.selected_transactions = self.mempool[:BLOCK_CAP]
 
-                        if attack_type == 'front':
-                            selected_transactions.append(attack_transaction)
-                            selected_transactions.append(transaction)
-                        elif attack_type == 'back':
-                            selected_transactions.append(transaction)
-                            selected_transactions.append(attack_transaction)
+    def calculate_block_value(self):
+        gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
+        mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
+        return gas_fee + mev_value
 
-                        if len(selected_transactions) > BLOCK_CAP:
-                            selected_transactions.pop()
-                    else:
-                        selected_transactions.append(transaction)
+    def place_bid(self, round_num, block_value, last_round_bids):
+        if self.strategy == "reactive" and round_num > 0:
+            # Reactive strategy logic
+            my_last_bid = self.bid_history[-1] if self.bid_history else 0
+            highest_last_bid = max(last_round_bids, default=0)
+            second_highest_last_bid = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0
+
+            if my_last_bid < highest_last_bid:
+                # Not the highest bid: raise bid
+                bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
+            elif my_last_bid == highest_last_bid:
+                # Tied with another builder: raise bid
+                bid = my_last_bid + 0.5 * (block_value - my_last_bid)
+            else:
+                # Highest bid: reduce bid
+                bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
+        elif self.strategy == "late_enter" and round_num > 18:
+            # Late enter strategy: bid aggressively in later rounds
+            bid = 0.5 * block_value + random.uniform(0.1, 0.3) * block_value
+        elif self.strategy == "random":
+            # Random strategy: random bid based on block value
+            bid = random.uniform(0.4, 0.6) * block_value
         else:
-            self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
-            for transaction in self.mempool:
-                if len(selected_transactions) < BLOCK_CAP:
-                    selected_transactions.append(transaction)
+            # Default bid (for the first round or non-reactive builders)
+            bid = 0.5 * block_value
 
-        return selected_transactions
+        self.bid_history.append(bid)
+        return bid
 
-    def bid(self, selected_transactions, all_bids):
-        total_gas_fee = sum(tx.gas_fee for tx in selected_transactions)
-        block_value = total_gas_fee
+    def clear_mempool(self):
+        self.mempool = []
 
-        if self.is_attacker:
-            mev_gain = sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
-            block_value += mev_gain
+def simulate_auction(builders, users, num_blocks=100):
+    all_block_data = []
 
-        bid = 0.5 * block_value
+    for block_num in range(num_blocks):
+        auction_end = random.randint(20, MAX_ROUNDS)
+        last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
 
-        bid_values = []
-        for round_number in range(24):
-            # Get current highest and second-highest bids from all_bids
-            round_bids = [bids[round_number] for bids in all_bids.values() if len(bids) > round_number]
-            current_highest_bid = max(round_bids, default=0)
-            second_highest_bid = sorted(round_bids, reverse=True)[1] if len(round_bids) > 1 else 0
+        for round_num in range(auction_end):
+            for user in users:
+                tx_count = random.randint(1, 5)
+                for _ in range(tx_count):
+                    tx = user.create_transactions(round_num)
+                    for builder in user.visible_builders:
+                        builder.receive_transaction(tx)
 
-            gas_fees = [tx.gas_fee for tx in self.mempool]
-            if not gas_fees:
-                bid_values.append(bid)
-                print(f"Builder {self.id}, Round {round_number}: Bid recorded as {bid}")
-                continue
+            round_bids = []
+            for builder in builders:
+                builder.select_transactions()
+                block_value = builder.calculate_block_value()
+                bid = builder.place_bid(round_num, block_value, last_round_bids)
+                round_bids.append(bid)
+                all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
 
-            if current_highest_bid > bid:
-                # Increase bid to compete
-                bid = min(current_highest_bid, bid + 0.1 * current_highest_bid)
-            elif current_highest_bid < bid:
-                # Adjust based on second-highest bid
-                bid = max(second_highest_bid + 0.5 * (current_highest_bid - second_highest_bid), bid)
-            # elif current highest bid == bid:
+            last_round_bids = round_bids  # Update for the next round
 
-            bid_values.append(bid)
-            print(f"Builder {self.id}, Round {round_number}: Bid recorded as {bid}")
+            for builder in builders:
+                builder.clear_mempool()
 
-        return bid_values, block_value
+    return all_block_data
 
-    def get_mempool(self):
-        return self.mempool
 
-    def clear_mempool(self, block_num):
-        timer = block_num - 5
-        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
+def save_results(block_data, num_attack_builders):
+    output_file = f"data/same_seed/bid_builder{num_attack_builders}.csv"
+    with open(output_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["block_num", "round_num", "builder_id", "strategy", "bid", "block_value"])
+        writer.writerows(block_data)
 
-def transaction_number():
-    random_number = random.randint(0, 100)
-    if random_number < 50:
-        return 1
-    elif random_number < 80:
-        return 0
-    elif random_number < 95:
-        return 2
-    else:
-        return random.randint(3, 5)
-
-def process_block(block_num, users, builders):
-    all_block_transactions = []
-    all_bids = {builder.id: [] for builder in builders}  # Initialize empty bids for all builders
-
-    # Broadcast user transactions
-    for user in users:
-        num_transactions = transaction_number()
-        for _ in range(num_transactions):
-            tx = user.launch_attack(block_num) if user.is_attacker else user.create_transactions(block_num)
-            if tx:
-                user.broadcast_transactions(tx)
-
-    builder_results = []
-    for builder in builders:
-        # Select transactions for the block
-        selected_transactions = builder.select_transactions(block_num)
-
-        # Simulate bidding across rounds
-        bid_values, block_value = builder.bid(selected_transactions, all_bids)
-        all_bids[builder.id] = bid_values  # Update all_bids with the current builder's bids
-        builder_results.append((builder.id, bid_values, block_value))
-
-    # Clear old transactions from mempools
-    for builder in builders:
-        builder.clear_mempool(block_num)
-
-    return builder_results
-
-def simulate_pbs():
-    attack_variants = [0, 5, 10, 15, 20]
-
-    for num_attack_builders in attack_variants:
-        builders = [ModifiedBuilder(f"builder_{i}", i < num_attack_builders) for i in range(BUILDERNUM)]
-        users = [User(f"user_{i}", i < USERNUM // 2, builders) for i in range(USERNUM)]
-
-        output_file = f"data/same_seed/bid_builder{num_attack_builders}.csv"
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-
-        with open(output_file, mode="w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["block_num", "builder_id", "bid_round", "bid_value", "block_value"])
-
-            for block_num in range(BLOCK_NUM):
-                builder_results = process_block(block_num, users, builders)
-                for builder_id, bid_values, block_value in builder_results:
-                    for bid_round, bid_value in enumerate(bid_values):
-                        # Record a single bid value for each round
-                        writer.writerow([block_num, builder_id, bid_round, bid_value, block_value])
 
 if __name__ == "__main__":
-    simulate_pbs()
+    for num_attack_builders in [0, 5, 10, 15, 20]:
+        # Assign specific strategies: 5 late, 5 random, 10 reactive
+        builders = (
+            [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
+            [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
+            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
+        )
+        users = [User(f"user_{i}", False, builders) for i in range(50)]
+        block_data = simulate_auction(builders, users, num_blocks=100)
+        save_results(block_data, num_attack_builders)
