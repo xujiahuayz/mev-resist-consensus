@@ -102,11 +102,12 @@ def save_results(block_data, num_attack_builders):
 if __name__ == "__main__":
     for num_attack_builders in [0, 5, 10, 15, 20]:
         # Assign specific strategies: 5 late, 5 random, 10 reactive
-        builders = (
-            [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
-        )
+        # builders = (
+        #     [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
+        #     [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
+        #     [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
+        # )
+        builders = [ModifiedBuilder(f"builder_{i}", strategy="reactive") for i in range(BUILDER_COUNT)]
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, num_blocks=100)
         save_results(block_data, num_attack_builders)
