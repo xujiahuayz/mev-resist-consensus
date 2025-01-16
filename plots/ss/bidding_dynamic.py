@@ -49,6 +49,7 @@ def plot_bid_dynamics(file_path, block_number):
 
     plt.xlabel('Bidding Round', fontsize=20)
     plt.ylabel('Bid Value', fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=18)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
@@ -89,6 +90,7 @@ def plot_block_value_dynamics(file_path, block_number):
 
     plt.xlabel('Bidding Round', fontsize=20)
     plt.ylabel('Block Value', fontsize=20)
+    plt.tick_params(axis='both', which='major', labelsize=18)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
