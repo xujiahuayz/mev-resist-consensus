@@ -7,21 +7,65 @@ from blockchain_env.user import User
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
+BLOCK_NUM = 100
 
 class ModifiedBuilder:
-    def __init__(self, builder_id, strategy="reactive"):
+    def __init__(self, builder_id, is_attacker, strategy="reactive"):
         self.id = builder_id
+        self.is_attacker = is_attacker
         self.strategy = strategy
         self.mempool = []
         self.selected_transactions = []
         self.bid_history = []  # Stores bids for historical rounds
 
+    def launch_attack(self, block_num, target_transaction, attack_type):
+        # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
+        mev_potential = 0
+        gas_fee = 0
+
+        creator_id = self.id
+        created_at = block_num
+        target_tx = target_transaction
+
+        # Create the attack transaction
+        attack_transaction = Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
+        attack_transaction.attack_type = attack_type
+        return attack_transaction
+
     def receive_transaction(self, transaction):
+        # Builder receives transaction and adds to mempool
         self.mempool.append(deepcopy(transaction))
 
-    def select_transactions(self):
-        self.mempool.sort(key=lambda tx: tx.mev_potential + tx.gas_fee, reverse=True)
-        self.selected_transactions = self.mempool[:BLOCK_CAP]
+    def select_transactions(self, block_num):
+        selected_transactions = []
+        if self.is_attacker:
+            # Sort transactions by mev potential + gas fee for attackers
+            self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
+            for transaction in self.mempool:
+                if len(selected_transactions) < BLOCK_CAP:
+                    if transaction.mev_potential > 0:
+                        attack_type = random.choice(['front', 'back'])
+                        attack_transaction = self.launch_attack(block_num, transaction, attack_type)
+
+                        if attack_type == 'front':
+                            selected_transactions.append(attack_transaction)
+                            selected_transactions.append(transaction)
+                        elif attack_type == 'back':
+                            selected_transactions.append(transaction)
+                            selected_transactions.append(attack_transaction)
+
+                        if len(selected_transactions) > BLOCK_CAP:
+                            selected_transactions.pop()
+                    else:
+                        selected_transactions.append(transaction)
+        else:
+            # Sort transactions by gas fee for non-attackers
+            self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
+            for transaction in self.mempool:
+                if len(selected_transactions) < BLOCK_CAP:
+                    selected_transactions.append(transaction)
+
+        return selected_transactions
 
     def calculate_block_value(self):
         gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
@@ -54,10 +98,17 @@ class ModifiedBuilder:
         self.bid_history.append(bid)
         return bid
 
-    def clear_mempool(self):
-        self.mempool = []
+    def get_mempool(self):
+        return self.mempool
+    
+    def clear_mempool(self, block_num):
+        # clear any transsaction that is already included onchain, and also clear pending transactions that has been in mempool for too long
+        timer = block_num - 5
+        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
 
-def simulate_auction(builders, users, num_blocks=100):
+
+
+def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
     all_block_data = []
 
     for block_num in range(num_blocks):
@@ -99,8 +150,8 @@ def save_results(block_data, num_attack_builders):
 if __name__ == "__main__":
     for num_attack_builders in [0, 5, 10, 15, 20]:
         builders = (
-            [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(15)]
+            [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(5)] +
+            [ModifiedBuilder(f"builder_{i+10}", is_attacker=True, strategy="reactive") for i in range(15)]
         )
         # builders = [ModifiedBuilder(f"builder_{i}", strategy="reactive") for i in range(BUILDER_COUNT)]
         users = [User(f"user_{i}", False, builders) for i in range(50)]
