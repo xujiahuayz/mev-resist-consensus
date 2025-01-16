@@ -8,6 +8,7 @@ BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
 
+
 class ModifiedBuilder:
     def __init__(self, builder_id, strategy="reactive"):
         self.id = builder_id
@@ -57,8 +58,10 @@ class ModifiedBuilder:
         self.bid_history.append(bid)
         return bid
 
-    def clear_mempool(self):
-        self.mempool = []
+    def clear_included_transactions(self, included_transactions):
+        # Remove only transactions that were included in the block
+        self.mempool = [tx for tx in self.mempool if tx not in included_transactions]
+
 
 def simulate_auction(builders, users, num_blocks=100):
     all_block_data = []
@@ -85,8 +88,13 @@ def simulate_auction(builders, users, num_blocks=100):
 
             last_round_bids = round_bids  # Update for the next round
 
-            for builder in builders:
-                builder.clear_mempool()
+        # Determine the winning builder (highest bid in the last round)
+        winning_builder = builders[last_round_bids.index(max(last_round_bids))]
+        included_transactions = winning_builder.selected_transactions
+
+        # Remove included transactions from all builders' mempools
+        for builder in builders:
+            builder.clear_included_transactions(included_transactions)
 
     return all_block_data
 
@@ -102,12 +110,11 @@ def save_results(block_data, num_attack_builders):
 if __name__ == "__main__":
     for num_attack_builders in [0, 5, 10, 15, 20]:
         # Assign specific strategies: 5 late, 5 random, 10 reactive
-        # builders = (
-        #     [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
-        #     [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
-        #     [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
-        # )
-        builders = [ModifiedBuilder(f"builder_{i}", strategy="reactive") for i in range(BUILDER_COUNT)]
+        builders = (
+            [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
+            [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
+            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
+        )
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, num_blocks=100)
         save_results(block_data, num_attack_builders)
