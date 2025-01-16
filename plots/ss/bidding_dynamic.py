@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import numpy as np
+import random
+
+random.seed(16)
 
 def plot_bid_dynamics(file_path, block_number):
     # Define the output file path within the function
