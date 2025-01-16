@@ -8,7 +8,6 @@ BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
 
-
 class ModifiedBuilder:
     def __init__(self, builder_id, strategy="reactive"):
         self.id = builder_id
@@ -30,10 +29,10 @@ class ModifiedBuilder:
         return gas_fee + mev_value
 
     def place_bid(self, round_num, block_value, last_round_bids):
+        highest_last_bid = max(last_round_bids, default=0)
         if self.strategy == "reactive" and round_num > 0:
             # Reactive strategy logic
             my_last_bid = self.bid_history[-1] if self.bid_history else 0
-            highest_last_bid = max(last_round_bids, default=0)
             second_highest_last_bid = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0
 
             if my_last_bid < highest_last_bid:
@@ -45,12 +44,9 @@ class ModifiedBuilder:
             else:
                 # Highest bid: reduce bid
                 bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
-        elif self.strategy == "late_enter" and round_num > 18:
+        elif self.strategy == "late_enter" and round_num > 20:
             # Late enter strategy: bid aggressively in later rounds
-            bid = 0.5 * block_value + random.uniform(0.1, 0.3) * block_value
-        elif self.strategy == "random":
-            # Random strategy: random bid based on block value
-            bid = random.uniform(0.4, 0.6) * block_value
+            bid = min (1.05 * highest_last_bid, block_value)
         else:
             # Default bid (for the first round or non-reactive builders)
             bid = 0.5 * block_value
@@ -58,10 +54,8 @@ class ModifiedBuilder:
         self.bid_history.append(bid)
         return bid
 
-    def clear_included_transactions(self, included_transactions):
-        # Remove only transactions that were included in the block
-        self.mempool = [tx for tx in self.mempool if tx not in included_transactions]
-
+    def clear_mempool(self):
+        self.mempool = []
 
 def simulate_auction(builders, users, num_blocks=100):
     all_block_data = []
@@ -88,13 +82,8 @@ def simulate_auction(builders, users, num_blocks=100):
 
             last_round_bids = round_bids  # Update for the next round
 
-        # Determine the winning builder (highest bid in the last round)
-        winning_builder = builders[last_round_bids.index(max(last_round_bids))]
-        included_transactions = winning_builder.selected_transactions
-
-        # Remove included transactions from all builders' mempools
-        for builder in builders:
-            builder.clear_included_transactions(included_transactions)
+            for builder in builders:
+                builder.clear_mempool()
 
     return all_block_data
 
@@ -109,12 +98,11 @@ def save_results(block_data, num_attack_builders):
 
 if __name__ == "__main__":
     for num_attack_builders in [0, 5, 10, 15, 20]:
-        # Assign specific strategies: 5 late, 5 random, 10 reactive
         builders = (
             [ModifiedBuilder(f"builder_{i}", strategy="late_enter") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+5}", strategy="random") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(10)]
+            [ModifiedBuilder(f"builder_{i+10}", strategy="reactive") for i in range(15)]
         )
+        # builders = [ModifiedBuilder(f"builder_{i}", strategy="reactive") for i in range(BUILDER_COUNT)]
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, num_blocks=100)
         save_results(block_data, num_attack_builders)
