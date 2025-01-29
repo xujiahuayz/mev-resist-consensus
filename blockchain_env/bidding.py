@@ -4,6 +4,7 @@ from copy import deepcopy
 from blockchain_env.transaction import Transaction
 from blockchain_env.user import User
 
+# Constants
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
@@ -38,6 +39,7 @@ class ModifiedBuilder:
 
     def select_transactions(self, block_num):
         selected_transactions = []
+        print(f"Builder {self.id} mempool size: {len(self.mempool)}")
         if self.is_attacker:
             # Sort transactions by mev potential + gas fee for attackers
             self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
@@ -65,11 +67,18 @@ class ModifiedBuilder:
                 if len(selected_transactions) < BLOCK_CAP:
                     selected_transactions.append(transaction)
 
+        print(f"Builder {self.id} selected {len(selected_transactions)} transactions")
+        self.selected_transactions = selected_transactions  # Update the selected_transactions attribute
         return selected_transactions
 
     def calculate_block_value(self):
+        if not self.selected_transactions:
+            print(f"Builder {self.id} has no selected transactions")
+            return 0
+
         gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
         mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
+        print(f"Builder {self.id} block value: gas_fee={gas_fee}, mev_value={mev_value}")
         return gas_fee + mev_value
 
     def place_bid(self, round_num, block_value, last_round_bids):
@@ -90,22 +99,22 @@ class ModifiedBuilder:
                 bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
         elif self.strategy == "late_enter" and round_num > 20:
             # Late enter strategy: bid aggressively in later rounds
-            bid = min (1.05 * highest_last_bid, block_value)
+            bid = min(1.05 * highest_last_bid, block_value)
         else:
             # Default bid (for the first round or non-reactive builders)
             bid = 0.5 * block_value
 
         self.bid_history.append(bid)
+        print(f"Builder {self.id} placed bid: {bid} (block_value={block_value})")
         return bid
 
     def get_mempool(self):
         return self.mempool
-    
-    def clear_mempool(self, block_num):
-        # clear any transsaction that is already included onchain, and also clear pending transactions that has been in mempool for too long
-        timer = block_num - 5
-        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
 
+    def clear_mempool(self, block_num):
+        # Clear any transaction that is already included onchain, and also clear pending transactions that have been in mempool for too long
+        timer = block_num - 5
+        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at >= timer]
 
 
 def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
@@ -119,13 +128,15 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
             for user in users:
                 tx_count = random.randint(1, 5)
                 for _ in range(tx_count):
-                    tx = user.create_transactions(round_num)
+                    tx = user.create_transactions(block_num)
+                    print(f"User {user.id} created transaction: gas_fee={tx.gas_fee}, mev_potential={tx.mev_potential}")
                     for builder in user.visible_builders:
                         builder.receive_transaction(tx)
+                        print(f"Transaction added to builder {builder.id}'s mempool")
 
             round_bids = []
             for builder in builders:
-                builder.select_transactions()
+                builder.select_transactions(block_num)
                 block_value = builder.calculate_block_value()
                 bid = builder.place_bid(round_num, block_value, last_round_bids)
                 round_bids.append(bid)
@@ -134,7 +145,7 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
             last_round_bids = round_bids  # Update for the next round
 
             for builder in builders:
-                builder.clear_mempool()
+                builder.clear_mempool(block_num)
 
     return all_block_data
 
@@ -153,7 +164,6 @@ if __name__ == "__main__":
             [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(5)] +
             [ModifiedBuilder(f"builder_{i+10}", is_attacker=True, strategy="reactive") for i in range(15)]
         )
-        # builders = [ModifiedBuilder(f"builder_{i}", strategy="reactive") for i in range(BUILDER_COUNT)]
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, num_blocks=100)
         save_results(block_data, num_attack_builders)
