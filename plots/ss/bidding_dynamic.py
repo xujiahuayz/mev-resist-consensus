@@ -116,7 +116,7 @@ def plot_block_value_dynamics(file_path, block_number):
     plt.show()
 
 if __name__ == "__main__":
-    file_path = 'data/same_seed/bid_builder20.csv'
+    file_path = 'data/same_seed/bid_builder0.csv'
     block_number = 10
     plot_bid_dynamics(file_path, block_number)
     plot_block_value_dynamics(file_path, block_number)
