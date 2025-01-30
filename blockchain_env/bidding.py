@@ -39,7 +39,6 @@ class ModifiedBuilder:
 
     def select_transactions(self, block_num):
         selected_transactions = []
-        print(f"Builder {self.id} mempool size: {len(self.mempool)}")
         if self.is_attacker:
             # Sort transactions by mev potential + gas fee for attackers
             self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
@@ -67,18 +66,15 @@ class ModifiedBuilder:
                 if len(selected_transactions) < BLOCK_CAP:
                     selected_transactions.append(transaction)
 
-        print(f"Builder {self.id} selected {len(selected_transactions)} transactions")
         self.selected_transactions = selected_transactions  # Update the selected_transactions attribute
         return selected_transactions
 
     def calculate_block_value(self):
         if not self.selected_transactions:
-            print(f"Builder {self.id} has no selected transactions")
             return 0
 
         gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
         mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
-        print(f"Builder {self.id} block value: gas_fee={gas_fee}, mev_value={mev_value}")
         return gas_fee + mev_value
 
     def place_bid(self, round_num, block_value, last_round_bids):
@@ -105,16 +101,14 @@ class ModifiedBuilder:
             bid = 0.5 * block_value
 
         self.bid_history.append(bid)
-        print(f"Builder {self.id} placed bid: {bid} (block_value={block_value})")
         return bid
 
     def get_mempool(self):
         return self.mempool
 
-    def clear_mempool(self, block_num):
-        # Clear any transaction that is already included onchain, and also clear pending transactions that have been in mempool for too long
-        timer = block_num - 5
-        self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at >= timer]
+    def clear_mempool(self, winning_block_transactions):
+        # Clear transactions that are included in the winning block
+        self.mempool = [tx for tx in self.mempool if tx not in winning_block_transactions]
 
 
 def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
@@ -125,15 +119,15 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
         last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
 
         for round_num in range(auction_end):
+            # Users create and broadcast transactions to their visible builders
             for user in users:
                 tx_count = random.randint(1, 5)
                 for _ in range(tx_count):
                     tx = user.create_transactions(block_num)
-                    print(f"User {user.id} created transaction: gas_fee={tx.gas_fee}, mev_potential={tx.mev_potential}")
                     for builder in user.visible_builders:
                         builder.receive_transaction(tx)
-                        print(f"Transaction added to builder {builder.id}'s mempool")
 
+            # Builders select transactions, calculate block value, and place bids
             round_bids = []
             for builder in builders:
                 builder.select_transactions(block_num)
@@ -144,8 +138,14 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
 
             last_round_bids = round_bids  # Update for the next round
 
-            for builder in builders:
-                builder.clear_mempool(block_num)
+        # After the auction ends, determine the winning builder and clear their transactions from all mempools
+        winning_builder_index = round_bids.index(max(round_bids))
+        winning_builder = builders[winning_builder_index]
+        winning_block_transactions = winning_builder.selected_transactions
+
+        # Clear winning block transactions from all builders' mempools
+        for builder in builders:
+            builder.clear_mempool(winning_block_transactions)
 
     return all_block_data
 
