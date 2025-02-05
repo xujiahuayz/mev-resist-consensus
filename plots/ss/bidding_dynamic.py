@@ -5,7 +5,7 @@ import os
 import numpy as np
 import random
 
-random.seed(16)
+# random.seed(16)
 
 def plot_bid_dynamics(file_path, block_number):
     # Define the output file path within the function
@@ -117,7 +117,7 @@ def plot_block_value_dynamics(file_path, block_number):
 
 if __name__ == "__main__":
     file_path = 'data/same_seed/bid_builder10.csv'
-    block_number = 1
+    block_number = 2
     plot_bid_dynamics(file_path, block_number)
     plot_block_value_dynamics(file_path, block_number)
     match_percentage = analyze_data(file_path)

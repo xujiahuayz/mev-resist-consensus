@@ -78,7 +78,7 @@ class ModifiedBuilder:
 
     def place_bid(self, round_num, block_value, last_round_bids):
         highest_last_bid = max(last_round_bids, default=0)
-        if self.strategy == "reactive" and round_num > 0:
+        if self.strategy == "reactive":
             # Reactive strategy logic
             my_last_bid = self.bid_history[-1] if self.bid_history else 0
             second_highest_last_bid = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0
@@ -92,9 +92,12 @@ class ModifiedBuilder:
             else:
                 # Highest bid: reduce bid
                 bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
-        elif self.strategy == "late_enter" and round_num > 20:
+        elif self.strategy == "late_enter":
             # Late enter strategy: bid aggressively in later rounds
-            bid = min(1.05 * highest_last_bid, block_value)
+            if round_num < 20:
+                bid = 0
+            elif round_num >= 20:
+                bid = min(1.05 * highest_last_bid, block_value)
         else:
             # Default bid (for the first round or non-reactive builders)
             bid = 0.5 * block_value
