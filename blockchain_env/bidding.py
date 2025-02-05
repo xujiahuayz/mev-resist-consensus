@@ -94,9 +94,9 @@ class ModifiedBuilder:
                 bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
         elif self.strategy == "late_enter":
             # Late enter strategy: bid aggressively in later rounds
-            if round_num < 20:
+            if round_num < random.randint(17, 22):
                 bid = 0
-            elif round_num >= 20:
+            else:
                 bid = min(1.05 * highest_last_bid, block_value)
         else:
             # Default bid (for the first round or non-reactive builders)
