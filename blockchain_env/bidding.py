@@ -8,7 +8,7 @@ from blockchain_env.user import User
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
-BLOCK_NUM = 100
+BLOCK_NUM = 1
 
 class ModifiedBuilder:
     def __init__(self, builder_id, is_attacker, strategy="reactive"):
@@ -116,7 +116,7 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
 
     for block_num in range(num_blocks):
         auction_end = random.randint(20, MAX_ROUNDS)
-        last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
+        last_round_bids = [0] * len(builders)
 
         for round_num in range(auction_end):
             # Users create and broadcast transactions to their visible builders
@@ -136,7 +136,7 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
                 round_bids.append(bid)
                 all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
 
-            last_round_bids = round_bids  # Update for the next round
+            last_round_bids = round_bids
 
         # After the auction ends, determine the winning builder and clear their transactions from all mempools
         winning_builder_index = round_bids.index(max(round_bids))
@@ -159,11 +159,11 @@ def save_results(block_data, num_attack_builders):
 
 
 if __name__ == "__main__":
-    for num_attack_builders in [0, 5, 10, 15, 20]:
+    for num_attack_builders in [10]:
         builders = (
             [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(5)] +
             [ModifiedBuilder(f"builder_{i+10}", is_attacker=True, strategy="reactive") for i in range(15)]
         )
         users = [User(f"user_{i}", False, builders) for i in range(50)]
-        block_data = simulate_auction(builders, users, num_blocks=100)
-        save_results(block_data, num_attack_builders)
+        block_data = simulate_auction(builders, users, BLOCK_NUM)
+        # save_results(block_data, num_attack_builders)
