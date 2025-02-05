@@ -117,7 +117,7 @@ def plot_block_value_dynamics(file_path, block_number):
 
 if __name__ == "__main__":
     file_path = 'data/same_seed/bid_builder10.csv'
-    block_number = 10
+    block_number = 1
     plot_bid_dynamics(file_path, block_number)
     plot_block_value_dynamics(file_path, block_number)
     match_percentage = analyze_data(file_path)

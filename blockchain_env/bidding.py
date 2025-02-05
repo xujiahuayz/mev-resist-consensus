@@ -8,7 +8,9 @@ from blockchain_env.user import User
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
-BLOCK_NUM = 1
+BLOCK_NUM = 3
+
+random.seed(16)
 
 class ModifiedBuilder:
     def __init__(self, builder_id, is_attacker, strategy="reactive"):
@@ -54,9 +56,6 @@ class ModifiedBuilder:
                         elif attack_type == 'back':
                             selected_transactions.append(transaction)
                             selected_transactions.append(attack_transaction)
-
-                        if len(selected_transactions) > BLOCK_CAP:
-                            selected_transactions.pop()
                     else:
                         selected_transactions.append(transaction)
         else:
@@ -115,37 +114,48 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
     all_block_data = []
 
     for block_num in range(num_blocks):
+        print(f"\n=== Starting Block {block_num} ===")
         auction_end = random.randint(20, MAX_ROUNDS)
-        last_round_bids = [0] * len(builders)
+        last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
 
         for round_num in range(auction_end):
+            print(f"\n--- Round {round_num} ---")
+
             # Users create and broadcast transactions to their visible builders
             for user in users:
                 tx_count = random.randint(1, 5)
                 for _ in range(tx_count):
                     tx = user.create_transactions(block_num)
+                    # print(f"User {user.id} created transaction with gas_fee={tx.gas_fee}, mev_potential={tx.mev_potential}")
                     for builder in user.visible_builders:
                         builder.receive_transaction(tx)
+                        # print(f"Transaction sent to Builder {builder.id}")
 
             # Builders select transactions, calculate block value, and place bids
             round_bids = []
             for builder in builders:
-                builder.select_transactions(block_num)
+                selected_txs = builder.select_transactions(block_num)
                 block_value = builder.calculate_block_value()
                 bid = builder.place_bid(round_num, block_value, last_round_bids)
                 round_bids.append(bid)
                 all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
+                # print(f"Builder {builder.id} (strategy={builder.strategy}): "
+                #       f"selected {len(selected_txs)} transactions, block_value={block_value}, bid={bid}")
 
-            last_round_bids = round_bids
+            last_round_bids = round_bids  # Update for the next round
 
         # After the auction ends, determine the winning builder and clear their transactions from all mempools
         winning_builder_index = round_bids.index(max(round_bids))
         winning_builder = builders[winning_builder_index]
         winning_block_transactions = winning_builder.selected_transactions
 
+        # print(f"\n=== Winning Builder for Block {block_num} ===")
+        # print(f"Builder {winning_builder.id} won with bid {max(round_bids)}")
+
         # Clear winning block transactions from all builders' mempools
         for builder in builders:
             builder.clear_mempool(winning_block_transactions)
+            # print(f"Builder {builder.id} mempool cleared. Remaining transactions: {len(builder.mempool)}")
 
     return all_block_data
 
@@ -158,6 +168,19 @@ def save_results(block_data, num_attack_builders):
         writer.writerows(block_data)
 
 
+# def print_visible_users(builders, users):
+#     # Initialize a dictionary to count visible users per builder
+#     visible_user_count = {builder.id: 0 for builder in builders}
+
+#     # Iterate over all users and count how many times each builder is in the user's visible_builders
+#     for user in users:
+#         for builder in user.visible_builders:
+#             visible_user_count[builder.id] += 1
+
+#     # Now print the results
+#     for builder_id, count in visible_user_count.items():
+#         print(f"Builder {builder_id} has {count} visible users")
+
 if __name__ == "__main__":
     for num_attack_builders in [10]:
         builders = (
@@ -166,4 +189,5 @@ if __name__ == "__main__":
         )
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, BLOCK_NUM)
-        # save_results(block_data, num_attack_builders)
+        save_results(block_data, num_attack_builders)
+        # print_visible_users(builders, users)
