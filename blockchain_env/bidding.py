@@ -8,7 +8,7 @@ from blockchain_env.user import User
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
-BLOCK_NUM = 3
+BLOCK_NUM = 100
 
 random.seed(16)
 
@@ -88,10 +88,10 @@ class ModifiedBuilder:
                 bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
             elif my_last_bid == highest_last_bid:
                 # Tied with another builder: raise bid
-                bid = my_last_bid + 0.5 * (block_value - my_last_bid)
+                bid = my_last_bid + random.random() * (block_value - my_last_bid)
             else:
                 # Highest bid: reduce bid
-                bid = my_last_bid - 0.5 * (my_last_bid - second_highest_last_bid)
+                bid = my_last_bid - 0.7 * (my_last_bid - second_highest_last_bid)
         elif self.strategy == "late_enter":
             # Late enter strategy: bid aggressively in later rounds
             if round_num < random.randint(17, 22):
@@ -117,12 +117,12 @@ def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
     all_block_data = []
 
     for block_num in range(num_blocks):
-        print(f"\n=== Starting Block {block_num} ===")
+        # print(f"\n=== Starting Block {block_num} ===")
         auction_end = random.randint(20, MAX_ROUNDS)
         last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
 
         for round_num in range(auction_end):
-            print(f"\n--- Round {round_num} ---")
+            # print(f"\n--- Round {round_num} ---")
 
             # Users create and broadcast transactions to their visible builders
             for user in users:
