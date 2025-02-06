@@ -1,11 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 import numpy as np
 import random
 
-random.seed(16)
+# random.seed(16)
 
 def plot_bid_dynamics(file_path, block_number):
     output_figure_path = 'figures/ss/bid_dynamics_selected_block.png'
@@ -29,24 +28,31 @@ def plot_bid_dynamics(file_path, block_number):
     last_round_data = block_data[block_data['round_num'] == last_round]
     winning_builder = last_round_data.loc[last_round_data['bid'].idxmax()]['builder_id']
 
-    # Select winning and 7 other builders
-    selected_builders = block_data['builder_id'].unique()
-    if len(selected_builders) > 8:
-        selected_builders = np.random.choice(selected_builders, size=7, replace=False)
+    # Determine attack status
+    block_data['is_attacker'] = block_data['strategy'].apply(lambda x: 'blue' if 'reactive' in x or 'late_enter' in x else 'green')
+
+    # Select up to 8 builders, ensuring the winner is included
+    unique_builders = block_data['builder_id'].unique()
+    if len(unique_builders) > 8:
+        selected_builders = np.random.choice([b for b in unique_builders if b != winning_builder], size=7, replace=False)
         selected_builders = np.append(selected_builders, winning_builder)
+    else:
+        selected_builders = unique_builders  
 
     # Plot
     plt.figure(figsize=(12, 8))
     for builder_id in selected_builders:
         builder_data = block_data[block_data['builder_id'] == builder_id]
         is_winner = builder_id == winning_builder
+        color = 'red' if is_winner else block_data[block_data['builder_id'] == builder_id]['is_attacker'].iloc[0]
+
         sns.lineplot(
             data=builder_data,
             x='round_num',
             y='bid',
             marker='o',
             linewidth=1,
-            color='red' if is_winner else 'grey',
+            color=color,
             markersize=4
         )
         if is_winner:
@@ -127,27 +133,31 @@ def plot_block_value_dynamics(file_path, block_number):
     # Identify the winning builder by highest bid
     winning_builder = block_data.loc[block_data['bid'].idxmax()]['builder_id']
 
-    # Select up to 8 builders randomly, ensuring the winning builder is included
+    # Determine attack status
+    block_data['is_attacker'] = block_data['strategy'].apply(lambda x: 'blue' if 'reactive' in x or 'late_enter' in x else 'green')
+
+    # Select up to 8 builders, ensuring the winner is included
     unique_builders = block_data['builder_id'].unique()
-    
     if len(unique_builders) > 8:
         selected_builders = np.random.choice([b for b in unique_builders if b != winning_builder], size=7, replace=False)
-        selected_builders = np.append(selected_builders, winning_builder)  # Ensure the winner is included
+        selected_builders = np.append(selected_builders, winning_builder)
     else:
-        selected_builders = unique_builders  # If fewer than 8 builders exist, show all
+        selected_builders = unique_builders  
 
-    # Plot block values for the selected builders
+    # Plot block values for selected builders
     plt.figure(figsize=(12, 8))
     for builder_id in selected_builders:
         builder_data = block_data[block_data['builder_id'] == builder_id]
         is_winner = builder_id == winning_builder
+        color = 'red' if is_winner else block_data[block_data['builder_id'] == builder_id]['is_attacker'].iloc[0]
+
         sns.lineplot(
             data=builder_data,
             x='round_num',
             y='block_value',
             marker='o',
             linewidth=1,
-            color='red' if is_winner else 'grey',
+            color=color,
             markersize=4
         )
         if is_winner:
@@ -163,9 +173,9 @@ def plot_block_value_dynamics(file_path, block_number):
 
 if __name__ == "__main__":
     file_path = 'data/same_seed/bid_builder10.csv'
-    block_number = 1
+    block_number = 2
 
-    # plot_bid_dynamics(file_path, block_number)
+    plot_bid_dynamics(file_path, block_number)
     plot_block_value_dynamics(file_path, block_number)
 
     match_percentage, avg_bid_block_value_ratio, avg_bid_second_highest_block_value_ratio = analyze_data(file_path)

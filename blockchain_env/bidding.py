@@ -8,7 +8,7 @@ from blockchain_env.user import User
 BLOCK_CAP = 100
 MAX_ROUNDS = 24
 BUILDER_COUNT = 20
-BLOCK_NUM = 100
+BLOCK_NUM = 10
 
 random.seed(16)
 
@@ -187,8 +187,10 @@ def save_results(block_data, num_attack_builders):
 if __name__ == "__main__":
     for num_attack_builders in [10]:
         builders = (
-            [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(5)] +
-            [ModifiedBuilder(f"builder_{i+10}", is_attacker=True, strategy="reactive") for i in range(15)]
+            [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(3)] +
+            [ModifiedBuilder(f"builder_{i+3}", is_attacker=False, strategy="late_enter") for i in range(2)] +
+            [ModifiedBuilder(f"builder_{i+5}", is_attacker=True, strategy="reactive") for i in range(10)] +
+            [ModifiedBuilder(f"builder_{i+15}", is_attacker=False, strategy="reactive") for i in range(5)]
         )
         users = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data = simulate_auction(builders, users, BLOCK_NUM)
