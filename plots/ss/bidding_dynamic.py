@@ -47,7 +47,7 @@ def plot_bid_dynamics(file_path, block_number):
         selected_builders = np.random.choice([b for b in unique_builders if b != winning_builder], size=7, replace=False)
         selected_builders = np.append(selected_builders, winning_builder)
     else:
-        selected_builders = unique_builders  
+        selected_builders = unique_builders
 
     # Plot
     plt.figure(figsize=(12, 8))
@@ -73,11 +73,11 @@ def plot_bid_dynamics(file_path, block_number):
         "Attacking Builder": "orange"
     }
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
-    plt.legend(handles=legend_handles, loc="lower right", fontsize=12)
+    plt.legend(handles=legend_handles, loc="lower right", fontsize=20)
 
-    plt.xlabel('Bidding Round', fontsize=20)
-    plt.ylabel('Bid Value', fontsize=20)
-    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.xlabel('Bidding Round', fontsize=26)
+    plt.ylabel('Bid Value', fontsize=26)
+    plt.tick_params(axis='both', which='major', labelsize=24)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
@@ -190,11 +190,11 @@ def plot_block_value_dynamics(file_path, block_number):
         "Attacking Builder": "orange"
     }
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
-    plt.legend(handles=legend_handles, loc="lower right", fontsize=12)
+    plt.legend(handles=legend_handles, loc="lower right", fontsize=20)
 
-    plt.xlabel('Bidding Round', fontsize=20)
-    plt.ylabel('Block Value', fontsize=20)
-    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.xlabel('Bidding Round', fontsize=26)
+    plt.ylabel('Block Value', fontsize=26)
+    plt.tick_params(axis='both', which='major', labelsize=24)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
