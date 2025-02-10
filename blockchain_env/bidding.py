@@ -41,15 +41,17 @@ class ModifiedBuilder:
 
     def select_transactions(self, block_num):
         selected_transactions = []
+        
+        # Ensure the mempool is always sorted before selection
+        sorted_mempool = sorted(self.mempool, key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
+        
         if self.is_attacker:
-            # Sort transactions by mev potential + gas fee for attackers
-            self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
-            for transaction in self.mempool:
+            for transaction in sorted_mempool:
                 if len(selected_transactions) < BLOCK_CAP:
                     if transaction.mev_potential > 0:
                         attack_type = random.choice(['front', 'back'])
                         attack_transaction = self.launch_attack(block_num, transaction, attack_type)
-
+                        
                         if attack_type == 'front':
                             selected_transactions.append(attack_transaction)
                             selected_transactions.append(transaction)
@@ -59,21 +61,27 @@ class ModifiedBuilder:
                     else:
                         selected_transactions.append(transaction)
         else:
-            # Sort transactions by gas fee for non-attackers
-            self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
-            for transaction in self.mempool:
-                if len(selected_transactions) < BLOCK_CAP:
-                    selected_transactions.append(transaction)
-
-        self.selected_transactions = selected_transactions  # Update the selected_transactions attribute
-        return selected_transactions
+            # Non-attackers sort by gas fees only
+            sorted_mempool = sorted(self.mempool, key=lambda x: x.gas_fee, reverse=True)
+            selected_transactions = sorted_mempool[:BLOCK_CAP]
+        
+        self.selected_transactions = selected_transactions[:BLOCK_CAP]  # Ensure exact selection limit
+        return self.selected_transactions
 
     def calculate_block_value(self):
         if not self.selected_transactions:
             return 0
 
         gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
-        mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
+        
+        if self.is_attacker:
+            mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
+            # Debugging: Ensure MEV value is being properly accounted
+            if mev_value < 0:
+                print(f"Warning: Negative MEV value detected for Builder {self.id}")
+        else:
+            mev_value = 0  # Non-attackers only get gas fees
+        
         return gas_fee + mev_value
 
     def place_bid(self, round_num, block_value, last_round_bids):
