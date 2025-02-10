@@ -60,7 +60,7 @@ def plot_bid_dynamics(file_path, block_number):
             x='round_num',
             y='bid',
             marker='o',
-            linewidth=1,
+            linewidth=1.5,
             color=color,
             markersize=4,
             label=f"{builder_id} ({'Winning Attacker' if is_winning_attacker else 'Winning Non-Attacker'})" if builder_id == winning_builder else ""
@@ -78,6 +78,7 @@ def plot_bid_dynamics(file_path, block_number):
     plt.xlabel('Bidding Round', fontsize=26)
     plt.ylabel('Bid Value', fontsize=26)
     plt.tick_params(axis='both', which='major', labelsize=24)
+    plt.gca().yaxis.get_offset_text().set_fontsize(22)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
@@ -127,6 +128,7 @@ def analyze_data(file_path):
     avg_bid_second_highest_block_value_ratio = np.mean(bid_second_highest_block_value_ratios) if bid_second_highest_block_value_ratios else 0
 
     return match_percentage, avg_bid_block_value_ratio, avg_bid_second_highest_block_value_ratio
+
 def plot_block_value_dynamics(file_path, block_number):
     output_figure_path = 'figures/ss/block_value_dynamics_selected_block.png'
     
@@ -177,7 +179,7 @@ def plot_block_value_dynamics(file_path, block_number):
             x='round_num',
             y='block_value',
             marker='o',
-            linewidth=1,
+            linewidth=1.5,
             color=color,
             markersize=4,
             label=f"{builder_id} ({'Winning Attacker' if is_winning_attacker else 'Winning Non-Attacker'})" if builder_id == winning_builder else ""
@@ -195,6 +197,7 @@ def plot_block_value_dynamics(file_path, block_number):
     plt.xlabel('Bidding Round', fontsize=26)
     plt.ylabel('Block Value', fontsize=26)
     plt.tick_params(axis='both', which='major', labelsize=24)
+    plt.gca().yaxis.get_offset_text().set_fontsize(22)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
