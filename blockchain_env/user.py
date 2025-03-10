@@ -11,7 +11,6 @@ class User:
     def __init__(self, user_id, is_attacker, builders):
         self.id = user_id
         self.is_attacker = is_attacker
-        # Initialize visible builders, which is 80% of the total builders
         self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
         self.balance = 0
 
