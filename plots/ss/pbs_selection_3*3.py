@@ -98,6 +98,7 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         line2, = ax.plot(x_vals, np.cumsum(nonatt_counts),
                          color='blue', alpha=0.5, label='Non-Attacking Builders')
         ax.set_ylim(0, y_limit)
+        ax.set_yticks([0, 500, 1000])
 
         # Only gather legend handles once
         if not handles:
