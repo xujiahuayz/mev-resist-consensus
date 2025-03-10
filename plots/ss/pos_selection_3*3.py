@@ -1,8 +1,11 @@
 import csv
 import os
-import re
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Change these to match your actual total counts
+TOTAL_VALIDATORS = 20
+TOTAL_USERS = 50
 
 def get_validator_counts_by_block(file_path, validator_attack_count):
     """Extract validator selection counts by block number from a CSV file."""
@@ -18,9 +21,10 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
         for row in reader:
             block_num = int(row['block_num'])
             validator_id = row['validator_id']
-            validator_index = int(validator_id.split('_')[-1])  # Extract numeric part of validator ID
+            # Extract numeric part of validator ID
+            validator_index = int(validator_id.split('_')[-1])
 
-            # Reset counts when a new block is encountered
+            # If new block, store the old block's counts
             if block_num != current_block:
                 if current_block != -1:
                     attacking_counts.append(attacking_in_block)
@@ -29,7 +33,7 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
                 attacking_in_block = 0
                 non_attacking_in_block = 0
 
-            # Increment attacking or non-attacking count based on validator ID
+            # Increment attacking or non-attacking count
             if validator_index < validator_attack_count:
                 attacking_in_block += 1
             else:
@@ -42,93 +46,144 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
     return attacking_counts, non_attacking_counts
 
 def plot_cumulative_selections_over_blocks(data_folder, configs):
-    # Ensure the output directory exists
+    """
+    - 3×3 subplots
+    - Columns = % of attacking validators
+    - Rows = % of attacking users
+    - Y-axis ticks forced to [0, 500, 1000]
+    - Single text labels around the edges:
+       * "Percentage of Attacking Validators" (top)
+       * "Percentage of Attacking Users" (right)
+       * "Cumulative Selections" (left)
+       * "Block Number" (bottom)
+    """
     output_dir = 'figures/ss'
     os.makedirs(output_dir, exist_ok=True)
 
-    # Extract unique counts of validators and users for row/column labels
-    validator_counts = sorted(set(config[0] for config in configs))
-    user_counts = sorted(set(config[1] for config in configs))
+    # Gather unique validator/user counts
+    validator_counts = sorted({cfg[0] for cfg in configs})
+    user_counts = sorted({cfg[1] for cfg in configs})
 
-    # Adjust figsize to maintain square subplots
-    fig, axes = plt.subplots(len(user_counts), len(validator_counts), figsize=(9.5, 9), squeeze=False)
-    y_limit = 1000  # Set common y-axis limit for consistency across plots
+    # Create subplots: rows=users, cols=validators
+    fig, axes = plt.subplots(
+        nrows=len(user_counts),
+        ncols=len(validator_counts),
+        figsize=(9.5, 9),
+        squeeze=False
+    )
 
-    # Font sizes for readability
-    label_font_size = 12
-    tick_label_font_size = 12
-    outer_label_font_size = 16
+    # Font sizes
+    label_font_size = 16
+    tick_label_font_size = 16
+    outer_label_font_size = 20
 
-    # Create handles for a unified legend
-    handles = []
-    labels = []
+    # Common y-limit
+    y_limit = 1000
 
-    for i, (validator_attack_count, user_attack_count) in enumerate(configs):
-        filename = f"pos_block_data_validators{validator_attack_count}_users{user_attack_count}.csv"
-        file_path = os.path.join(data_folder, filename)
+    # For collecting single legend
+    handles, labels = [], []
 
+    for validator_attack_count, user_attack_count in configs:
         row = user_counts.index(user_attack_count)
         col = validator_counts.index(validator_attack_count)
         ax = axes[row, col]
-        
+
+        filename = f"pos_block_data_validators{validator_attack_count}_users{user_attack_count}.csv"
+        file_path = os.path.join(data_folder, filename)
+
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
-            ax.text(0.5, 0.5, "File Not Found", ha='center', va='center', fontsize=label_font_size)
+            ax.text(0.5, 0.5, "File Not Found",
+                    ha='center', va='center',
+                    fontsize=label_font_size)
             ax.set_axis_off()
             continue
-        
-        attacking_counts, non_attacking_counts = get_validator_counts_by_block(file_path, validator_attack_count)
-        block_numbers = list(range(len(attacking_counts)))
 
-        # Plot cumulative selections without subplot titles
-        line1, = ax.plot(block_numbers, np.cumsum(attacking_counts), label='Attacking Validators', color='red', alpha=0.5)
-        line2, = ax.plot(block_numbers, np.cumsum(non_attacking_counts), label='Non-Attacking Validators', color='blue', alpha=0.5)
+        att_counts, nonatt_counts = get_validator_counts_by_block(file_path, validator_attack_count)
+        block_nums = np.arange(len(att_counts))
+
+        # Plot cumulative sums
+        line1, = ax.plot(block_nums, np.cumsum(att_counts),
+                         color='red', alpha=0.5, label='Attacking Validators')
+        line2, = ax.plot(block_nums, np.cumsum(nonatt_counts),
+                         color='blue', alpha=0.5, label='Non-Attacking Validators')
         ax.set_ylim(0, y_limit)
-        
-        # Add handles and labels for the legend
+        ax.set_yticks([0, 500, 1000])
+
+        # Collect legend refs once
         if not handles:
             handles.extend([line1, line2])
             labels.extend(['Attacking Validators', 'Non-Attacking Validators'])
-        
-        if row != len(user_counts) - 1:  # Not bottom row
-            ax.tick_params(axis='x', labelbottom=False)  # Hide x-axis labels but keep tick marks
-        if col != 0:  # Not leftmost column
-            ax.tick_params(axis='y', labelleft=False)  # Hide y-axis labels but keep tick marks
 
-        # Set axis labels only for edge subplots
-        if row == len(user_counts) - 1:
-            ax.set_xlabel('Block Number', fontsize=label_font_size)
-        
-        # Set tick label font size
+        # Hide x labels except bottom row
+        if row != len(user_counts) - 1:
+            ax.tick_params(axis='x', labelbottom=False)
+        # Hide y labels except first column
+        if col != 0:
+            ax.tick_params(axis='y', labelleft=False)
+
         ax.tick_params(axis='both', labelsize=tick_label_font_size)
 
-    # Add outer titles for rows and columns without "Number"
-    for ax, col_val in zip(axes[0], validator_counts):
-        ax.set_title(f'Attacking Validators: {col_val}', fontsize=outer_label_font_size, pad=20)
-    
-    for ax, row_val in zip(axes[:, 0], user_counts):
+    # Convert numeric validator counts → percentage columns
+    for ax, val_count in zip(axes[0], validator_counts):
+        pct_validators = (val_count / TOTAL_VALIDATORS) * 100
+        ax.set_title(f"{pct_validators:.0f}%", fontsize=outer_label_font_size, pad=10)
+
+    # Convert numeric user counts → percentage rows, on the right
+    for ax, usr_count in zip(axes[:, -1], user_counts):
+        pct_users = (usr_count / TOTAL_USERS) * 100
         ax.annotate(
-            f'Attacking Users: {row_val}', 
-            xy=(0, 0.5), xytext=(-0.4, 0.5),
-            textcoords='axes fraction', ha='center', va='center',
-            fontsize=outer_label_font_size, rotation=90, annotation_clip=False
-        )
-        ax.annotate(
-            "Cumulative Selections", 
-            xy=(0, 0.5), xytext=(-0.25, 0.5),
-            textcoords='axes fraction', ha='center', va='center',
-            fontsize=label_font_size, rotation=90, annotation_clip=False
+            f"{pct_users:.0f}%",
+            xy=(1.06, 0.5),
+            xytext=(1.06, 0.5),
+            textcoords='axes fraction',
+            ha='center',
+            va='center',
+            rotation=-90,
+            fontsize=outer_label_font_size,
+            annotation_clip=False
         )
 
-    # Add a single legend to the bottom right
-    fig.legend(handles, labels, loc='lower right', fontsize=12, frameon=False)
+    # Make subplots fit nicely
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.12, right=0.88, top=0.83, bottom=0.12)
 
-    plt.tight_layout(rect=[0, 0.05, 1, 1])  # Adjust layout to fit the legend
-    output_path = os.path.join(output_dir, 'pos_cumulative_selection_3x3_grid.png')
-    plt.savefig(output_path, dpi=300)
+    # Single text labels
+    fig.text(
+        0.5, 0.91,  # top
+        "Percentage of Attacking Validators",
+        ha='center', va='center',
+        fontsize=outer_label_font_size
+    )
+    fig.text(
+        0.95, 0.5,  # right
+        "Percentage of Attacking Users",
+        ha='center', va='center',
+        rotation=-90,
+        fontsize=outer_label_font_size
+    )
+    fig.text(
+        0.03, 0.5,  # left
+        "Cumulative Selections",
+        ha='center', va='center',
+        rotation='vertical',
+        fontsize=outer_label_font_size
+    )
+    fig.text(
+        0.5, 0.06,  # bottom
+        "Block Number",
+        ha='center', va='center',
+        fontsize=outer_label_font_size
+    )
+
+    # Single legend at bottom-right
+    fig.legend(handles, labels, loc='lower right',
+               fontsize=label_font_size, frameon=False)
+
+    out_path = os.path.join(output_dir, 'pos_cumulative_selection_3x3_grid.png')
+    plt.savefig(out_path, dpi=300)
     plt.close()
-
-    print(f"3x3 grid plot saved to {output_path}")
+    print(f"3×3 grid plot saved to {out_path}")
 
 if __name__ == "__main__":
     data_folder = 'data/same_seed/pos_visible80'
