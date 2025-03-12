@@ -180,9 +180,9 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
     uncaptured_mev_percent = [100 - b - u for b, u in zip(builder_mev_percent, user_mev_percent)]
 
     # Font sizes
-    axis_font_size = 32
+    axis_font_size = 36
     title_font_size = 36
-    tick_font_size = 28
+    tick_font_size = 36
 
     plt.figure(figsize=(10, 9))
     palette = sns.color_palette("Blues", 3)
@@ -194,7 +194,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
         user_mev_percent,
         builder_mev_percent,
         uncaptured_mev_percent,
-        labels=["Users' MEV", "Builders' MEV", "Uncaptured MEV"],
+        labels=["Users'", "Builders'", "Uncaptured"],
         colors=colors,
         alpha=0.9
     )
@@ -221,8 +221,8 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
     plt.close()
 
 def main():
-    data_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
-    output_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
+    data_folder = '/Users/tammy/pbs/figures/ss'
+    output_folder = '/Users/tammy/pbs/figures/ss'
     os.makedirs(output_folder, exist_ok=True)  # Ensure output directory exists
 
     # Process all matching JSON files in data folder

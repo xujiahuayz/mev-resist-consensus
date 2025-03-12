@@ -23,9 +23,9 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
     uncaptured_mev_percent = [100 - v - u for v, u in zip(validator_mev_percent, user_mev_percent)]
 
     # Set large font sizes
-    axis_font_size = 32
+    axis_font_size = 36
     title_font_size = 36
-    tick_font_size = 28
+    tick_font_size = 36
 
     plt.figure(figsize=(10, 9))
     palette = sns.color_palette("Blues", 3)
@@ -33,7 +33,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
 
     # Stackplot to visualize MEV distribution with adjusted data
     plt.stackplot(validator_percentages, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
-                  labels=["Users' MEV", "Validators' MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
+                  labels=["Users'", "Validators'", "Uncaptured"], colors=colors, alpha=0.9)
     
     plt.xlabel("Attacking Validators (%)", fontsize=axis_font_size)
     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
@@ -57,8 +57,8 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
     plt.close()
 
 def main():
-    data_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
-    output_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
+    data_folder = '/Users/tammy/pbs/figures/ss'
+    output_folder = '/Users/tammy/pbs/figures/ss'
     os.makedirs(output_folder, exist_ok=True)  # Ensure the output directory exists
 
     # Iterate through the JSON files in the data folder
