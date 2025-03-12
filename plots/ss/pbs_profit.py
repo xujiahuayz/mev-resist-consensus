@@ -194,7 +194,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
         user_mev_percent,
         builder_mev_percent,
         uncaptured_mev_percent,
-        labels=["Users MEV", "Builders MEV", "Uncaptured MEV"],
+        labels=["Users' MEV", "Builders' MEV", "Uncaptured MEV"],
         colors=colors,
         alpha=0.9
     )
