@@ -162,37 +162,58 @@ def load_data(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
 
-def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
+def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_builders=20):
     """Generate and save a plot of MEV distribution."""
-    # Extracting data
+    # Extract data from JSON
     builder_counts = sorted(int(key) for key in aggregated_data.keys())
+
+    # Convert builder counts to percentages (like in PoS)
+    builder_percentages = [100 * c / total_builders for c in builder_counts]
+
     builder_mev = [aggregated_data[str(count)]["builders_mev"] for count in builder_counts]
     user_mev = [aggregated_data[str(count)]["users_mev"] for count in builder_counts]
     total_mev = [aggregated_data[str(count)]["total_mev"] for count in builder_counts]
 
-    # Calculating percentages
-    builder_mev_percent = [100 * v / t if t > 0 else 0 for v, t in zip(builder_mev, total_mev)]
-    user_mev_percent = [100 * u / t if t > 0 else 0 for u, t in zip(user_mev, total_mev)]
-    uncaptured_mev_percent = [100 - v - u for v, u in zip(builder_mev_percent, user_mev_percent)]
+    # Calculate percentage share of MEV
+    builder_mev_percent = [100 * b / t if t else 0 for b, t in zip(builder_mev, total_mev)]
+    user_mev_percent = [100 * u / t if t else 0 for u, t in zip(user_mev, total_mev)]
+    uncaptured_mev_percent = [100 - b - u for b, u in zip(builder_mev_percent, user_mev_percent)]
 
-    # Set large font sizes
-    axis_font_size = 28
-    title_font_size = 32
-    tick_font_size = 22 
+    # Font sizes
+    axis_font_size = 32
+    title_font_size = 36
+    tick_font_size = 28
 
     plt.figure(figsize=(10, 9))
     palette = sns.color_palette("Blues", 3)
     colors = [palette[2], palette[1], palette[0]]
 
-    # Stackplot to visualize MEV distribution with adjusted data
-    plt.stackplot(builder_counts, user_mev_percent, builder_mev_percent, uncaptured_mev_percent,
-                  labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
-    
-    plt.xlabel("Number of Attacking Builders", fontsize=axis_font_size)
+    # Build stackplot (x-axis is the percentage of attacking builders)
+    plt.stackplot(
+        builder_percentages,
+        user_mev_percent,
+        builder_mev_percent,
+        uncaptured_mev_percent,
+        labels=["Users MEV", "Builders MEV", "Uncaptured MEV"],
+        colors=colors,
+        alpha=0.9
+    )
+
+    # Mapping user_attacker_count → user attacker percentage
+    user_attack_percentage_map = {
+        '0': '0',
+        '12': '33',
+        '24': '67',
+        '50': '100'
+    }
+    user_attack_percentage = user_attack_percentage_map.get(str(user_attack_count), 'Check Data')
+
+    # Axis labels and chart styling
+    plt.xlabel("Attacking Builders (%)", fontsize=axis_font_size)
     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
-    plt.title(f"User Attacker Number: {user_attack_count}", fontsize=title_font_size)
+    plt.title(f"Attacking User: {user_attack_percentage}%", fontsize=title_font_size)
     plt.legend(loc="upper right", fontsize=tick_font_size)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=tick_font_size)
+    plt.xticks([0, 25, 50, 75, 100], [0, 25, 50, 75, 100], fontsize=tick_font_size)
     plt.yticks(fontsize=tick_font_size)
     plt.margins(0)
     plt.tight_layout(pad=0)
@@ -202,14 +223,15 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path):
 def main():
     data_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
     output_folder = '/Users/tammy/mev-resist-consensus/figures/ss'
-    os.makedirs(output_folder, exist_ok=True)  # Ensure the output directory exists
+    os.makedirs(output_folder, exist_ok=True)  # Ensure output directory exists
 
-    # Iterate through the JSON files in the data folder
+    # Process all matching JSON files in data folder
     for file_name in os.listdir(data_folder):
         if file_name.endswith('.json') and file_name.startswith('pbs_aggregated_data_user_attack'):
             file_path = os.path.join(data_folder, file_name)
             data = load_data(file_path)
-            user_attack_count = file_name.split('_')[-1].split('.')[0]  # Extract user attack count from filename
+            # Extract user attack count from file name (e.g., "..._12.json")
+            user_attack_count = file_name.split('_')[-1].split('.')[0]
             save_path = os.path.join(output_folder, f"pbs_mev_distribution_user_attack_{user_attack_count}.png")
             plot_mev_distribution(data, user_attack_count, save_path)
 

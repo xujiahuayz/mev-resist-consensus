@@ -35,7 +35,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
     plt.stackplot(validator_percentages, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
                   labels=["Users' MEV", "Validators' MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
     
-    plt.xlabel("Percentage of Attacking Validators", fontsize=axis_font_size)
+    plt.xlabel("Attacking Validators (%)", fontsize=axis_font_size)
     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
     # user_attack_percentage = round(100 * int(user_attack_count) / total_users)
     user_attack_percentage_map = {
@@ -47,7 +47,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
     user_attack_percentage = user_attack_percentage_map.get(str(user_attack_count), 'Check Data')
 
 
-    plt.title(f"User Attacker Percentage: {user_attack_percentage}%", fontsize=title_font_size)
+    plt.title(f"Attacking User: {user_attack_percentage}%", fontsize=title_font_size)
     plt.legend(loc="upper right", fontsize=tick_font_size)
     plt.xticks(ticks=[0, 25, 50, 75, 100], labels=['0', '25', '50', '75', '100'], fontsize=tick_font_size)
     plt.yticks(fontsize=tick_font_size)
