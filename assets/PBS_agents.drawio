@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.0">
   <diagram name="Page-1" id="Rt2gjxt__m3kLgCPaDpE">
-    <mxGraphModel dx="1376" dy="1120" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="591" dy="533" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -432,7 +432,7 @@
           <mxGeometry width="109.75" height="53" as="geometry" />
         </mxCell>
         <mxCell id="9paTq_0o_kBmyaApCOEQ-41" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;RANDAO selected proposer for block n at 2 block ahead&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;container=0;" parent="9paTq_0o_kBmyaApCOEQ-135" vertex="1">
-          <mxGeometry x="7.25" y="15.5" width="100.5" height="20" as="geometry">
+          <mxGeometry x="6.25" y="13.5" width="100.5" height="20" as="geometry">
             <mxRectangle x="7.25" y="15.5" width="230" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
