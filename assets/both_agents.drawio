@@ -253,8 +253,8 @@
         <mxCell id="-1FMtL--xxu45l2r8FuS-70" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn0.iconfinder.com/data/icons/basic-e-commerce-line/48/Receipt_success-128.png" parent="-1FMtL--xxu45l2r8FuS-68" vertex="1">
           <mxGeometry x="2.8800000000000026" y="2.8799999999999955" width="17.25" height="17.25" as="geometry" />
         </mxCell>
-        <mxCell id="-1FMtL--xxu45l2r8FuS-71" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;Validators&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#82b366&quot;&gt;{Vi}&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="33.620000000000005" y="285" width="90" height="60" as="geometry" />
+        <mxCell id="-1FMtL--xxu45l2r8FuS-71" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;Validators&lt;/font&gt;&lt;/h3&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="32.50000000000001" y="290" width="90" height="50" as="geometry" />
         </mxCell>
         <mxCell id="-1FMtL--xxu45l2r8FuS-72" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="261" y="271" width="50.620000000000005" height="80" as="geometry" />
