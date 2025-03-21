@@ -1,9 +1,70 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.1">
   <diagram name="Page-1" id="RIdl4yIpkKvQEjexbSTN">
-    <mxGraphModel>
+    <mxGraphModel dx="889" dy="534" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="jQI5X7SojYvdJqr93CXN-23" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=none;movable=0;resizable=0;rotatable=0;deletable=0;editable=0;locked=1;connectable=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="190" width="450" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-15" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="100" y="60" width="150" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-16" value="Users" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="89" y="45" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-18" value="Create txs. based on attribute&amp;nbsp;&amp;nbsp;\( \tau_{U_i} \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="115" y="100" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-21" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="174.76" y="160" as="sourcePoint" />
+            <mxPoint x="175" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-22" value="txs." style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="167" y="164" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-24" value="Builders" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="96" y="175" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-25" value="New txs.&lt;div&gt;&amp;nbsp;received?&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="122.5" y="205" width="107.5" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-26" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="174.76" y="260" as="sourcePoint" />
+            <mxPoint x="174.85523809523806" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-27" value="Yes" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="167" y="260" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-28" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="227.5" y="232.26" as="sourcePoint" />
+            <mxPoint x="264.5952380952381" y="232.26" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-29" value="No" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="221" y="205" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-31" value="Update block \( \mathcal{T}_{i,t} \)&lt;i&gt;&lt;sub&gt;&amp;nbsp;&lt;/sub&gt;,&lt;/i&gt; according to attribute \( \tau_{B_i} \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="120" y="300" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-34" value="" style="endArrow=classic;html=1;rounded=0;entryX=-0.011;entryY=0.846;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="jQI5X7SojYvdJqr93CXN-35">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="335" as="sourcePoint" />
+            <mxPoint x="260" y="250" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="245" y="335" />
+              <mxPoint x="245" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="jQI5X7SojYvdJqr93CXN-35" value="Bid according to strategy \( \sigma_i \)&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="266" y="207.5" width="110" height="50" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
