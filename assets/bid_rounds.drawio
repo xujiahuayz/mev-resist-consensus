@@ -95,8 +95,8 @@
         <mxCell id="jQI5X7SojYvdJqr93CXN-53" value="Selected for&lt;div&gt;highest bid?&amp;nbsp;&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
           <mxGeometry x="274.75" y="269.5" width="109.5" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="jQI5X7SojYvdJqr93CXN-58" value="End" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
-          <mxGeometry x="225" y="367.5" width="40" height="25" as="geometry" />
+        <mxCell id="jQI5X7SojYvdJqr93CXN-58" value="End with \(0\) pay" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="181" y="367.5" width="85" height="25" as="geometry" />
         </mxCell>
         <mxCell id="jQI5X7SojYvdJqr93CXN-59" value="" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -189,7 +189,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="jQI5X7SojYvdJqr93CXN-95" value="" style="endArrow=classic;html=1;rounded=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;curved=0;" edge="1" parent="1" source="jQI5X7SojYvdJqr93CXN-53" target="jQI5X7SojYvdJqr93CXN-58">
+        <mxCell id="jQI5X7SojYvdJqr93CXN-95" value="" style="endArrow=classic;html=1;rounded=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;exitPerimeter=0;curved=0;" edge="1" parent="1" source="jQI5X7SojYvdJqr93CXN-53" target="jQI5X7SojYvdJqr93CXN-58">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="306" y="344.02" as="sourcePoint" />
             <mxPoint x="251" y="344.02" as="targetPoint" />
