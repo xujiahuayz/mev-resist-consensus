@@ -3,15 +3,17 @@ from copy import deepcopy
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
 from blockchain_env.builder import Builder
+from blockchain_env.node import Node 
 import uuid
 
 random.seed(16)
 
 class User:
     def __init__(self, user_id, is_attacker, builders):
+        super().__init__(user_id)
         self.id = user_id
         self.is_attacker = is_attacker
-        self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
+        # self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
         self.balance = 0
 
     def create_transactions(self, block_num):

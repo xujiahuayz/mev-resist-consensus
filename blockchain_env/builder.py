@@ -1,11 +1,13 @@
 import random
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
+from blockchain_env.node import Node 
 
 BLOCK_CAP = 100
 
-class Builder:
+class Builder(Node):
     def __init__(self, builder_id, is_attacker):
+        super().__init__(builder_id)
         self.id = builder_id
         self.is_attacker = is_attacker
         self.balance = 0
