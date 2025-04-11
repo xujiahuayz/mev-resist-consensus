@@ -7,7 +7,7 @@ random.seed(16)
 class Node:
     def __init__(self, node_id):
         self.id = node_id
-        self.visible_builders = []
+        self.visible_nodes = []
 
 def build_network(users, builders, proposers):
     nodes = users + builders + proposers

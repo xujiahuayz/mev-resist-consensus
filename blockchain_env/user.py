@@ -9,7 +9,7 @@ import uuid
 random.seed(16)
 
 class User:
-    def __init__(self, user_id, is_attacker, builders):
+    def __init__(self, user_id, is_attacker):
         super().__init__(user_id)
         self.id = user_id
         self.is_attacker = is_attacker
