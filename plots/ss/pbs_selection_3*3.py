@@ -66,9 +66,9 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     )
 
     # Font sizes
-    label_font_size = 16
-    tick_label_font_size = 16
-    outer_label_font_size = 20
+    label_font_size = 14
+    tick_label_font_size = 14
+    outer_label_font_size = 16
 
     y_limit = 1000
     handles, labels = [], []
@@ -145,14 +145,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Top: "Percentage of Attacking Builders"
     fig.text(
         0.5, 0.91,  # Move down from 0.95 if needed
-        r"MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
+        r"Percentage of MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     # Right: "Percentage of Attacking Users"
     fig.text(
         0.95, 0.5,  # Move left from 0.92 if needed
-        r"MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Percentage MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size

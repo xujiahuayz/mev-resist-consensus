@@ -73,9 +73,9 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     )
 
     # Font sizes
-    label_font_size = 16
-    tick_label_font_size = 16
-    outer_label_font_size = 20
+    label_font_size = 14
+    tick_label_font_size = 14
+    outer_label_font_size = 16
 
     # Common y-limit
     y_limit = 1000
@@ -151,13 +151,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Single text labels
     fig.text(
         0.5, 0.91,  # top
-        r"MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
+        r"Percentage of MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     fig.text(
         0.95, 0.5,  # right
-        r"MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Percentage of MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size
