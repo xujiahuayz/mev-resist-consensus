@@ -30,12 +30,12 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
 
     user_attack_percentage_map = {'0': '0', '12': '33', '24': '67', '50': '100'}
     user_attack_percentage = user_attack_percentage_map.get(str(user_attack_count), 'Check Data')
-    plt.xlabel(r"Validators: $\tau_{V_i} = \mathtt{attack}$ (%)", fontsize=36)
-    plt.ylabel(r"MEV Profit Captured (%)", fontsize=36)
-    plt.title(rf"${user_attack_percentage}\%$ of Users: $\tau_{{U_i}} = \mathtt{{attack}}$", fontsize=36)
+    plt.xlabel(r"Percentage of MEV-Seeking Validators (%)", fontsize=30)
+    plt.ylabel(r"MEV Profit Captured (%)", fontsize=30)
+    plt.title(rf"${user_attack_percentage}\%$ of MEV-Seeking Users", fontsize=30)
     
-    plt.xticks(ticks=[0, 25, 50, 75, 100], labels=['0', '25', '50', '75', '100'], fontsize=36)
-    plt.yticks(fontsize=36)
+    plt.xticks(ticks=[0, 25, 50, 75, 100], labels=['0', '25', '50', '75', '100'], fontsize=30)
+    plt.yticks(fontsize=30)
     plt.margins(0)
     plt.tight_layout(pad=0)
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
@@ -50,7 +50,7 @@ def create_legend_figure(save_path):
     labels = ["Users'", "Validators'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
     
-    legend = plt.legend(handles, labels, loc='center', fontsize=36, frameon=False)
+    legend = plt.legend(handles, labels, loc='center', fontsize=26, frameon=False)
     plt.axis('off')
     
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
