@@ -203,7 +203,7 @@ def create_legend_figure(save_path):
     labels = ["Users'", "Builders'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
     
-    legend = plt.legend(handles, labels, loc='center', fontsize=26, frameon=False)
+    legend = plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
     plt.axis('off')
     
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
