@@ -77,7 +77,7 @@ def plot_bid_dynamics(file_path, block_number):
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
     plt.xlabel(r"Round $t$", fontsize=30)
-    plt.ylabel('Bid Value (gwei)', fontsize=30)
+    plt.ylabel('Bid Value $b_{i,t}$ (gwei)', fontsize=30)
     plt.tick_params(axis='both', which='major', labelsize=26)
     plt.gca().yaxis.get_offset_text().set_fontsize(26)
     plt.tight_layout()
@@ -197,7 +197,7 @@ def plot_block_value_dynamics(file_path, block_number):
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
     plt.xlabel(r"Round $t$", fontsize=30)
-    plt.ylabel('Block Value (gwei)', fontsize=30)
+    plt.ylabel('Block Value $v_{i,t}$ (gwei)', fontsize=30)
     plt.tick_params(axis='both', which='major', labelsize=26)
     plt.gca().yaxis.get_offset_text().set_fontsize(26)
     plt.tight_layout()
