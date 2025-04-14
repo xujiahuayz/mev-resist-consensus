@@ -118,13 +118,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     for ax, bcount in zip(axes[0], builder_counts):
         pct_builders = (bcount / TOTAL_BUILDERS) * 100
         # Move pad down a bit from 15 to 10 if you want more space from the top label
-        ax.set_title(f"{pct_builders:.0f}%", fontsize=outer_label_font_size, pad=10)
+        ax.set_title(f"{pct_builders:.0f}", fontsize=outer_label_font_size, pad=10)
 
     # Convert numeric user counts to percentages and label rows on the right
     for ax, ucount in zip(axes[:, -1], user_counts):
         pct_users = (ucount / TOTAL_USERS) * 100
         ax.annotate(
-            f"{pct_users:.0f}%",
+            f"{pct_users:.0f}",
             xy=(1.06, 0.5),
             xytext=(1.06, 0.5),
             textcoords='axes fraction',
@@ -145,14 +145,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Top: "Percentage of Attacking Builders"
     fig.text(
         0.5, 0.91,  # Move down from 0.95 if needed
-        r"$B_i$: $\tau_{B_i} = \mathtt{attack}$",
+        r"MEV-Seeking Builders: $\tau_{B_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     # Right: "Percentage of Attacking Users"
     fig.text(
         0.95, 0.5,  # Move left from 0.92 if needed
-        r"$U_i$: $\tau_{U_i} = \mathtt{attack}$",
+        r"MEV-Seeking Users: $\tau_{U_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size

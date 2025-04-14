@@ -127,13 +127,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Convert numeric validator counts → percentage columns
     for ax, val_count in zip(axes[0], validator_counts):
         pct_validators = (val_count / TOTAL_VALIDATORS) * 100
-        ax.set_title(f"{pct_validators:.0f}%", fontsize=outer_label_font_size, pad=10)
+        ax.set_title(f"{pct_validators:.0f}", fontsize=outer_label_font_size, pad=10)
 
     # Convert numeric user counts → percentage rows, on the right
     for ax, usr_count in zip(axes[:, -1], user_counts):
         pct_users = (usr_count / TOTAL_USERS) * 100
         ax.annotate(
-            f"{pct_users:.0f}%",
+            f"{pct_users:.0f}",
             xy=(1.06, 0.5),
             xytext=(1.06, 0.5),
             textcoords='axes fraction',
@@ -151,13 +151,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Single text labels
     fig.text(
         0.5, 0.91,  # top
-        r"$V_i$: $\tau_{V_i} = \mathtt{attack}$",
+        r"MEV-Seeking Validators: $\tau_{V_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     fig.text(
         0.95, 0.5,  # right
-        r"$U_i$: $\tau_{U_i} = \mathtt{attack}$",
+        r"MEV-Seeking Users: $\tau_{U_i} = \mathtt{attack}$ (%)",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size
