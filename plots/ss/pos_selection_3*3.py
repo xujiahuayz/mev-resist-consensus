@@ -104,16 +104,16 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
 
         # Plot cumulative sums
         line1, = ax.plot(block_nums, np.cumsum(att_counts),
-                         color='red', alpha=0.5, label='Attacking Validators')
+                         color='red', alpha=0.5, label=r"$\tau_{V_i} = \mathtt{attack}$")
         line2, = ax.plot(block_nums, np.cumsum(nonatt_counts),
-                         color='blue', alpha=0.5, label='Non-Attacking Validators')
+                         color='blue', alpha=0.5, label=r"$\tau_{V_i} = \mathtt{benign}$")
         ax.set_ylim(0, y_limit)
         ax.set_yticks([0, 500, 1000])
 
         # Collect legend refs once
         if not handles:
             handles.extend([line1, line2])
-            labels.extend(['Attacking Validators', 'Non-Attacking Validators'])
+            labels.extend([r"$\tau_{V_i} = \mathtt{attack}$", r"$\tau_{V_i} = \mathtt{benign}$"])
 
         # Hide x labels except bottom row
         if row != len(user_counts) - 1:
@@ -151,13 +151,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Single text labels
     fig.text(
         0.5, 0.91,  # top
-        "Percentage of Attacking Validators",
+        r"$V_i$: $\tau_{V_i} = \mathtt{attack}$",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     fig.text(
         0.95, 0.5,  # right
-        "Percentage of Attacking Users",
+        r"$U_i$: $\tau_{U_i} = \mathtt{attack}$",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size

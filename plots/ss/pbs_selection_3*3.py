@@ -94,16 +94,16 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
         x_vals = np.arange(len(att_counts))
 
         line1, = ax.plot(x_vals, np.cumsum(att_counts),
-                         color='red', alpha=0.5, label='Attacking Builders')
+                         color='red', alpha=0.5, label=r"$\tau_{B_i} = \mathtt{attack}$")
         line2, = ax.plot(x_vals, np.cumsum(nonatt_counts),
-                         color='blue', alpha=0.5, label='Non-Attacking Builders')
+                         color='blue', alpha=0.5, label=r"$\tau_{B_i} = \mathtt{benign}$")
         ax.set_ylim(0, y_limit)
         ax.set_yticks([0, 500, 1000])
 
         # Only gather legend handles once
         if not handles:
             handles.extend([line1, line2])
-            labels.extend(["Attacking Builders", "Non-Attacking Builders"])
+            labels.extend([r"$\tau_{B_i} = \mathtt{attack}$", r"$\tau_{B_i} = \mathtt{benign}$"])
 
         # Hide x-axis labels except bottom row
         if row_idx != len(user_counts) - 1:
@@ -145,14 +145,14 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # Top: "Percentage of Attacking Builders"
     fig.text(
         0.5, 0.91,  # Move down from 0.95 if needed
-        "Percentage of Attacking Builders",
+        r"$B_i$: $\tau_{B_i} = \mathtt{attack}$",
         ha='center', va='center',
         fontsize=outer_label_font_size
     )
     # Right: "Percentage of Attacking Users"
     fig.text(
         0.95, 0.5,  # Move left from 0.92 if needed
-        "Percentage of Attacking Users",
+        r"$U_i$: $\tau_{U_i} = \mathtt{attack}$",
         ha='center', va='center',
         rotation=-90,
         fontsize=outer_label_font_size
