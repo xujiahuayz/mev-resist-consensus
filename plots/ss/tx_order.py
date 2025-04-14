@@ -124,7 +124,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     plt.figure(figsize=(12, 10))
     sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
     plt.xlabel(x_label, fontsize=30)
-    plt.ylabel(r"$\%$ of $U_i$: $\tau_{U_i} = \mathtt{attack}$", fontsize=30)
+    plt.ylabel(r"MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=30)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=26)
     plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=26)
 
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     vmin, vmax = min(all_inversion_counts), max(all_inversion_counts)
 
     # Plot heatmap of results for PoS with "Validators" as x-axis label
-    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder, r"$\%$ of $V_i$: $\tau_{V_i} = \mathtt{attack}$")
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder, r"MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
 
     # Plot heatmap of results for PBS with "Builders" as x-axis label
-    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder, r"$\%$ of $B_i$: $\tau_{B_i} = \mathtt{attack}$")
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder, r"MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
