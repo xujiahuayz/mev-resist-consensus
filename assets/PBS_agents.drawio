@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36" version="26.2.9">
   <diagram name="Page-1" id="Rt2gjxt__m3kLgCPaDpE">
-    <mxGraphModel dx="983" dy="450" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="983" dy="450" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -182,14 +182,11 @@
             <mxPoint x="442.37" y="451" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="_BZ0ECuWgsDujHOAMHDS-43" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(151, 115, 166), rgb(105, 70, 122));&quot;&gt;Proposers&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font color=&quot;#9773a6&quot;&gt;{P&lt;sub style=&quot;line-height: 60%;&quot;&gt;i&lt;/sub&gt;&lt;span style=&quot;font-size: 10px; line-height: 60%;&quot;&gt;}&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+        <mxCell id="_BZ0ECuWgsDujHOAMHDS-43" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(151, 115, 166), rgb(105, 70, 122));&quot;&gt;Proposers&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font color=&quot;#9773a6&quot;&gt;$$\{P_i\}$$&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="40" y="186" width="90" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="_BZ0ECuWgsDujHOAMHDS-44" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(110, 145, 191), rgb(105, 70, 122));&quot;&gt;Builders&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#6e91bf&quot;&gt;{Bi}&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+        <mxCell id="_BZ0ECuWgsDujHOAMHDS-44" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(110, 145, 191), rgb(105, 70, 122));&quot;&gt;Builders&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font color=&quot;#6e91bf&quot;&gt;$$\{B_i\}$$&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="40" y="372" width="80" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="_BZ0ECuWgsDujHOAMHDS-45" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(214, 182, 86), rgb(105, 70, 122));&quot;&gt;Users&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#d6b656&quot;&gt;{Ui}&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="47.620000000000005" y="511" width="60" height="60" as="geometry" />
         </mxCell>
         <mxCell id="_BZ0ECuWgsDujHOAMHDS-46" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.929;exitY=1.036;exitDx=0;exitDy=0;exitPerimeter=0;strokeWidth=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#000000;" parent="1" source="_BZ0ECuWgsDujHOAMHDS-7" target="_BZ0ECuWgsDujHOAMHDS-8" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -505,6 +502,9 @@
         </mxCell>
         <mxCell id="nSoYGPkodk3FVyQMjDa2-1" value="Empty&lt;div&gt;slot&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
           <mxGeometry x="177.62" y="95" width="60" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nSoYGPkodk3FVyQMjDa2-3" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(214, 182, 86), rgb(105, 70, 122));&quot;&gt;Users&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#d6b656&quot;&gt;$$\{U_i\}$$&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="511" width="80" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
