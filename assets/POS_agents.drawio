@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36" version="26.2.12">
   <diagram name="Page-1" id="uq0ruCk3_rSD9SvaCY8R">
-    <mxGraphModel dx="1405" dy="643" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1405" dy="643" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -208,8 +208,8 @@
         <mxCell id="D-NRNB5gOzUlE2xE504m-63" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn0.iconfinder.com/data/icons/basic-e-commerce-line/48/Receipt_success-128.png" parent="D-NRNB5gOzUlE2xE504m-61" vertex="1">
           <mxGeometry x="2.8800000000000026" y="2.8799999999999955" width="17.25" height="17.25" as="geometry" />
         </mxCell>
-        <mxCell id="D-NRNB5gOzUlE2xE504m-64" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;Validators&lt;/font&gt;&lt;/h3&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="32.50000000000001" y="290" width="90" height="50" as="geometry" />
+        <mxCell id="D-NRNB5gOzUlE2xE504m-64" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;Validators&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;$$\{V_i\}$$&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="32.50000000000001" y="285" width="90" height="60" as="geometry" />
         </mxCell>
         <mxCell id="D-NRNB5gOzUlE2xE504m-65" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="261" y="271" width="50.620000000000005" height="80" as="geometry" />
@@ -235,8 +235,8 @@
         <mxCell id="D-NRNB5gOzUlE2xE504m-72" value="..." style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="D-NRNB5gOzUlE2xE504m-67" vertex="1">
           <mxGeometry x="9.595" y="20.25" width="30" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="D-NRNB5gOzUlE2xE504m-75" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(214, 182, 86), rgb(105, 70, 122));&quot;&gt;Users&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#d6b656&quot;&gt;{Ui}&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="47.5" y="511" width="60" height="60" as="geometry" />
+        <mxCell id="D-NRNB5gOzUlE2xE504m-75" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(214, 182, 86), rgb(105, 70, 122));&quot;&gt;Users&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#d6b656&quot;&gt;$$\{U_i\}$$&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="37.5" y="511" width="80" height="60" as="geometry" />
         </mxCell>
         <mxCell id="r1D6VSpxrKc8KSH1jY-o-6" value="" style="shape=actor;whiteSpace=wrap;html=1;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
           <mxGeometry x="115.12" y="521" width="40" height="50" as="geometry" />
@@ -442,9 +442,6 @@
         <mxCell id="r1D6VSpxrKc8KSH1jY-o-63" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn0.iconfinder.com/data/icons/basic-e-commerce-line/48/Receipt_success-128.png" parent="r1D6VSpxrKc8KSH1jY-o-61" vertex="1">
           <mxGeometry x="2.8800000000000026" y="2.8799999999999955" width="17.25" height="17.25" as="geometry" />
         </mxCell>
-        <mxCell id="r1D6VSpxrKc8KSH1jY-o-64" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(130, 179, 102), rgb(105, 70, 122));&quot;&gt;Validators&lt;/font&gt;&lt;/h3&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="32.50000000000001" y="290" width="90" height="50" as="geometry" />
-        </mxCell>
         <mxCell id="r1D6VSpxrKc8KSH1jY-o-65" value="" style="group" parent="1" vertex="1" connectable="0">
           <mxGeometry x="261" y="271" width="50.620000000000005" height="80" as="geometry" />
         </mxCell>
@@ -474,9 +471,6 @@
         </mxCell>
         <mxCell id="r1D6VSpxrKc8KSH1jY-o-74" value="&lt;span style=&quot;font-size: 11px;&quot;&gt;Pack the transactions to a block and publish on chain&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="334.12" y="158" width="110" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="r1D6VSpxrKc8KSH1jY-o-75" value="&lt;div style=&quot;line-height: 60%;&quot;&gt;&lt;h3 style=&quot;line-height: 60%;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(214, 182, 86), rgb(105, 70, 122));&quot;&gt;Users&lt;/font&gt;&lt;/h3&gt;&lt;div&gt;&lt;font&gt;&lt;font color=&quot;#d6b656&quot;&gt;{Ui}&lt;/font&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="47.5" y="511" width="60" height="60" as="geometry" />
         </mxCell>
         <mxCell id="XEZV7KVTwxbiqD7pJ-Vi-27" value="&lt;b&gt;n-1&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="360.75" y="95" width="38.5" height="30" as="geometry" />
