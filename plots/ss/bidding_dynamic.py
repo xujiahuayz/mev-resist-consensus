@@ -68,15 +68,16 @@ def plot_bid_dynamics(file_path, block_number):
 
     # Add a legend explanation for colors
     legend_labels = {
-        "Winning Attacker" if is_winning_attacker else "Winning Non-Attacker": "red",
-        "Non-Attacking Builder": "lightblue",
-        "Attacking Builder": "orange"
+        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "red" if not is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{benign},\ B_w$": "red" if is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{attack}$": "orange",
+        r"$\tau_{B_i} = \mathtt{benign}$": "lightblue"
     }
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
-    plt.xlabel('Bidding Round', fontsize=30)
-    plt.ylabel('Bid Value', fontsize=30)
+    plt.xlabel('Bidding Round (t)', fontsize=30)
+    plt.ylabel('Bid Value (gwei)', fontsize=30)
     plt.tick_params(axis='both', which='major', labelsize=26)
     plt.gca().yaxis.get_offset_text().set_fontsize(26)
     plt.tight_layout()
@@ -187,15 +188,16 @@ def plot_block_value_dynamics(file_path, block_number):
 
     # Add a legend explanation for colors
     legend_labels = {
-        "Winning Attacker" if is_winning_attacker else "Winning Non-Attacker": "red",
-        "Non-Attacking Builder": "lightblue",
-        "Attacking Builder": "orange"
+        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "red" if not is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{benign},\ B_w$": "red" if is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{attack}$": "orange",
+        r"$\tau_{B_i} = \mathtt{benign}$": "lightblue"
     }
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
-    plt.xlabel('Bidding Round', fontsize=30)
-    plt.ylabel('Block Value', fontsize=30)
+    plt.xlabel('Bidding Round (t)', fontsize=30)
+    plt.ylabel('Block Value (gwei)', fontsize=30)
     plt.tick_params(axis='both', which='major', labelsize=26)
     plt.gca().yaxis.get_offset_text().set_fontsize(26)
     plt.tight_layout()
