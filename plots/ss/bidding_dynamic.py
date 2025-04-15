@@ -76,10 +76,10 @@ def plot_bid_dynamics(file_path, block_number):
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
-    plt.xlabel(r"Round $t$", fontsize=30)
-    plt.ylabel('Bid Value $b_{i,t}$ (gwei)', fontsize=30)
-    plt.tick_params(axis='both', which='major', labelsize=26)
-    plt.gca().yaxis.get_offset_text().set_fontsize(26)
+    plt.xlabel(r"Round $t$", fontsize=26)
+    plt.ylabel('Bid Value $b_{i,t}$ (gwei)', fontsize=26)
+    plt.tick_params(axis='both', which='major', labelsize=24)
+    plt.gca().yaxis.get_offset_text().set_fontsize(24)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
@@ -196,10 +196,10 @@ def plot_block_value_dynamics(file_path, block_number):
     legend_handles = [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
     plt.legend(handles=legend_handles, loc="lower right", fontsize=24)
 
-    plt.xlabel(r"Round $t$", fontsize=30)
-    plt.ylabel('Block Value $v_{i,t}$ (gwei)', fontsize=30)
-    plt.tick_params(axis='both', which='major', labelsize=26)
-    plt.gca().yaxis.get_offset_text().set_fontsize(26)
+    plt.xlabel(r"Round $t$", fontsize=26)
+    plt.ylabel('Block Value $v_{i,t}$ (gwei)', fontsize=26)
+    plt.tick_params(axis='both', which='major', labelsize=24)
+    plt.gca().yaxis.get_offset_text().set_fontsize(24)
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
