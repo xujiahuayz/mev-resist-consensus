@@ -3,44 +3,45 @@ import csv
 from copy import deepcopy
 from blockchain_env.transaction import Transaction
 from blockchain_env.user import User
+from typing import List, Tuple, Optional, Union, Dict, Any
 
 # Constants
-BLOCK_CAP = 100
-MAX_ROUNDS = 24
-BUILDER_COUNT = 20
-BLOCK_NUM = 10
+BLOCK_CAP: int = 100
+MAX_ROUNDS: int = 24
+BUILDER_COUNT: int = 20
+BLOCK_NUM: int = 10
 
 random.seed(16)
 
 class ModifiedBuilder:
-    def __init__(self, builder_id, is_attacker, strategy="reactive"):
-        self.id = builder_id
-        self.is_attacker = is_attacker
-        self.strategy = strategy
-        self.mempool = []
-        self.selected_transactions = []
-        self.bid_history = []  # Stores bids for historical rounds
+    def __init__(self, builder_id: str, is_attacker: bool, strategy: str = "reactive") -> None:
+        self.id: str = builder_id
+        self.is_attacker: bool = is_attacker
+        self.strategy: str = strategy
+        self.mempool: List[Transaction] = []
+        self.selected_transactions: List[Transaction] = []
+        self.bid_history: List[float] = []
 
-    def launch_attack(self, block_num, target_transaction, attack_type):
+    def launch_attack(self, block_num: int, target_transaction: Transaction, attack_type: str) -> Transaction:
         # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
-        mev_potential = 0
-        gas_fee = 0
+        mev_potential: int = 0
+        gas_fee: int = 0
 
-        creator_id = self.id
-        created_at = block_num
-        target_tx = target_transaction
+        creator_id: str = self.id
+        created_at: int = block_num
+        target_tx: Transaction = target_transaction
 
         # Create the attack transaction
         attack_transaction = Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
         attack_transaction.attack_type = attack_type
         return attack_transaction
 
-    def receive_transaction(self, transaction):
+    def receive_transaction(self, transaction: Transaction) -> None:
         # Builder receives transaction and adds to mempool
         self.mempool.append(deepcopy(transaction))
 
-    def select_transactions(self, block_num):
-        selected_transactions = []
+    def select_transactions(self, block_num: int) -> List[Transaction]:
+        selected_transactions: List[Transaction] = []
         
         # Ensure the mempool is always sorted before selection
         sorted_mempool = sorted(self.mempool, key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
@@ -49,8 +50,8 @@ class ModifiedBuilder:
             for transaction in sorted_mempool:
                 if len(selected_transactions) < BLOCK_CAP:
                     if transaction.mev_potential > 0:
-                        attack_type = random.choice(['front', 'back'])
-                        attack_transaction = self.launch_attack(block_num, transaction, attack_type)
+                        attack_type: str = random.choice(['front', 'back'])
+                        attack_transaction: Transaction = self.launch_attack(block_num, transaction, attack_type)
                         
                         if attack_type == 'front':
                             selected_transactions.append(attack_transaction)
@@ -68,32 +69,32 @@ class ModifiedBuilder:
         self.selected_transactions = selected_transactions[:BLOCK_CAP]  # Ensure exact selection limit
         return self.selected_transactions
 
-    def calculate_block_value(self):
+    def calculate_block_value(self) -> float:
         if not self.selected_transactions:
-            return 0
+            return 0.0
 
-        gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
+        gas_fee: float = sum(tx.gas_fee for tx in self.selected_transactions)
         
         if self.is_attacker:
-            mev_value = sum(tx.mev_potential for tx in self.selected_transactions)
+            mev_value: float = sum(tx.mev_potential for tx in self.selected_transactions)
             # Debugging: Ensure MEV value is being properly accounted
             if mev_value < 0:
                 print(f"Warning: Negative MEV value detected for Builder {self.id}")
         else:
-            mev_value = 0  # Non-attackers only get gas fees
+            mev_value: float = 0.0  # Non-attackers only get gas fees
         
         return gas_fee + mev_value
 
-    def place_bid(self, round_num, block_value, last_round_bids):
-        highest_last_bid = max(last_round_bids, default=0)
+    def place_bid(self, round_num: int, block_value: float, last_round_bids: List[float]) -> float:
+        highest_last_bid: float = max(last_round_bids, default=0.0)
         if self.strategy == "reactive":
             # Reactive strategy logic
-            my_last_bid = self.bid_history[-1] if self.bid_history else 0
-            second_highest_last_bid = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0
+            my_last_bid: float = self.bid_history[-1] if self.bid_history else 0.0
+            second_highest_last_bid: float = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0.0
 
             if my_last_bid < highest_last_bid:
                 # Not the highest bid: raise bid
-                bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
+                bid: float = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
             elif my_last_bid == highest_last_bid:
                 # Tied with another builder: raise bid
                 bid = my_last_bid + random.random() * (block_value - my_last_bid)
@@ -103,7 +104,7 @@ class ModifiedBuilder:
         elif self.strategy == "late_enter":
             # Late enter strategy: bid aggressively in later rounds
             if round_num < random.randint(17, 22):
-                bid = 0
+                bid = 0.0
             else:
                 bid = min(1.05 * highest_last_bid, block_value)
         else:
@@ -113,66 +114,55 @@ class ModifiedBuilder:
         self.bid_history.append(bid)
         return bid
 
-    def get_mempool(self):
+    def get_mempool(self) -> List[Transaction]:
         return self.mempool
 
-    def clear_mempool(self, winning_block_transactions):
+    def clear_mempool(self, winning_block_transactions: List[Transaction]) -> None:
         # Clear transactions that are included in the winning block
         self.mempool = [tx for tx in self.mempool if tx not in winning_block_transactions]
 
 
-def simulate_auction(builders, users, num_blocks=BLOCK_NUM):
-    all_block_data = []
+def simulate_auction(builders: List[ModifiedBuilder], users: List[User], num_blocks: int = BLOCK_NUM) -> List[Tuple[int, int, str, str, float, float]]:
+    all_block_data: List[Tuple[int, int, str, str, float, float]] = []
 
     for block_num in range(num_blocks):
-        # print(f"\n=== Starting Block {block_num} ===")
-        auction_end = random.randint(20, MAX_ROUNDS)
-        last_round_bids = [0] * len(builders)  # Initialize with zeros for the first round
+        auction_end: int = random.randint(20, MAX_ROUNDS)
+        last_round_bids: List[float] = [0.0] * len(builders)  # Initialize with zeros for the first round
 
         for round_num in range(auction_end):
-            # print(f"\n--- Round {round_num} ---")
-
             # Users create and broadcast transactions to their visible builders
             for user in users:
-                tx_count = random.randint(1, 5)
+                tx_count: int = random.randint(1, 5)
                 for _ in range(tx_count):
-                    tx = user.create_transactions(block_num)
-                    # print(f"User {user.id} created transaction with gas_fee={tx.gas_fee}, mev_potential={tx.mev_potential}")
+                    tx: Transaction = user.create_transactions(block_num)
                     for builder in user.visible_builders:
                         builder.receive_transaction(tx)
-                        # print(f"Transaction sent to Builder {builder.id}")
 
             # Builders select transactions, calculate block value, and place bids
-            round_bids = []
+            round_bids: List[float] = []
             for builder in builders:
-                selected_txs = builder.select_transactions(block_num)
-                block_value = builder.calculate_block_value()
-                bid = builder.place_bid(round_num, block_value, last_round_bids)
+                selected_txs: List[Transaction] = builder.select_transactions(block_num)
+                block_value: float = builder.calculate_block_value()
+                bid: float = builder.place_bid(round_num, block_value, last_round_bids)
                 round_bids.append(bid)
                 all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
-                # print(f"Builder {builder.id} (strategy={builder.strategy}): "
-                #       f"selected {len(selected_txs)} transactions, block_value={block_value}, bid={bid}")
 
             last_round_bids = round_bids  # Update for the next round
 
         # After the auction ends, determine the winning builder and clear their transactions from all mempools
-        winning_builder_index = round_bids.index(max(round_bids))
-        winning_builder = builders[winning_builder_index]
-        winning_block_transactions = winning_builder.selected_transactions
-
-        # print(f"\n=== Winning Builder for Block {block_num} ===")
-        # print(f"Builder {winning_builder.id} won with bid {max(round_bids)}")
+        winning_builder_index: int = round_bids.index(max(round_bids))
+        winning_builder: ModifiedBuilder = builders[winning_builder_index]
+        winning_block_transactions: List[Transaction] = winning_builder.selected_transactions
 
         # Clear winning block transactions from all builders' mempools
         for builder in builders:
             builder.clear_mempool(winning_block_transactions)
-            # print(f"Builder {builder.id} mempool cleared. Remaining transactions: {len(builder.mempool)}")
 
     return all_block_data
 
 
-def save_results(block_data, num_attack_builders):
-    output_file = f"data/same_seed/bid_builder{num_attack_builders}.csv"
+def save_results(block_data: List[Tuple[int, int, str, str, float, float]], num_attack_builders: int) -> None:
+    output_file: str = f"data/same_seed/bid_builder{num_attack_builders}.csv"
     with open(output_file, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["block_num", "round_num", "builder_id", "strategy", "bid", "block_value"])
@@ -194,13 +184,13 @@ def save_results(block_data, num_attack_builders):
 
 if __name__ == "__main__":
     for num_attack_builders in [10]:
-        builders = (
+        builders: List[ModifiedBuilder] = (
             [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(3)] +
             [ModifiedBuilder(f"builder_{i+3}", is_attacker=False, strategy="late_enter") for i in range(2)] +
             [ModifiedBuilder(f"builder_{i+5}", is_attacker=True, strategy="reactive") for i in range(10)] +
             [ModifiedBuilder(f"builder_{i+15}", is_attacker=False, strategy="reactive") for i in range(5)]
         )
-        users = [User(f"user_{i}", False, builders) for i in range(50)]
-        block_data = simulate_auction(builders, users, BLOCK_NUM)
+        users: List[User] = [User(f"user_{i}", False, builders) for i in range(50)]
+        block_data: List[Tuple[int, int, str, str, float, float]] = simulate_auction(builders, users, BLOCK_NUM)
         save_results(block_data, num_attack_builders)
         # print_visible_users(builders, users)
