@@ -3,7 +3,7 @@ import csv
 from copy import deepcopy
 from blockchain_env.transaction import Transaction
 from blockchain_env.user import User
-from typing import List, Tuple, Optional, Union, Dict, Any
+from typing import List, Tuple
 
 # Constants
 BLOCK_CAP: int = 100

@@ -9,7 +9,6 @@ BLOCK_CAP: int = 100
 class Builder(Node):
     def __init__(self, builder_id: int, is_attacker: bool) -> None:
         super().__init__(builder_id)
-        self.id: int = builder_id
         self.is_attacker: bool = is_attacker
         self.balance: int = 0
         self.mempool: List[Transaction] = []

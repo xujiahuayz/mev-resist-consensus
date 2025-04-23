@@ -1,14 +1,49 @@
 import networkx as nx
 import numpy as np
 import random
-from typing import List
+from typing import List, Dict, Any
+from dataclasses import dataclass
 
 random.seed(16)
+
+@dataclass
+class Message:
+    sender_id: int
+    receiver_id: int
+    content: Any
+    round: int
 
 class Node:
     def __init__(self, node_id: int) -> None:
         self.id: int = node_id
-        self.visible_builders: List[int] = []  # List of builder IDs that this node can see
+        self.visible_nodes: List[int] = []  # List of node IDs that this node can see
+        self.message_queue: List[Message] = []  # Queue of messages to process
+        self.network: nx.Graph = None  # Reference to the network graph
+
+    def set_network(self, network: nx.Graph) -> None:
+        self.network = network
+        # Update visible nodes based on network connections
+        self.visible_nodes = list(network.neighbors(self.id))
+
+    def send_message(self, receiver_id: int, content: Any, current_round: int) -> None:
+        """Send a message to another node through the network"""
+        if receiver_id in self.visible_nodes:
+            message = Message(
+                sender_id=self.id,
+                receiver_id=receiver_id,
+                content=content,
+                round=current_round
+            )
+            # Add message to receiver's queue
+            receiver = next((n for n in self.network.nodes if n.id == receiver_id), None)
+            if receiver:
+                receiver.message_queue.append(message)
+
+    def receive_messages(self) -> List[Message]:
+        """Get all messages from the queue"""
+        messages = self.message_queue.copy()
+        self.message_queue.clear()
+        return messages
 
 def build_network(users: List['User'], builders: List['Builder'], proposers: List['Proposer']) -> nx.Graph:
     nodes: List[Node] = users + builders + proposers
@@ -26,10 +61,8 @@ def build_network(users: List['User'], builders: List['Builder'], proposers: Lis
                 latency: float = np.clip(np.random.normal(2.5, 1.0), 0.5, 5.0)
                 G.add_edge(node_i.id, node_j.id, weight=latency)
 
-    # Assign visible builders (20–80% randomly selected)
-    builder_ids: List[int] = [b.id for b in builders]
+    # Set network reference for all nodes
     for node in nodes:
-        visible_count: int = random.randint(int(0.2 * len(builder_ids)), int(0.8 * len(builder_ids)))
-        node.visible_builders = random.sample(builder_ids, visible_count)
+        node.set_network(G)
 
     return G

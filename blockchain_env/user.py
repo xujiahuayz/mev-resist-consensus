@@ -3,7 +3,7 @@ from copy import deepcopy
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
 from blockchain_env.builder import Builder
-from blockchain_env.node import Node 
+from blockchain_env.node import Node, build_network
 from typing import List
 
 random.seed(16)
@@ -11,9 +11,7 @@ random.seed(16)
 class User(Node):
     def __init__(self, user_id: int, is_attacker: bool) -> None:
         super().__init__(user_id)
-        self.id: int = user_id
         self.is_attacker: bool = is_attacker
-        # self.visible_builders = random.sample(builders, int(0.8 * len(builders)))
         self.balance: int = 0
 
     def create_transactions(self, block_num: int) -> Transaction:
@@ -27,10 +25,12 @@ class User(Node):
         
     def launch_attack(self, block_num: int) -> Transaction:
         # Launch front, back, or sandwich attack on the transaction with the highest MEV potential
-        # Get the mempool content from the visible builders
+        # Get the mempool content from visible nodes
         mempool_content: List[Transaction] = []
-        for builder in self.visible_builders:
-            mempool_content.extend(deepcopy(builder.get_mempool()))
+        for node_id in self.visible_nodes:
+            node = next((n for n in self.network.nodes if n.id == node_id), None)
+            if node and hasattr(node, 'get_mempool'):
+                mempool_content.extend(node.get_mempool())
 
         # Filter for transactions with MEV potential greater than zero
         profitable_txs: List[Transaction] = [tx for tx in mempool_content if tx.mev_potential > 0]
@@ -60,15 +60,19 @@ class User(Node):
         return self.create_transactions(block_num)
 
     def broadcast_transactions(self, transaction: Transaction) -> None:
-        # Broadcast transactions to all visible builders
-        for builder in self.visible_builders:
-            builder.receive_transaction(transaction)
+        # Broadcast transactions to all visible nodes that are builders
+        for node_id in self.visible_nodes:
+            node = next((n for n in self.network.nodes if n.id == node_id), None)
+            if node and hasattr(node, 'receive_transaction'):
+                node.receive_transaction(transaction)
 
     @classmethod
     def test_create_transactions(cls) -> None:
+        # Create test network
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
-
+        network = build_network([user], builders, [])
+        
         for block_num in range(2):
             for i in range(2): 
                 tx: Transaction = user.create_transactions(block_num)
@@ -82,8 +86,10 @@ class User(Node):
 
     @classmethod
     def test_launch_attack(cls) -> None:
+        # Create test network
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(1, True)
+        network = build_network([user], builders, [])
         
         # Populate builders' mempools with some transactions
         for builder in builders:
@@ -103,13 +109,19 @@ class User(Node):
 
     @classmethod
     def test_broadcast_transactions(cls) -> None:
+        # Create test network
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
+        network = build_network([user], builders, [])
+        
         tx: Transaction = user.create_transactions(1)
         user.broadcast_transactions(tx)
         
-        for builder in user.visible_builders:
-            assert tx in builder.get_mempool(), "Transaction not found in builder's mempool"
+        # Check if transaction was received by visible builders
+        for node_id in user.visible_nodes:
+            node = next((n for n in network.nodes if n.id == node_id), None)
+            if node and hasattr(node, 'get_mempool'):
+                assert tx in node.get_mempool(), "Transaction not found in builder's mempool"
         
         print("test_broadcast_transactions passed!")
 

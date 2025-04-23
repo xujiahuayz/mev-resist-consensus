@@ -1,14 +1,15 @@
-import random
 import os
+import random
 import csv
 import time
 import multiprocessing as mp
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
-import gc  # for garbage collection
-import tracemalloc  # for memory profiling if needed
-
+from blockchain_env.node import Node, build_network
+import gc
+import tracemalloc
+ 
 # Constants
 BLOCKNUM = 1000
 BLOCK_CAP = 100
@@ -16,7 +17,6 @@ USERNUM = 50
 BUILDERNUM = 20
 PROPOSERNUM = 20
 
-# Seed for reproducibility
 random.seed(16)
 
 # Determine the number of CPU cores and set the number of processes
@@ -54,6 +54,9 @@ def process_block(block_num, users, builders, proposers):
         bid_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, selected_transactions, bid_value))
     
+    winning_bid = None
+    winning_builder = None
+    
     for proposer in proposers:
         # Reset proposer state for new block
         proposer.reset_for_new_block()
@@ -65,28 +68,35 @@ def process_block(block_num, users, builders, proposers):
         # Select winning bid
         winner = proposer.select_winner()
         if winner:
-            winning_builder_id, winning_bid = winner
-            highest_bid = next(result for result in builder_results if result[0] == winning_builder_id)
-            highest_bid_builder = next(b for b in builders if b.id == winning_builder_id)
+            winning_builder_id, winning_bid_amount = winner
+            winning_bid = next(result for result in builder_results if result[0] == winning_builder_id)
+            winning_builder = next(b for b in builders if b.id == winning_builder_id)
+            break  # First proposer to select a winner wins
 
+    if winning_bid and winning_builder:
+        # Process the winning bid
+        for position, tx in enumerate(winning_bid[1]):
+            tx.position = position
+            tx.included_at = block_num
+        
+        all_block_transactions.extend(winning_bid[1])
+        total_gas_fee = sum(tx.gas_fee for tx in winning_bid[1])
+        total_mev = sum(tx.mev_potential for tx in winning_bid[1])
 
-    # highest_bid = max(builder_results, key=lambda x: x[2])
-    # highest_bid_builder = next(b for b in builders if b.id == highest_bid[0])
-    
-    for position, tx in enumerate(highest_bid[1]):
-        tx.position = position
-        tx.included_at = block_num
-    
-    all_block_transactions.extend(highest_bid[1])
-    total_gas_fee = sum(tx.gas_fee for tx in highest_bid[1])
-    total_mev = sum(tx.mev_potential for tx in highest_bid[1])
-
-    block_data = {
-        "block_num": block_num,
-        "builder_id": highest_bid_builder.id,
-        "total_gas_fee": total_gas_fee,
-        "total_mev": total_mev
-    }
+        block_data = {
+            "block_num": block_num,
+            "builder_id": winning_builder.id,
+            "total_gas_fee": total_gas_fee,
+            "total_mev": total_mev
+        }
+    else:
+        # No winner was selected
+        block_data = {
+            "block_num": block_num,
+            "builder_id": None,
+            "total_gas_fee": 0,
+            "total_mev": 0
+        }
 
     for builder in builders:
         builder.clear_mempool(block_num)

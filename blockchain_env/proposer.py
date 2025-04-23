@@ -7,7 +7,6 @@ import random
 class Proposer(Node):
     def __init__(self, proposer_id: int) -> None:
         super().__init__(proposer_id)
-        self.id: int = proposer_id
         self.current_round: int = 0
         self.max_rounds: int = 24  # Maximum number of rounds per block
         self.bids: Dict[int, float] = {}  # {builder_id: bid_amount}
