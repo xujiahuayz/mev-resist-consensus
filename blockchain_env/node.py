@@ -1,6 +1,9 @@
 import networkx as nx
 import numpy as np
 import random
+from blockchain_env.user import User
+from blockchain_env.builder import Builder
+from blockchain_env.proposer import Proposer
 from typing import List, Dict, Any
 from dataclasses import dataclass
 

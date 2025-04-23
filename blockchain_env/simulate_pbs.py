@@ -34,8 +34,15 @@ def transaction_number():
     else:
         return random.randint(3, 5)
 
-def process_block(block_num, users, builders, proposers):
+def process_block(block_num, network):
     all_block_transactions = []
+    
+    # Get all users, builders, and proposers from the network
+    users = [node for node in network.nodes if isinstance(node, User)]
+    builders = [node for node in network.nodes if isinstance(node, Builder)]
+    proposers = [node for node in network.nodes if isinstance(node, Proposer)]
+
+    # Process user transactions
     for user in users:
         num_transactions = transaction_number()
         for _ in range(num_transactions):
@@ -47,13 +54,14 @@ def process_block(block_num, users, builders, proposers):
             if tx:
                 user.broadcast_transactions(tx)
 
-    
+    # Process builder bids
     builder_results = []
     for builder in builders:
         selected_transactions = builder.select_transactions(block_num)
         bid_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, selected_transactions, bid_value))
     
+    # Process proposer bids
     winning_bid = None
     winning_builder = None
     
@@ -98,19 +106,24 @@ def process_block(block_num, users, builders, proposers):
             "total_mev": 0
         }
 
+    # Clear mempools for all builders
     for builder in builders:
         builder.clear_mempool(block_num)
 
     return block_data, all_block_transactions
 
 def simulate_pbs(num_attacker_builders, num_attacker_users):
-    proposers = [Proposer(f"propsoer_{i}") for i in range(PROPOSERNUM)]
+    # Create network participants
+    proposers = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
     builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
-    users = [User(f"user_{i}", i < num_attacker_users, builders) for i in range(USERNUM)]
+    users = [User(f"user_{i}", i < num_attacker_users) for i in range(USERNUM)]
+
+    # Build the network
+    network = build_network(users, builders, proposers)
 
     # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:
-        results = pool.starmap(process_block, [(block_num, users, builders, proposers) for block_num in range(BLOCKNUM)])
+        results = pool.starmap(process_block, [(block_num, network) for block_num in range(BLOCKNUM)])
     
     # Gather results
     block_data_list, all_transactions = zip(*results)
