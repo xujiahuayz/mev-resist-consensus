@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Tuple
 from blockchain_env.node import Node
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
@@ -12,8 +12,8 @@ class Proposer(Node):
         self.max_rounds: int = 24  # Maximum number of rounds per block
         self.bids: Dict[int, float] = {}  # {builder_id: bid_amount}
         self.all_observed_bids: Dict[int, float] = {}  # {round: bid_amount}
-        self.winning_bid: Optional[Tuple[int, float]] = None  # (round, bid_amount)
-        self.end_round: Optional[int] = None
+        self.winning_bid: Tuple[int, float] | None = None  # (round, bid_amount)
+        self.end_round: int | None = None
         
     def receive_bid(self, builder_id: int, bid_amount: float) -> None:
         """Receive a bid from a builder for the current round."""
@@ -26,8 +26,13 @@ class Proposer(Node):
         self.current_round += 1
         self.end_round = self.current_round
         
-    def select_winner(self) -> Optional[Tuple[int, float]]:
-        """Select the winning bid for the current block."""
+    def select_winner(self) -> Tuple[int, float] | None:
+        """Select the winning bid for the current block.
+        
+        Returns:
+            Tuple[int, float] | None: A tuple of (winning_builder_id, winning_bid_amount) if a winner is found,
+                                     None if no valid bids exist.
+        """
         if not self.bids:
             return None
             
@@ -35,6 +40,7 @@ class Proposer(Node):
         highest_bid: float = 0.0
         winning_round: int = -1
         
+        # First find the highest bid amount and its round
         for round_num, bid_amount in self.all_observed_bids.items():
             if bid_amount > highest_bid:
                 highest_bid = bid_amount
@@ -57,7 +63,7 @@ class Proposer(Node):
         self.winning_bid = (winning_round, highest_bid)
         return (winning_builder, highest_bid)
         
-    def adjust_auction_duration(self, prev_winning_bid: Optional[Tuple[int, float]], prev_end_round: Optional[int]) -> None:
+    def adjust_auction_duration(self, prev_winning_bid: Tuple[int, float] | None, prev_end_round: int | None) -> None:
         """Adjust the auction duration based on the adaptive termination strategy."""
         if prev_winning_bid is None or prev_end_round is None:
             return
@@ -81,7 +87,7 @@ class Proposer(Node):
         elif higher_bid_before:
             self.max_rounds = max(1, self.max_rounds - 1)
             
-    def get_block(self, builders: List[Builder]) -> Optional[List[Transaction]]:
+    def get_block(self, builders: List[Builder]) -> List[Transaction] | None:
         """Get the block from the winning builder."""
         winner = self.select_winner()
         if winner is None:

@@ -4,12 +4,11 @@ from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
 from blockchain_env.builder import Builder
 from blockchain_env.node import Node 
-import uuid
-from typing import List, Optional
+from typing import List
 
 random.seed(16)
 
-class User:
+class User(Node):
     def __init__(self, user_id: int, is_attacker: bool) -> None:
         super().__init__(user_id)
         self.id: int = user_id
@@ -23,7 +22,7 @@ class User:
         mev_potential: int = random.choice(MEV_POTENTIALS)
         creator_id: int = self.id
         created_at: int = block_num
-        target_tx: Optional[Transaction] = None
+        target_tx: Transaction | None = None
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
         
     def launch_attack(self, block_num: int) -> Transaction:
