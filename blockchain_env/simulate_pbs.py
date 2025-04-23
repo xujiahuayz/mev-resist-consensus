@@ -5,6 +5,7 @@ import time
 import multiprocessing as mp
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
+from blockchain_env.proposer import Proposer
 import gc  # for garbage collection
 import tracemalloc  # for memory profiling if needed
 
@@ -13,6 +14,7 @@ BLOCKNUM = 1000
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 20
+PROPOSERNUM = 20
 
 # Seed for reproducibility
 random.seed(16)
@@ -32,7 +34,7 @@ def transaction_number():
     else:
         return random.randint(3, 5)
 
-def process_block(block_num, users, builders):
+def process_block(block_num, users, builders, proposers):
     all_block_transactions = []
     for user in users:
         num_transactions = transaction_number()
@@ -52,8 +54,24 @@ def process_block(block_num, users, builders):
         bid_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, selected_transactions, bid_value))
     
-    highest_bid = max(builder_results, key=lambda x: x[2])
-    highest_bid_builder = next(b for b in builders if b.id == highest_bid[0])
+    for proposer in proposers:
+        # Reset proposer state for new block
+        proposer.reset_for_new_block()
+        
+        # Process each builder's bid
+        for builder_id, transactions, bid_amount in builder_results:
+            proposer.receive_bid(builder_id, bid_amount)
+            
+        # Select winning bid
+        winner = proposer.select_winner()
+        if winner:
+            winning_builder_id, winning_bid = winner
+            highest_bid = next(result for result in builder_results if result[0] == winning_builder_id)
+            highest_bid_builder = next(b for b in builders if b.id == winning_builder_id)
+
+
+    # highest_bid = max(builder_results, key=lambda x: x[2])
+    # highest_bid_builder = next(b for b in builders if b.id == highest_bid[0])
     
     for position, tx in enumerate(highest_bid[1]):
         tx.position = position
@@ -76,12 +94,13 @@ def process_block(block_num, users, builders):
     return block_data, all_block_transactions
 
 def simulate_pbs(num_attacker_builders, num_attacker_users):
+    proposers = [Proposer(f"propsoer_{i}") for i in range(PROPOSERNUM)]
     builders = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
     users = [User(f"user_{i}", i < num_attacker_users, builders) for i in range(USERNUM)]
 
     # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:
-        results = pool.starmap(process_block, [(block_num, users, builders) for block_num in range(BLOCKNUM)])
+        results = pool.starmap(process_block, [(block_num, users, builders, proposers) for block_num in range(BLOCKNUM)])
     
     # Gather results
     block_data_list, all_transactions = zip(*results)

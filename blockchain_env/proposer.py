@@ -28,10 +28,6 @@ class Proposer(Node):
         
     def select_winner(self) -> Tuple[int, float] | None:
         """Select the winning bid for the current block.
-        
-        Returns:
-            Tuple[int, float] | None: A tuple of (winning_builder_id, winning_bid_amount) if a winner is found,
-                                     None if no valid bids exist.
         """
         if not self.bids:
             return None
