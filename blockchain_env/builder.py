@@ -75,31 +75,40 @@ class Builder(Node):
             mev_gain: float = sum(tx.target_tx.mev_potential for tx in selected_transactions if tx.target_tx)
             block_value += mev_gain  # Add MEV profit to block value for attackers
 
-        # Initial bid is 50% of the adjusted block value
-        bid: float = 0.5 * block_value
+        # Initial bid is a random percentage of the block value between 40% and 60%
+        bid: float = block_value * random.uniform(0.4, 0.6)
 
         # Reactive strategy over 5 rounds of bidding
         for _ in range(5):
             # Get current highest bid from history in the builder's mempool
-            gas_fees: List[float] = [tx.gas_fee for tx in self.mempool]
-            if len(gas_fees) == 0:
+            # Use the actual block values (gas fees + MEV) instead of just gas fees
+            block_values: List[float] = []
+            for tx in self.mempool:
+                tx_value = tx.gas_fee
+                if hasattr(tx, 'target_tx') and tx.target_tx:
+                    tx_value += tx.target_tx.mev_potential
+                block_values.append(tx_value)
+            
+            if len(block_values) == 0:
                 break  # If no transactions in the mempool, exit the loop
 
-            highest_bid: float = max(gas_fees)
+            highest_value: float = max(block_values)
             
-            if highest_bid > bid:
-                # Increase bid by 0.1 times the highest bid
-                bid = min(highest_bid, bid + 0.1 * highest_bid)
+            if highest_value > bid:
+                # Increase bid by 0.1 times the highest value
+                bid = min(highest_value, bid + 0.1 * highest_value)
             else:
-                # Get the second highest bid if possible, else use the current bid
-                sorted_bids: List[float] = sorted(gas_fees, reverse=True)
-                if len(sorted_bids) > 1:
-                    second_highest_bid: float = sorted_bids[1]
-                    bid = max(0.5 * (highest_bid + second_highest_bid), bid)
+                # Get the second highest value if possible, else use the current bid
+                sorted_values: List[float] = sorted(block_values, reverse=True)
+                if len(sorted_values) > 1:
+                    second_highest_value: float = sorted_values[1]
+                    bid = max(0.5 * (highest_value + second_highest_value), bid)
                 else:
-                    bid = max(0.5 * highest_bid, bid)
+                    bid = max(0.5 * highest_value, bid)
 
-        # Return the final bid for this builder
+        # Add a small random factor to prevent identical bids
+        bid = bid * random.uniform(0.99, 1.01)
+
         return bid
 
     def get_mempool(self) -> List[Transaction]:

@@ -33,31 +33,18 @@ class Proposer(Node):
         if not self.bids:
             return None
             
-        # Find the highest bid across all rounds
+        # Find the highest bid and its builder
         highest_bid: float = 0.0
-        winning_round: int = -1
+        winning_builder: int = -1
         
-        # First find the highest bid amount and its round
-        for round_num, bid_amount in self.all_observed_bids.items():
+        for builder_id, bid_amount in self.bids.items():
             if bid_amount > highest_bid:
                 highest_bid = bid_amount
-                winning_round = round_num
+                winning_builder = builder_id
                 
-        if winning_round == -1:
+        if winning_builder == -1:
             return None  # No valid bids found
             
-        # Now find the builder who made this bid
-        winning_builder = None
-        for builder_id, bid_amount in self.bids.items():
-            if bid_amount == highest_bid:
-                winning_builder = builder_id
-                break
-                
-        if winning_builder is None:
-            # This should never happen in normal operation as we track bids in both structures
-            raise ValueError("Found highest bid but no matching builder. Data inconsistency detected.")
-            
-        self.winning_bid = (winning_round, highest_bid)
         return (winning_builder, highest_bid)
         
     def adjust_auction_duration(self, prev_winning_bid: Tuple[int, float] | None, prev_end_round: int | None) -> None:
