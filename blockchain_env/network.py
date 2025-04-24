@@ -1,9 +1,6 @@
 import networkx as nx
 import numpy as np
 import random
-from blockchain_env.user import User
-from blockchain_env.builder import Builder
-from blockchain_env.proposer import Proposer
 from typing import List, Dict, Any
 from dataclasses import dataclass
 
@@ -68,4 +65,4 @@ def build_network(users: List['User'], builders: List['Builder'], proposers: Lis
     for node in nodes:
         node.set_network(G)
 
-    return G
+    return G 

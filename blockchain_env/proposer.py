@@ -1,8 +1,10 @@
 from typing import List, Dict, Tuple
-from blockchain_env.node import Node
+from blockchain_env.network import Node
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
 import random
+
+random.seed(16)
 
 class Proposer(Node):
     def __init__(self, proposer_id: int) -> None:

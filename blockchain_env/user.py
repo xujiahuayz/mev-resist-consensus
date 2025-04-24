@@ -2,8 +2,8 @@ import random
 from copy import deepcopy
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
+from blockchain_env.network import Node, build_network
 from blockchain_env.builder import Builder
-from blockchain_env.node import Node, build_network
 from typing import List
 
 random.seed(16)
@@ -28,8 +28,8 @@ class User(Node):
         # Get the mempool content from visible nodes
         mempool_content: List[Transaction] = []
         for node_id in self.visible_nodes:
-            node = next((n for n in self.network.nodes if n.id == node_id), None)
-            if node and hasattr(node, 'get_mempool'):
+            node = self.network.nodes[node_id]['node']
+            if hasattr(node, 'get_mempool'):
                 mempool_content.extend(node.get_mempool())
 
         # Filter for transactions with MEV potential greater than zero
@@ -62,8 +62,8 @@ class User(Node):
     def broadcast_transactions(self, transaction: Transaction) -> None:
         # Broadcast transactions to all visible nodes that are builders
         for node_id in self.visible_nodes:
-            node = next((n for n in self.network.nodes if n.id == node_id), None)
-            if node and hasattr(node, 'receive_transaction'):
+            node = self.network.nodes[node_id]['node']
+            if hasattr(node, 'receive_transaction'):
                 node.receive_transaction(transaction)
 
     @classmethod
@@ -119,8 +119,8 @@ class User(Node):
         
         # Check if transaction was received by visible builders
         for node_id in user.visible_nodes:
-            node = next((n for n in network.nodes if n.id == node_id), None)
-            if node and hasattr(node, 'get_mempool'):
+            node = network.nodes[node_id]['node']
+            if hasattr(node, 'get_mempool'):
                 assert tx in node.get_mempool(), "Transaction not found in builder's mempool"
         
         print("test_broadcast_transactions passed!")

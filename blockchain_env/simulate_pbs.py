@@ -6,7 +6,7 @@ import multiprocessing as mp
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
-from blockchain_env.node import Node, build_network
+from blockchain_env.network import build_network
 import gc
 import tracemalloc
  
@@ -38,9 +38,9 @@ def process_block(block_num, network):
     all_block_transactions = []
     
     # Get all users, builders, and proposers from the network
-    users = [node for node in network.nodes if isinstance(node, User)]
-    builders = [node for node in network.nodes if isinstance(node, Builder)]
-    proposers = [node for node in network.nodes if isinstance(node, Proposer)]
+    users = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], User)]
+    builders = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], Builder)]
+    proposers = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], Proposer)]
 
     # Process user transactions
     for user in users:
@@ -57,6 +57,12 @@ def process_block(block_num, network):
     # Process builder bids
     builder_results = []
     for builder in builders:
+        # Process any received messages (transactions)
+        messages = builder.receive_messages()
+        for msg in messages:
+            if hasattr(builder, 'receive_transaction'):
+                builder.receive_transaction(msg.content)
+
         selected_transactions = builder.select_transactions(block_num)
         bid_value = builder.bid(selected_transactions)
         builder_results.append((builder.id, selected_transactions, bid_value))
@@ -71,7 +77,15 @@ def process_block(block_num, network):
         
         # Process each builder's bid
         for builder_id, transactions, bid_amount in builder_results:
-            proposer.receive_bid(builder_id, bid_amount)
+            # Send bid to proposer through network
+            builder = next((b for b in builders if b.id == builder_id), None)
+            if builder:
+                builder.send_message(proposer.id, bid_amount, block_num)
+            
+        # Process received bids
+        messages = proposer.receive_messages()
+        for msg in messages:
+            proposer.receive_bid(msg.sender_id, msg.content)
             
         # Select winning bid
         winner = proposer.select_winner()

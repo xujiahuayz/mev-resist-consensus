@@ -1,7 +1,7 @@
 import random
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
-from blockchain_env.node import Node 
+from blockchain_env.network import Node 
 from typing import List
 
 BLOCK_CAP: int = 100
