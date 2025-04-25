@@ -187,4 +187,3 @@ if __name__ == "__main__":
             run_simulation_in_process(num_attacker_builders, num_attacker_users)
             end_time = time.time()
             print(f"Simulation with {num_attacker_builders} attacker builders and {num_attacker_users} attacker users completed in {end_time - start_time:.2f} seconds")
-

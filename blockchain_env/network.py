@@ -1,7 +1,8 @@
 import networkx as nx
 import numpy as np
 import random
-from typing import List, Any
+import matplotlib.pyplot as plt
+from typing import List, Any, Type
 from dataclasses import dataclass
 
 random.seed(16)
@@ -45,7 +46,7 @@ class Node:
         self.message_queue.clear()
         return messages
 
-def build_network(users: List['User'], builders: List['Builder'], proposers: List['Proposer']) -> nx.Graph:
+def build_network(users: List[Node], builders: List[Node], proposers: List[Node]) -> nx.Graph:
     nodes: List[Node] = users + builders + proposers
     G: nx.Graph = nx.Graph()
 
@@ -57,7 +58,7 @@ def build_network(users: List['User'], builders: List['Builder'], proposers: Lis
     for i, node_i in enumerate(nodes):
         for j, node_j in enumerate(nodes):
             if i < j:
-                # Sample latency in rounds from N(2.5, 1), clip to [0.5, 5]
+                # Sample latency in rounds from N(1.0, 1.0), clip to [0.1, 3.0]
                 latency: float = np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0)
                 G.add_edge(node_i.id, node_j.id, weight=latency)
 
@@ -65,4 +66,56 @@ def build_network(users: List['User'], builders: List['Builder'], proposers: Lis
     for node in nodes:
         node.set_network(G)
 
-    return G 
+    return G
+
+def visualize_network(network: nx.Graph) -> None:
+    """Visualize the network structure with different node types."""
+    plt.figure(figsize=(12, 8))
+    pos = nx.spring_layout(network)
+    
+    # Get node types
+    users = [n for n in network.nodes() if 'user' in str(n)]
+    builders = [n for n in network.nodes() if 'builder' in str(n)]
+    proposers = [n for n in network.nodes() if 'proposer' in str(n)]
+    
+    # Draw nodes
+    nx.draw_networkx_nodes(network, pos, nodelist=users, node_color='lightblue', node_size=500, label='Users')
+    nx.draw_networkx_nodes(network, pos, nodelist=builders, node_color='lightgreen', node_size=500, label='Builders')
+    nx.draw_networkx_nodes(network, pos, nodelist=proposers, node_color='pink', node_size=500, label='Proposers')
+    
+    # Draw edges with width based on latency
+    edge_widths = [1/network[u][v]['weight'] for u,v in network.edges()]
+    nx.draw_networkx_edges(network, pos, width=edge_widths, alpha=0.5)
+    
+    # Add labels and legend
+    nx.draw_networkx_labels(network, pos)
+    plt.title("Network Visualization with Latency-Based Edge Widths")
+    plt.legend()
+    plt.axis('off')
+    plt.show()
+
+if __name__ == "__main__":
+    # Create test nodes
+    class TestNode(Node):
+        def __init__(self, node_id: str) -> None:
+            super().__init__(node_id)
+    
+    # Create sample nodes for testing
+    users = [TestNode(f"user_{i}") for i in range(5)]
+    builders = [TestNode(f"builder_{i}") for i in range(3)]
+    proposers = [TestNode(f"proposer_{i}") for i in range(2)]
+    
+    # Build and visualize network
+    G = build_network(users, builders, proposers)
+    visualize_network(G)
+    
+    # Print network statistics
+    print("\nNetwork Statistics:")
+    print(f"Number of nodes: {G.number_of_nodes()}")
+    print(f"Number of edges: {G.number_of_edges()}")
+    print("\nNode connections:")
+    for node in G.nodes():
+        print(f"{node} is connected to: {list(G.neighbors(node))}")
+    print("\nEdge latencies:")
+    for u, v, data in G.edges(data=True):
+        print(f"{u} <-> {v}: {data['weight']:.2f} rounds")
