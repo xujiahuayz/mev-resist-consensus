@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 import random
-from typing import List, Dict, Any
+from typing import List, Any
 from dataclasses import dataclass
 
 random.seed(16)
@@ -58,7 +58,7 @@ def build_network(users: List['User'], builders: List['Builder'], proposers: Lis
         for j, node_j in enumerate(nodes):
             if i < j:
                 # Sample latency in rounds from N(2.5, 1), clip to [0.5, 5]
-                latency: float = np.clip(np.random.normal(2.5, 1.0), 0.5, 5.0)
+                latency: float = np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0)
                 G.add_edge(node_i.id, node_j.id, weight=latency)
 
     # Set network reference for all nodes

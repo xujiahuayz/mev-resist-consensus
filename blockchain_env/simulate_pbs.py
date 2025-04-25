@@ -126,6 +126,7 @@ def process_block(block_num, network):
 
     return block_data, all_block_transactions
 
+
 def simulate_pbs(num_attacker_builders, num_attacker_users):
     # Create network participants
     proposers = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
@@ -134,6 +135,9 @@ def simulate_pbs(num_attacker_builders, num_attacker_users):
 
     # Build the network
     network = build_network(users, builders, proposers)
+    
+    # Save network structure
+    # save_network_structure(network, num_attacker_builders, num_attacker_users)
 
     # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:
@@ -184,9 +188,3 @@ if __name__ == "__main__":
             end_time = time.time()
             print(f"Simulation with {num_attacker_builders} attacker builders and {num_attacker_users} attacker users completed in {end_time - start_time:.2f} seconds")
 
-    # Optional: Print memory usage statistics after the simulation
-    snapshot = tracemalloc.take_snapshot()
-    top_stats = snapshot.statistics('lineno')
-    print("\n[Top 10 lines by memory usage]")
-    for stat in top_stats[:10]:
-        print(stat)
