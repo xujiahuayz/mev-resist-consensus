@@ -169,18 +169,6 @@ def save_results(block_data: List[Tuple[int, int, str, str, float, float]], num_
         writer.writerows(block_data)
 
 
-# def print_visible_users(builders, users):
-#     # Initialize a dictionary to count visible users per builder
-#     visible_user_count = {builder.id: 0 for builder in builders}
-
-#     # Iterate over all users and count how many times each builder is in the user's visible_builders
-#     for user in users:
-#         for builder in user.visible_builders:
-#             visible_user_count[builder.id] += 1
-
-#     # Now print the results
-#     for builder_id, count in visible_user_count.items():
-#         print(f"Builder {builder_id} has {count} visible users")
 
 if __name__ == "__main__":
     for num_attack_builders in [10]:
@@ -193,4 +181,3 @@ if __name__ == "__main__":
         users: List[User] = [User(f"user_{i}", False, builders) for i in range(50)]
         block_data: List[Tuple[int, int, str, str, float, float]] = simulate_auction(builders, users, BLOCK_NUM)
         save_results(block_data, num_attack_builders)
-        # print_visible_users(builders, users)
