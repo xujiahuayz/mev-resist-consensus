@@ -96,8 +96,7 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
             winning_builder = next(b for b in builders if b.id == winning_builder_id)
             break  # First proposer to select a winner wins
 
-    if winning_bid[0]:  # Check if we have a valid winning bid
-        # Process the winning bid
+    if winning_bid[0]:
         for position, tx in enumerate(winning_bid[1]):
             tx.position = position
             tx.included_at = block_num
@@ -113,7 +112,6 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
             "total_mev": total_mev
         }
     else:
-        # No winner was selected
         block_data: Dict[str, Any] = {
             "block_num": block_num,
             "builder_id": "",
