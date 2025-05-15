@@ -46,46 +46,24 @@ class Node:
         self.message_queue.clear()
         return messages
 
-def build_network(users: List[Node], builders: List[Node], proposers: List[Node]) -> nx.Graph:
+def build_network(users: List[Node], builders: List[Node], proposers: List[Node], m: int = 3) -> nx.Graph:
     nodes: List[Node] = users + builders + proposers
-    G: nx.Graph = nx.Graph()
+    N = len(nodes)
+    G = nx.Graph()
 
-    # Add all nodes
-    for node in nodes:
+    # Use Barabási–Albert model to generate the network structure
+    # The BA model requires m < N, and m >= 1
+    m = max(1, min(m, N - 1))
+    ba_graph = nx.barabasi_albert_graph(N, m, seed=16)
+
+    # Add all nodes to the graph with their node object
+    for i, node in enumerate(nodes):
         G.add_node(node.id, node=node)
 
-    min_connectivity = 0.2
-    max_connectivity = 0.5
-    N = len(nodes)
-
-    # Assign target degree to each node
-    target_degrees = {}
-    stubs = []
-    for node in nodes:
-        connectivity = np.random.uniform(min_connectivity, max_connectivity)
-        degree = int(round(connectivity * (N-1)))
-        target_degrees[node.id] = degree
-        stubs.extend([node.id] * degree)
-
-    # Shuffle stubs for random pairing
-    np.random.shuffle(stubs)
-    edges = set()
-    attempts = 0
-    max_attempts = 10 * len(stubs)
-    while len(stubs) >= 2 and attempts < max_attempts:
-        a = stubs.pop()
-        b = stubs.pop()
-        # Avoid self-loops and duplicate edges
-        if a == b or (a, b) in edges or (b, a) in edges:
-            # Put them back in random positions and try again
-            stubs.extend([a, b])
-            np.random.shuffle(stubs)
-            attempts += 1
-            continue
-        edges.add((a, b))
-        latency: float = np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0)
-        G.add_edge(a, b, weight=latency)
-        attempts = 0  # Reset attempts after a successful edge
+    # Add edges with random latency as weight
+    for u, v in ba_graph.edges():
+        latency = float(np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0))
+        G.add_edge(nodes[u].id, nodes[v].id, weight=latency)
 
     # Set network reference for all nodes
     for node in nodes:
