@@ -54,13 +54,38 @@ def build_network(users: List[Node], builders: List[Node], proposers: List[Node]
     for node in nodes:
         G.add_node(node.id, node=node)
 
-    # Generate latency edges
-    for i, node_i in enumerate(nodes):
-        for j, node_j in enumerate(nodes):
-            if i < j:
-                # Sample latency in rounds from N(1.0, 1.0), clip to [0.1, 3.0]
-                latency: float = np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0)
-                G.add_edge(node_i.id, node_j.id, weight=latency)
+    min_connectivity = 0.2
+    max_connectivity = 0.5
+    N = len(nodes)
+
+    # Assign target degree to each node
+    target_degrees = {}
+    stubs = []
+    for node in nodes:
+        connectivity = np.random.uniform(min_connectivity, max_connectivity)
+        degree = int(round(connectivity * (N-1)))
+        target_degrees[node.id] = degree
+        stubs.extend([node.id] * degree)
+
+    # Shuffle stubs for random pairing
+    np.random.shuffle(stubs)
+    edges = set()
+    attempts = 0
+    max_attempts = 10 * len(stubs)
+    while len(stubs) >= 2 and attempts < max_attempts:
+        a = stubs.pop()
+        b = stubs.pop()
+        # Avoid self-loops and duplicate edges
+        if a == b or (a, b) in edges or (b, a) in edges:
+            # Put them back in random positions and try again
+            stubs.extend([a, b])
+            np.random.shuffle(stubs)
+            attempts += 1
+            continue
+        edges.add((a, b))
+        latency: float = np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0)
+        G.add_edge(a, b, weight=latency)
+        attempts = 0  # Reset attempts after a successful edge
 
     # Set network reference for all nodes
     for node in nodes:
