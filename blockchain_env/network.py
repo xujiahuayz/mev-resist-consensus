@@ -108,7 +108,7 @@ def build_network(users: List[Node], builders: List[Node], proposers: List[Node]
     G = nx.Graph()
 
     # Use Barabási–Albert model to generate the network structure
-    m = max(1, min(m, N - 1))
+    m = max(1, min(m, N - 1))  # Ensure m is at least 1
     ba_graph = nx.barabasi_albert_graph(N, m, seed=16)
 
     # Add all nodes to the graph with their node object
@@ -163,17 +163,18 @@ if __name__ == "__main__":
     builders = [TestNode(f"builder_{i}") for i in range(20)]
     proposers = [TestNode(f"proposer_{i}") for i in range(20)]
     
-    # Build and visualize network
-    G = build_network(users, builders, proposers)
-    visualize_network(G)
+    # Build and visualize network with m=1
+    G = build_network(users, builders, proposers, m=1)
     
     # Print network statistics
     print("\nNetwork Statistics:")
     print(f"Number of nodes: {G.number_of_nodes()}")
     print(f"Number of edges: {G.number_of_edges()}")
-    print("\nNode connections:")
-    for node in G.nodes():
-        print(f"{node} is connected to: {list(G.neighbors(node))}")
-    print("\nEdge latencies:")
-    for u, v, data in G.edges(data=True):
-        print(f"{u} <-> {v}: {data['weight']:.2f} rounds")
+    print("\nDegree distribution:")
+    degrees = [G.degree(node) for node in G.nodes()]
+    print(f"Average degree: {sum(degrees)/len(degrees):.2f}")
+    print(f"Minimum degree: {min(degrees)}")
+    print(f"Maximum degree: {max(degrees)}")
+    print("\nSample node degrees:")
+    for node in list(G.nodes())[:10]:  # Show first 10 nodes
+        print(f"{node}: degree {G.degree(node)}")
