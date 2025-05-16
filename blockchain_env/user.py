@@ -24,16 +24,12 @@ class User(Node):
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
         
     def launch_attack(self, block_num: int) -> Transaction:
-        # Launch front, back, or sandwich attack on the transaction with the highest MEV potential
-        # Get the mempool content from visible nodes
-        mempool_content: List[Transaction] = []
-        for node_id in self.visible_nodes:
-            node = self.network.nodes[node_id]['node']
-            if hasattr(node, 'get_mempool'):
-                mempool_content.extend(node.get_mempool())
-
+        """Launch front, back, or sandwich attack on the transaction with the highest MEV potential"""
+        # Process any messages to update mempool
+        self.receive_messages()
+        
         # Filter for transactions with MEV potential greater than zero
-        profitable_txs: List[Transaction] = [tx for tx in mempool_content if tx.mev_potential > 0]
+        profitable_txs: List[Transaction] = [tx for tx in self.mempool if tx.mev_potential > 0]
         if profitable_txs:
             # Sort by highest MEV potential
             profitable_txs.sort(key=lambda x: x.mev_potential, reverse=True)
@@ -41,7 +37,7 @@ class User(Node):
             for i in range(min(len(profitable_txs), 5)):  # Limit to 5 attempts or less
                 target_tx: Transaction = profitable_txs[i]
                 # Look for existing attacks by comparing gas fees
-                existing_attacks: List[Transaction] = [tx for tx in mempool_content if tx.gas_fee - 2 <= target_tx.gas_fee <= tx.gas_fee + 2]
+                existing_attacks: List[Transaction] = [tx for tx in self.mempool if tx.gas_fee - 2 <= target_tx.gas_fee <= tx.gas_fee + 2]
                 # Calculate switch probability based on the number of existing attacks
                 switch_prob: float = min(0.9, len(existing_attacks) / 5)
                 if random.random() >= switch_prob:
@@ -60,11 +56,9 @@ class User(Node):
         return self.create_transactions(block_num)
 
     def broadcast_transactions(self, transaction: Transaction) -> None:
-        # Broadcast transactions to all visible nodes that are builders
-        for node_id in self.visible_nodes:
-            node = self.network.nodes[node_id]['node']
-            if hasattr(node, 'receive_transaction'):
-                node.receive_transaction(transaction)
+        """Broadcast transactions to the network with propagation"""
+        # Start propagation from this node
+        self.propagate_transaction(transaction, transaction.created_at, self.id)
 
     @classmethod
     def test_create_transactions(cls) -> None:

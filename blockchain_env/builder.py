@@ -11,14 +11,16 @@ class Builder(Node):
         super().__init__(builder_id)
         self.is_attacker: bool = is_attacker
         self.balance: int = 0
-        self.mempool: List[Transaction] = []
         self.selected_transactions: List[Transaction] = []
 
     def launch_attack(self, block_num: int, target_transaction: Transaction, attack_type: str) -> Transaction:
         # Launch an attack with specific gas fee and mev potential, targeting a specific transaction
-        mev_potential: int = 0
-        gas_fee: int = 0
-
+        if attack_type == 'front':
+            gas_fee: int = target_transaction.gas_fee + 1
+        else:  # back
+            gas_fee: int = target_transaction.gas_fee - 1
+            
+        mev_potential: int = 0  # Attack transactions don't have MEV potential themselves
         creator_id: int = self.id
         created_at: int = block_num
         target_tx: Transaction = target_transaction
@@ -30,7 +32,8 @@ class Builder(Node):
 
     def receive_transaction(self, transaction: Transaction) -> None:
         # Builder receives transaction and adds to mempool
-        self.mempool.append(deepcopy(transaction))
+        if transaction not in self.mempool:  # Avoid duplicates
+            self.mempool.append(deepcopy(transaction))
 
     def select_transactions(self, block_num: int) -> List[Transaction]:
         selected_transactions: List[Transaction] = []
@@ -38,28 +41,30 @@ class Builder(Node):
             # Sort transactions by mev potential + gas fee for attackers
             self.mempool.sort(key=lambda x: x.mev_potential + x.gas_fee, reverse=True)
             for transaction in self.mempool:
-                if len(selected_transactions) < BLOCK_CAP:
-                    if transaction.mev_potential > 0:
-                        attack_type: str = random.choice(['front', 'back'])
-                        attack_transaction: Transaction = self.launch_attack(block_num, transaction, attack_type)
+                if len(selected_transactions) >= BLOCK_CAP:
+                    break
+                    
+                if transaction.mev_potential > 0:
+                    attack_type: str = random.choice(['front', 'back'])
+                    attack_transaction: Transaction = self.launch_attack(block_num, transaction, attack_type)
 
-                        if attack_type == 'front':
-                            selected_transactions.append(attack_transaction)
+                    if attack_type == 'front':
+                        selected_transactions.append(attack_transaction)
+                        if len(selected_transactions) < BLOCK_CAP:
                             selected_transactions.append(transaction)
-                        elif attack_type == 'back':
-                            selected_transactions.append(transaction)
-                            selected_transactions.append(attack_transaction)
-
-                        if len(selected_transactions) > BLOCK_CAP:
-                            selected_transactions.pop()
-                    else:
+                    elif attack_type == 'back':
                         selected_transactions.append(transaction)
+                        if len(selected_transactions) < BLOCK_CAP:
+                            selected_transactions.append(attack_transaction)
+                else:
+                    selected_transactions.append(transaction)
         else:
             # Sort transactions by gas fee for non-attackers
             self.mempool.sort(key=lambda x: x.gas_fee, reverse=True)
             for transaction in self.mempool:
-                if len(selected_transactions) < BLOCK_CAP:
-                    selected_transactions.append(transaction)
+                if len(selected_transactions) >= BLOCK_CAP:
+                    break
+                selected_transactions.append(transaction)
 
         return selected_transactions
 

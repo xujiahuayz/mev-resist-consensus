@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 from blockchain_env.network import Node
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
@@ -16,11 +16,14 @@ class Proposer(Node):
         self.winning_bid: Tuple[int, float] | None = None  # (round, bid_amount)
         self.end_round: int | None = None
         
-    def receive_bid(self, builder_id: int, bid_amount: float) -> None:
+    def receive_bid(self, builder_id: int, bid_amount: Any) -> None:
         """Receive a bid from a builder for the current round."""
-        self.bids[builder_id] = bid_amount
-        # Track all observed bids for this round
-        self.all_observed_bids[self.current_round] = bid_amount
+        # Convert bid_amount to float if it's not already
+        if isinstance(bid_amount, (int, float)):
+            bid_amount_float: float = float(bid_amount)
+            self.bids[builder_id] = bid_amount_float
+            # Track all observed bids for this round
+            self.all_observed_bids[self.current_round] = bid_amount_float
         
     def end_round(self) -> None:
         """End the current round and determine if the auction should continue."""
