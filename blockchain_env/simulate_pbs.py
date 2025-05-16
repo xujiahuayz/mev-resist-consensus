@@ -11,7 +11,8 @@ from blockchain_env.network import build_network
 from blockchain_env.transaction import Transaction
 import gc
 import tracemalloc
- 
+import networkx as nx
+
 # Constants
 BLOCKNUM: int = 1000
 BLOCK_CAP: int = 100
@@ -24,6 +25,46 @@ random.seed(16)
 # Determine the number of CPU cores and set the number of processes
 num_cores: int = os.cpu_count()
 num_processes: int = max(num_cores - 1, 1)  # Use all cores except one, but at least one
+
+# Create network participants and build network once
+proposers: List[Proposer] = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
+builders: List[Builder] = [Builder(f"builder_{i}", False) for i in range(BUILDERNUM)]  # is_attacker will be set in simulation
+users: List[User] = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
+network: Any = build_network(users, builders, proposers)
+
+# Calculate and save network metrics once
+network_metrics = {}
+for node_id in network.nodes():
+    node = network.nodes[node_id]['node']
+    # Calculate average latency to all other nodes
+    latencies = []
+    for other_id in network.nodes():
+        if other_id != node_id:
+            try:
+                # Get shortest path latency
+                path = nx.shortest_path(network, node_id, other_id, weight='weight')
+                path_latency = sum(network[path[i]][path[i+1]]['weight'] for i in range(len(path)-1))
+                latencies.append(path_latency)
+            except nx.NetworkXNoPath:
+                continue
+    network_metrics[node_id] = {
+        'avg_latency': sum(latencies) / len(latencies) if latencies else float('inf'),
+        'degree': network.degree(node_id)
+    }
+
+# Save network metrics to CSV
+metrics_filename: str = f"data/same_seed/pbs_network_m2/network_metrics.csv"
+os.makedirs(os.path.dirname(metrics_filename), exist_ok=True)
+with open(metrics_filename, 'w', newline='') as f:
+    fieldnames: List[str] = ['node_id', 'avg_latency', 'degree']
+    writer: csv.DictWriter = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    for node_id, metrics in network_metrics.items():
+        writer.writerow({
+            'node_id': node_id,
+            'avg_latency': metrics['avg_latency'],
+            'degree': metrics['degree']
+        })
 
 def transaction_number() -> int:
     random_number: int = random.randint(0, 100)
@@ -127,16 +168,11 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
 
 
 def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Dict[str, Any]]:
-    # Create network participants
-    proposers: List[Proposer] = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
-    builders: List[Builder] = [Builder(f"builder_{i}", i < num_attacker_builders) for i in range(BUILDERNUM)]
-    users: List[User] = [User(f"user_{i}", i < num_attacker_users) for i in range(USERNUM)]
-
-    # Build the network
-    network: Any = build_network(users, builders, proposers)
-    
-    # Save network structure
-    # save_network_structure(network, num_attacker_builders, num_attacker_users)
+    # Set attacker status for builders and users
+    for i, builder in enumerate(builders):
+        builder.is_attacker = i < num_attacker_builders
+    for i, user in enumerate(users):
+        user.is_attacker = i < num_attacker_users
 
     # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:

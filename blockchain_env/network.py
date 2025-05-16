@@ -6,6 +6,7 @@ from typing import List, Any, Type
 from dataclasses import dataclass
 
 random.seed(16)
+np.random.seed(16)
 
 @dataclass
 class Message:
