@@ -102,13 +102,11 @@ class Node:
                 transactions.append(msg.content)
         return transactions
 
-def build_network(users: List[Node], builders: List[Node], proposers: List[Node], m: int = 1) -> nx.Graph:
+def build_network(users: List[Node], builders: List[Node], proposers: List[Node], m: int = 2) -> nx.Graph:
     nodes: List[Node] = users + builders + proposers
     N = len(nodes)
     G = nx.Graph()
 
-    # Use Barabási–Albert model to generate the network structure
-    m = max(1, min(m, N - 1))  # Ensure m is at least 1
     ba_graph = nx.barabasi_albert_graph(N, m, seed=16)
 
     # Add all nodes to the graph with their node object
