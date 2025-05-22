@@ -9,7 +9,7 @@ def ensure_directories():
     directories = [
         'data/same_seed/pbs_network_m1',
         'data/same_seed/pbs_network_m2',
-        'plots/ss'
+        'figure'
     ]
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
@@ -125,7 +125,7 @@ def plot_network_effects():
     axes[1,1].set_ylabel('Profit (Gas Fee)')
     
     plt.tight_layout()
-    plt.savefig('plots/ss/network_effects.png')
+    plt.savefig('figures/ss/network_effects.png')
     plt.close()
 
 if __name__ == "__main__":
