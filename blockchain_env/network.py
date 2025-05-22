@@ -102,26 +102,24 @@ class Node:
                 transactions.append(msg.content)
         return transactions
 
-def build_network(users: List[Node], builders: List[Node], proposers: List[Node], m: int = 2) -> nx.Graph:
+def build_network(users: List[Node], builders: List[Node], proposers: List[Node], p=0.05) -> nx.Graph:
     nodes: List[Node] = users + builders + proposers
     N = len(nodes)
-    G = nx.Graph()
-
-    ba_graph = nx.barabasi_albert_graph(N, m, seed=16)
-
-    # Add all nodes to the graph with their node object
-    for i, node in enumerate(nodes):
-        G.add_node(node.id, node=node)
-
-    # Add edges with random latency as weight
-    for u, v in ba_graph.edges():
+    # Step 1: Create the graph with integer labels
+    G = nx.erdos_renyi_graph(N, p, seed=16)
+    # Step 2: Relabel nodes to use your string IDs
+    mapping = {i: nodes[i].id for i in range(N)}
+    G = nx.relabel_nodes(G, mapping)
+    # Step 3: Add node objects as attributes
+    for node in nodes:
+        G.nodes[node.id]['node'] = node
+    # Step 4: Add edges with random latency as weight
+    for u, v in G.edges():
         latency = float(np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0))
-        G.add_edge(nodes[u].id, nodes[v].id, weight=latency)
-
-    # Set network reference for all nodes
+        G[u][v]['weight'] = latency
+    # Step 5: Set network reference for all nodes
     for node in nodes:
         node.set_network(G)
-
     return G
 
 def visualize_network(network: nx.Graph) -> None:
@@ -161,8 +159,8 @@ if __name__ == "__main__":
     builders = [TestNode(f"builder_{i}") for i in range(20)]
     proposers = [TestNode(f"proposer_{i}") for i in range(20)]
     
-    # Build and visualize network with m=1
-    G = build_network(users, builders, proposers, m=1)
+    # Build and visualize network with p=0.05
+    G = build_network(users, builders, proposers, p=0.05)
     
     # Print network statistics
     print("\nNetwork Statistics:")

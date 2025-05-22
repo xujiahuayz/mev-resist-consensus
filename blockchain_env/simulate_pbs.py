@@ -12,6 +12,7 @@ from blockchain_env.transaction import Transaction
 import gc
 import tracemalloc
 import networkx as nx
+import numpy as np
 
 # Constants
 BLOCKNUM: int = 1000
@@ -53,7 +54,7 @@ for node_id in network.nodes():
     }
 
 # Save network metrics to CSV
-metrics_filename: str = f"data/same_seed/pbs_network_m1/network_metrics.csv"
+metrics_filename: str = f"data/same_seed/pbs_network_p0.05/network_metrics.csv"
 os.makedirs(os.path.dirname(metrics_filename), exist_ok=True)
 with open(metrics_filename, 'w', newline='') as f:
     fieldnames: List[str] = ['node_id', 'avg_latency', 'degree']
@@ -185,7 +186,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
     # Save transaction data to CSV
-    transaction_filename: str = f"data/same_seed/pbs_network_m1/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
     with open(transaction_filename, 'w', newline='') as f:
         if all_transactions:
@@ -196,7 +197,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
                 writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    block_filename: str = f"data/same_seed/pbs_network_m1/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     with open(block_filename, 'w', newline='') as f:
         fieldnames: List[str] = [
             'block_num', 
