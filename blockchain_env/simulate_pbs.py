@@ -53,7 +53,7 @@ for node_id in network.nodes():
     }
 
 # Save network metrics to CSV
-metrics_filename: str = f"data/same_seed/pbs_network_m2/network_metrics.csv"
+metrics_filename: str = f"data/same_seed/pbs_network_m1/network_metrics.csv"
 os.makedirs(os.path.dirname(metrics_filename), exist_ok=True)
 with open(metrics_filename, 'w', newline='') as f:
     fieldnames: List[str] = ['node_id', 'avg_latency', 'degree']
@@ -150,16 +150,14 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
             "block_num": block_num,
             "builder_id": winning_builder.id,
             "total_gas_fee": total_gas_fee,
-            "total_mev": total_mev,
-            "included_txs": len(winning_bid[1])
+            "total_mev": total_mev
         }
     else:
         block_data: Dict[str, Any] = {
             "block_num": block_num,
             "builder_id": "",
             "total_gas_fee": 0,
-            "total_mev": 0,
-            "included_txs": 0
+            "total_mev": 0
         }
 
     # Clear mempools for all builders
@@ -187,7 +185,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
     # Save transaction data to CSV
-    transaction_filename: str = f"data/same_seed/pbs_network_m2/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    transaction_filename: str = f"data/same_seed/pbs_network_m1/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
     with open(transaction_filename, 'w', newline='') as f:
         if all_transactions:
@@ -198,7 +196,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
                 writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    block_filename: str = f"data/same_seed/pbs_network_m2/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    block_filename: str = f"data/same_seed/pbs_network_m1/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     with open(block_filename, 'w', newline='') as f:
         fieldnames: List[str] = [
             'block_num', 
