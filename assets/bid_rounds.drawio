@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" version="27.1.0">
   <diagram name="Page-1" id="RIdl4yIpkKvQEjexbSTN">
-    <mxGraphModel dx="1208" dy="536" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+    <mxGraphModel dx="845" dy="375" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -61,7 +61,7 @@
         <mxCell id="jQI5X7SojYvdJqr93CXN-39" value="\(t &amp;lt; 24 \) &amp;amp;&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Cont. Auction?&lt;/span&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="469.24" y="110" width="123" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="jQI5X7SojYvdJqr93CXN-46" value="&amp;nbsp;\( t \to t+1 \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
+        <mxCell id="jQI5X7SojYvdJqr93CXN-46" value="&amp;nbsp;\( t \leftarrow t+1 \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="306" y="95" width="80" height="30" as="geometry" />
         </mxCell>
         <mxCell id="jQI5X7SojYvdJqr93CXN-47" value="Proposers&lt;div&gt;{\(P_i\)}&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
@@ -225,10 +225,10 @@
         <mxCell id="jQI5X7SojYvdJqr93CXN-113" value="Yes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="345" y="317.5" width="20" height="12.5" as="geometry" />
         </mxCell>
-        <mxCell id="2ye4-e9o7-4i7KY7eBPU-1" value="&amp;nbsp;\( t \to T \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="2ye4-e9o7-4i7KY7eBPU-1" value="&amp;nbsp;\( T \leftarrow t \)" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="505.37" y="198" width="50.75" height="20.25" as="geometry" />
         </mxCell>
-        <mxCell id="2ye4-e9o7-4i7KY7eBPU-3" value="No" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=none;" vertex="1" parent="1">
+        <mxCell id="2ye4-e9o7-4i7KY7eBPU-3" value="No" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=none;" parent="1" vertex="1">
           <mxGeometry x="519.75" y="177.5" width="20" height="12.5" as="geometry" />
         </mxCell>
       </root>
