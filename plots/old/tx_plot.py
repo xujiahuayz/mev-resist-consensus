@@ -9,20 +9,15 @@ palette = {'normal': 'lightblue', 'attacked': 'lightgreen'}
 order = ['normal', 'attacked']
 
 def load_csv(file_path):
-<<<<<<< HEAD
-    print(f"Loading file: {file_path}")
-    df = pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column == 'mev_builders' or column == 'characteristic')
-    print(f"Columns in {file_path}: {df.columns.tolist()}")
-    if 'mev_builders' not in df.columns or 'characteristic' not in df.columns:
-        raise KeyError(f"Expected columns 'mev_builders' and 'characteristic' not found in {file_path}")
-    return df
-=======
+    """Load a CSV file and ensure required columns are present."""
     try:
-        return pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column.startswith('transaction_type'))
+        df = pd.read_csv(file_path, usecols=lambda column: column.startswith('transaction_id') or column.startswith('gas') or column.startswith('mev') or column.startswith('block_created') or column == 'block_index' or column == 'mev_builders' or column == 'characteristic' or column.startswith('transaction_type'))
+        if 'mev_builders' not in df.columns or 'characteristic' not in df.columns:
+            raise KeyError(f"Expected columns 'mev_builders' and 'characteristic' not found in {file_path}")
+        return df
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
         return pd.DataFrame()
->>>>>>> eedd7d5c1d3fc6187ce5ca9222bc4250228a6275
 
 def extract_params(file_name):
     try:
@@ -35,6 +30,7 @@ def extract_params(file_name):
         return None, None
 
 def reshape_data(data, mev_builders, connectivity):
+    """Reshape the data for analysis."""
     records = []
     for i in range(100):
         trans_id_col = f'transaction_id.{i}'
@@ -42,58 +38,14 @@ def reshape_data(data, mev_builders, connectivity):
         mev_col = f'mev.{i}'
         block_time_col = f'block_created.{i}'
         trans_type_col = f'transaction_type.{i}'
-
-<<<<<<< HEAD
-            if trans_id_col in data.columns and not pd.isna(row[trans_id_col]):
-                records.append({
-                    'block_index': row['block_index'],
-                    'transaction_id': row[trans_id_col],
-                    'gas': row[gas_col],
-                    'mev': row[mev_col],
-                    'block_time': row[block_time_col],
-                    'mev_builders': row['mev_builders'],
-                    'connectivity': row['characteristic']
-                })
-    reshaped_df = pd.DataFrame(records)
-    print(f"Reshaped data has {len(reshaped_df)} records.")
-    return reshaped_df
-
-def process_file(file_path):
-    try:
-        data = load_csv(file_path)
-        reshaped_data = reshape_data(data)
-        return reshaped_data
-    except KeyError as e:
-        print(f"Skipping file {file_path} due to error: {e}")
-        return pd.DataFrame()
-
-def process_folder(folder_path):
-    all_records = []
-    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
-
-    with ProcessPoolExecutor() as executor:
-        results = executor.map(process_file, files)
-        for result in results:
-            if not result.empty:
-                all_records.append(result)
-    
-    if all_records:
-        combined_data = pd.concat(all_records, ignore_index=True)
-        print(f"Combined data has {len(combined_data)} records.")
-    else:
-        combined_data = pd.DataFrame()
-    return combined_data
-=======
         if trans_id_col in data.columns and trans_type_col in data.columns:
             subset = data[['block_index', trans_id_col, gas_col, mev_col, block_time_col, trans_type_col]].dropna()
             subset.columns = ['block_index', 'transaction_id', 'gas', 'mev', 'block_created', 'transaction_type']
             subset['mev_builders'] = mev_builders
             subset['connectivity'] = connectivity
-
             subset['inclusion_time'] = subset['block_index'].astype(int) - subset['block_created'].astype(int)
             subset = subset[(subset['inclusion_time'] >= 0) & (subset['mev'] >= 0) & (subset['gas'] >= 0)]
             records.append(subset)
-    
     if records:
         return pd.concat(records, ignore_index=True)
     else:
@@ -115,7 +67,6 @@ def process_file(file_path):
     if reshaped_data.empty:
         print(f"No valid transactions in {file_path}")
     return reshaped_data
->>>>>>> eedd7d5c1d3fc6187ce5ca9222bc4250228a6275
 
 def process_files_in_parallel(file_paths):
     data_dict = {}
