@@ -2,6 +2,7 @@
 import random
 import uuid
 import copy
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -22,27 +23,27 @@ NUM_BUILDERS = 200
 NUM_PROPOSERS = 20
 
 def generate_normal_users(num_users):
-    normal_users = []
+    normal_users_list = []
     for i in range(num_users):
         address = f"Address{i}"
         # balance = random.uniform(1000.0, 10000.0)
         balance = 100.0
         user = Account(address, balance)
-        normal_users.append(user)
-    return normal_users
+        normal_users_list.append(user)
+    return normal_users_list
 
 # add percentage of invalid transactions
-def generate_transactions(normal_users, num_transactions, valid_percentage):
+def generate_transactions(normal_users_list, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
     for transaction in range(num_transactions):
-        sender = random.choice(normal_users)
-        recipient = random.choice(normal_users)
+        sender = random.choice(normal_users_list)
+        recipient = random.choice(normal_users_list)
         sender_address = sender.address
         recipient_address = recipient.address
         if sender_address == recipient_address:
             while True:
-                recipient = random.choice(normal_users)
+                recipient = random.choice(normal_users_list)
                 recipient_address = recipient.address
                 if sender_address != recipient_address:
                     break
@@ -56,39 +57,24 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
         is_private = random.choice([True, False])
 
         if len(transactions) < num_valid:
-            # Get the sender object
-            sender_balance = sender.balance
             # Generate a valid transaction
             amount = random.uniform(0.1, 1)
             transaction = Transaction(
-                transaction_id=transaction_id,
-                timestamp=timestamp,
-                sender=sender_address,
-                recipient=recipient_address,
-                gas=gas,
-                amount=amount,
-                base_fee=base_fee,
-                priority_fee=priority_fee,
-                is_private=is_private
+                gas_fee=fee,
+                mev_potential=0,
+                creator_id=sender_address,
+                created_at=timestamp
             )
         else:
             # Generate an invalid transaction if the number of valid transactions
             # has reached the limit
-            # sender_balance = sender.balance
-            # Ensure the amount is greater than the sender's balance for an invalid
-            # transaction
-            # amount = sender_balance
+            amount = random.uniform(0.1, 1)
 
             transaction = Transaction(
-                transaction_id=transaction_id,
-                timestamp=timestamp,
-                sender=sender_address,
-                recipient=recipient_address,
-                gas=gas,
-                amount=amount,
-                base_fee=base_fee,
-                priority_fee=priority_fee,
-                is_private=is_private
+                gas_fee=fee,
+                mev_potential=0,
+                creator_id=sender_address,
+                created_at=timestamp
             )
 
         transactions.append(transaction)
@@ -97,10 +83,9 @@ def generate_transactions(normal_users, num_transactions, valid_percentage):
 
 
 def generate_builders(num_builders):
-    builders = []
+    builders_list = []
     build_strategies = ['greedy', 'mev', 'random']
     bid_strategies = ['fraction_based', 'reactive', 'historical', 'last_minute', 'bluff']
-    bid = []
     discount_factor_range = (0.0, 1.0)
     credit_range = (0.0, 1.0)
     inclusion_rate_range = (0.0, 1.0)
@@ -114,27 +99,23 @@ def generate_builders(num_builders):
         private = random.choice([True, False])
 
         builder = Builder(
-            address=f"Builder{i}",
-            balance=INIT_BALANCE,
-            builder_strategy=builder_strategy,
-            discount=discount_factor,
-            private=private,
-            credit=credit,
-            inclusion_rate=inclusion_rate,
-            bid_strategy=bid_strategy
+            builder_id=f"Builder{i}",
+            is_attacker=False
         )
-        builders.append(builder)
-    return builders
+        builders_list.append(builder)
+    return builders_list
 
 def generate_proposers(num_proposers):
-    proposers = []
+    proposers_list = []
     for i in range(num_proposers):
         proposer_address = f"Proposer{i}"
         blockpool = Blockpool(address=proposer_address)
-        proposer = Proposer(address=proposer_address, balance=INIT_BALANCE,
-                            proposer_strategy="greedy", blockpool=blockpool)
-        proposers.append(proposer)
-    return proposers
+        proposer = Proposer(
+            proposer_id=f"Proposer{i}",
+            is_attacker=False
+        )
+        proposers_list.append(proposer)
+    return proposers_list
 
 def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]:
     counter = 0

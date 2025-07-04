@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from web3 import Web3
 
 # Use your Infura project URL
-infura_url = "https://mainnet.infura.io/v3/dd763ae6e7ca4f059f69f4589ad695f0"
-web3 = Web3(Web3.HTTPProvider(infura_url))
+INFURA_URL = "https://mainnet.infura.io/v3/dd763ae6e7ca4f059f69f4589ad695f0"
+web3 = Web3(Web3.HTTPProvider(INFURA_URL))
 
 # Check connection
 if not web3.is_connected():
@@ -97,7 +97,7 @@ def main():
 
         # Save each block's data to a JSON file
         output_file = os.path.join(output_dir, f'block_{block_data["block_number"]}.json')
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(block_data, f, indent=4, default=str)
 
     print(f"Block data analysis saved in '{output_dir}'")

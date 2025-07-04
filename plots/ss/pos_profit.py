@@ -5,10 +5,10 @@ import seaborn as sns
 
 def load_data(file_path):
     """Load JSON data from a file."""
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
-def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_users=50, total_validators=20):
+def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_validators=20):
     """Generate and save a plot of MEV distribution without a legend."""
     validator_counts = sorted(int(key) for key in aggregated_data.keys())
     validator_percentages = [100 * count / total_validators for count in validator_counts]
@@ -50,7 +50,7 @@ def create_legend_figure(save_path):
     labels = ["Users'", "Validators'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
 
-    legend = plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
+    plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
     plt.axis('off')
 
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
@@ -67,7 +67,7 @@ def main():
             data = load_data(file_path)
             user_attack_count = file_name.split('_')[-1].split('.')[0]
             save_path = os.path.join(output_folder, f"pos_mev_distribution_user_attack_{user_attack_count}.png")
-            plot_mev_distribution(data, user_attack_count, save_path, total_users=50)
+            plot_mev_distribution(data, user_attack_count, save_path)
 
     legend_path = os.path.join(output_folder, "pos_mev_dis_legend.png")
     create_legend_figure(legend_path)

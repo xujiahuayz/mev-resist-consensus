@@ -20,13 +20,13 @@ NUM_BLOCKS = 50
 MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 NUM_RUNS = 50
 
-transaction_counter = 1
+TRANSACTION_COUNTER = 1
 
 class Transaction:
     def __init__(self, fee, mev_potential, creator_id=None, targeting=False, target_tx_id=None, block_created=None, transaction_type="normal"):
-        global transaction_counter
-        self.id = transaction_counter
-        transaction_counter += 1
+        global TRANSACTION_COUNTER
+        self.id = TRANSACTION_COUNTER
+        TRANSACTION_COUNTER += 1
         self.fee = fee
         self.mev_potential = mev_potential
         self.creator_id = creator_id
@@ -58,13 +58,13 @@ class Transaction:
             'success': success
         })
 
-user_counter = 1
-builder_counter = 1
-validator_counter = 1
+USER_COUNTER = 1
+BUILDER_COUNTER = 1
+VALIDATOR_COUNTER = 1
 
 class Participant:
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, participant_id):
+        self.id = participant_id
         self.mempool_pbs = []
         self.mempool_pos = []
 
@@ -82,15 +82,15 @@ class Participant:
 
 class NormalUser(Participant):
     def __init__(self):
-        global user_counter
-        super().__init__(user_counter)
-        user_counter += 1
+        global USER_COUNTER
+        super().__init__(USER_COUNTER)
+        USER_COUNTER += 1
 
 class AttackUser(Participant):
     def __init__(self):
-        global user_counter
-        super().__init__(user_counter)
-        user_counter += 1
+        global USER_COUNTER
+        super().__init__(USER_COUNTER)
+        USER_COUNTER += 1
 
     def create_transaction(self, all_participants, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
@@ -109,10 +109,10 @@ class AttackUser(Participant):
 
 class Builder(Participant):
     def __init__(self, is_attack):
-        global builder_counter
-        super().__init__(builder_counter)
+        global BUILDER_COUNTER
+        super().__init__(BUILDER_COUNTER)
         self.is_attack = is_attack
-        builder_counter += 1
+        BUILDER_COUNTER += 1
         self.average_bid_percentage = 0.5  # Initial average bid percentage set to 50%
 
     def bid(self, block_bid_his, block_number):
@@ -139,10 +139,10 @@ class Builder(Participant):
 
 class Validator(Participant):
     def __init__(self, is_attack):
-        global validator_counter
-        super().__init__(validator_counter)
+        global VALIDATOR_COUNTER
+        super().__init__(VALIDATOR_COUNTER)
         self.is_attack = is_attack
-        validator_counter += 1
+        VALIDATOR_COUNTER += 1
 
     def select_transactions(self, block_number):
         return select_transactions_common(self, block_number, self.mempool_pos, 'pos')
@@ -195,7 +195,7 @@ def run_pbs(builders, num_blocks, users):
     for block_num in range(num_blocks):
         block_bid_his = []
 
-        for counter in range(24):
+        for _ in range(24):
             counter_bids = {}
             for builder in builders:
                 bid = builder.bid(block_bid_his, block_num + 1)
@@ -354,7 +354,7 @@ def run_simulation(run_id, mev_count):
     targeting_tracker = {}
 
     for block_number in range(NUM_BLOCKS):
-        for counter in range(24):
+        for _ in range(24):
             attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
             normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
 

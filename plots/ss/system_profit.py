@@ -3,7 +3,6 @@ import csv
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from collections import defaultdict
 from matplotlib import ticker
 
 def calculate_mev_from_transactions(file_path):
@@ -14,7 +13,7 @@ def calculate_mev_from_transactions(file_path):
     total_mev = 0
     gas_fee = 0
 
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         if not required_fields.issubset(reader.fieldnames):
             print(f"Skipping file {file_path} due to missing fields.")
@@ -72,16 +71,16 @@ def load_total_profit_from_csv(data_folder, system_type):
     return df.pivot(index='Users', columns='Entities', values='Total Profit')
 
 
-def calculate_profit_difference(pbs_folder, pos_folder):
+def calculate_profit_difference(pbs_folder_path, pos_folder_path):
     """
     Calculate the profit difference (PBS - PoS) for all configurations.
     """
-    pbs_profit = load_total_profit_from_csv(pbs_folder)
-    pos_profit = load_total_profit_from_csv(pos_folder)
-    profit_difference = pbs_profit.subtract(pos_profit, fill_value=0)
-    return pbs_profit, pos_profit, profit_difference
+    pbs_profit_data = load_total_profit_from_csv(pbs_folder_path, system_type="pbs")
+    pos_profit_data = load_total_profit_from_csv(pos_folder_path, system_type="pos")
+    profit_difference_data = pbs_profit_data.subtract(pos_profit_data, fill_value=0)
+    return pbs_profit_data, pos_profit_data, profit_difference_data
 
-def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
+def plot_heatmap(results, title, vmin_val, vmax_val, output_folder_path, x_label):
     """
     Plot a heatmap of inversion counts for each user and builder/validator configuration with consistent formatting.
     """
@@ -95,8 +94,8 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
         fmt=".0f",
         cmap="YlGnBu",
         cbar_kws={'label': "Inversion Count"},
-        vmin=vmin,
-        vmax=vmax
+        vmin=vmin_val,
+        vmax=vmax_val
     )
 
     # Axis labels
@@ -125,7 +124,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     plt.title(title, fontsize=20, pad=20)
 
     # Save the heatmap
-    output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
+    output_path = os.path.join(output_folder_path, f"{title.replace(' ', '_').lower()}.png")
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -133,25 +132,23 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
 
 if __name__ == "__main__":
     # Define input and output folders
-    pbs_folder = 'data/same_seed/pbs_visible80'
-    pos_folder = 'data/same_seed/pos_visible80'
-    output_folder = 'figures/ss'
-    os.makedirs(output_folder, exist_ok=True)
+    PBS_FOLDER = 'data/same_seed/pbs_visible80'
+    POS_FOLDER = 'data/same_seed/pos_visible80'
+    OUTPUT_FOLDER = 'figures/ss'
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
     # Calculate profit differences
-    pbs_profit = load_total_profit_from_csv(pbs_folder, system_type="pbs")
-    pos_profit = load_total_profit_from_csv(pos_folder, system_type="pos")
-    profit_difference = pbs_profit.subtract(pos_profit, fill_value=0)
+    pbs_profit_data, pos_profit_data, profit_difference_data = calculate_profit_difference(PBS_FOLDER, POS_FOLDER)
 
     # Save profit data for checking
-    pbs_profit.to_csv(os.path.join(output_folder, "pbs_profit.csv"))
-    pos_profit.to_csv(os.path.join(output_folder, "pos_profit.csv"))
-    profit_difference.to_csv(os.path.join(output_folder, "profit_difference.csv"))
+    pbs_profit_data.to_csv(os.path.join(OUTPUT_FOLDER, "pbs_profit.csv"))
+    pos_profit_data.to_csv(os.path.join(OUTPUT_FOLDER, "pos_profit.csv"))
+    profit_difference_data.to_csv(os.path.join(OUTPUT_FOLDER, "profit_difference.csv"))
 
     # Determine vmin and vmax for heatmap color scale
-    vmin = profit_difference.min().min()
-    vmax = profit_difference.max().max()
+    vmin_val = profit_difference_data.min().min()
+    vmax_val = profit_difference_data.max().max()
 
     # Plot heatmap
-    heatmap_path = os.path.join(output_folder, "profit_difference_heatmap.png")
-    plot_heatmap(profit_difference, "PBS-PoS Profit Difference Heatmap", vmin, vmax, output_folder, "Percentage of Attacking Entities")
+    heatmap_path = os.path.join(OUTPUT_FOLDER, "profit_difference_heatmap.png")
+    plot_heatmap(profit_difference_data, "PBS-PoS Profit Difference Heatmap", vmin_val, vmax_val, OUTPUT_FOLDER, "Percentage of Attacking Entities")

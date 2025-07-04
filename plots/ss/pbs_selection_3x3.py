@@ -12,7 +12,7 @@ def get_builder_counts_by_block(file_path, builder_attack_count):
     attacking_counts = []
     non_attacking_counts = []
 
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         current_block = -1
         a_in_block = 0
@@ -42,7 +42,7 @@ def get_builder_counts_by_block(file_path, builder_attack_count):
 
     return attacking_counts, non_attacking_counts
 
-def plot_cumulative_selections_over_blocks(data_folder, configs):
+def plot_cumulative_selections_over_blocks(data_folder_path, configs_list):
     """
     - 3×3 subplots
     - Columns = percentage of attacking builders
@@ -55,8 +55,8 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     os.makedirs(output_dir, exist_ok=True)
 
     # Gather unique builder/user counts from the configs
-    builder_counts = sorted({c[0] for c in configs})
-    user_counts = sorted({c[1] for c in configs})
+    builder_counts = sorted({c[0] for c in configs_list})
+    user_counts = sorted({c[1] for c in configs_list})
 
     fig, axes = plt.subplots(
         nrows=len(user_counts),
@@ -74,13 +74,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     handles, labels = [], []
 
     # Plot each subplot
-    for b_attack, u_attack in configs:
+    for b_attack, u_attack in configs_list:
         row_idx = user_counts.index(u_attack)
         col_idx = builder_counts.index(b_attack)
         ax = axes[row_idx, col_idx]
 
         filename = f"pbs_block_data_builders{b_attack}_users{u_attack}.csv"
-        file_path = os.path.join(data_folder, filename)
+        file_path = os.path.join(data_folder_path, filename)
 
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
@@ -183,11 +183,11 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     print(f"3×3 grid plot saved to {out_path}")
 
 if __name__ == "__main__":
-    data_folder = "data/same_seed/pbs_visible80"
+    DATA_FOLDER = "data/same_seed/pbs_visible80"
     # Example: (attacking_builders_count, attacking_users_count).
     configs = [
         (5, 0), (10, 0), (15, 0),
         (5, 25), (10, 25), (15, 25),
         (5, 50), (10, 50), (15, 50)
     ]
-    plot_cumulative_selections_over_blocks(data_folder, configs)
+    plot_cumulative_selections_over_blocks(DATA_FOLDER, configs)

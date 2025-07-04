@@ -1,13 +1,13 @@
-import pandas as pd
-import numpy as np
 import os
 import json
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
 
 # Load the collected data
-data_dir = 'data/fetch'
+DATA_DIR = 'data/fetch'
 all_gas_fees = []
 
 # Function to extract gas fees from transactions
@@ -21,9 +21,9 @@ def extract_gas_fees(transactions):
             fees.append(gas_fee_gwei)
     return fees
 
-for file in os.listdir(data_dir):
+for file in os.listdir(DATA_DIR):
     if file.endswith('.json'):
-        with open(os.path.join(data_dir, file), 'r') as f:
+        with open(os.path.join(DATA_DIR, file), 'r', encoding='utf-8') as f:
             block_data = json.load(f)
             if 'transactions' in block_data:
                 gas_fees = extract_gas_fees(block_data['transactions'])
@@ -56,11 +56,11 @@ sample_gas_fees_3sig = [round_to_sig_figs(fee, 3) for fee in sample_gas_fees]
 print(f"Sample Gas Fees (rounded to 3 significant figures): {sample_gas_fees_3sig}")
 
 # Calculate potential MEV values based on the sample gas fees using a normal distribution
-mean_percentage = 0.1  # Mean is 10% of the gas fee
-std_dev_percentage = 0.07  # Standard deviation is 7% of the gas fee
+MEAN_PERCENTAGE = 0.1  # Mean is 10% of the gas fee
+STD_DEV_PERCENTAGE = 0.07  # Standard deviation is 7% of the gas fee
 
 # Generate MEV potentials
-sample_mev_potentials = np.maximum(0, np.random.normal(sample_gas_fees * mean_percentage, sample_gas_fees * std_dev_percentage))
+sample_mev_potentials = np.maximum(0, np.random.normal(sample_gas_fees * MEAN_PERCENTAGE, sample_gas_fees * STD_DEV_PERCENTAGE))
 
 # Print MEV potentials
 sample_mev_potentials_3sig = [round_to_sig_figs(mev, 3) for mev in sample_mev_potentials]

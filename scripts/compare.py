@@ -1,14 +1,14 @@
 import sys
 import os
+import random
+import pandas as pd
+import numpy as np
 
 # Add project root to PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
-import random
-import pandas as pd
-import numpy as np
 
 random.seed(42)
 
@@ -20,13 +20,13 @@ NUM_TRANSACTIONS_PER_BLOCK = 20
 NUM_BLOCKS = 100
 MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
-transaction_counter = 1
+TRANSACTION_COUNTER = 1
 
 class Transaction:
     def __init__(self, fee, mev_potential, creator_id=None, targeting=False, target_tx_id=None, block_created=None, transaction_type="normal"):
-        global transaction_counter
-        self.id = transaction_counter
-        transaction_counter += 1
+        global TRANSACTION_COUNTER
+        self.id = TRANSACTION_COUNTER
+        TRANSACTION_COUNTER += 1
         self.fee = fee
         self.mev_potential = mev_potential
         self.creator_id = creator_id
@@ -36,13 +36,13 @@ class Transaction:
         self.block_created = block_created
         self.transaction_type = transaction_type
 
-user_counter = 1
-builder_counter = 1
-validator_counter = 1
+USER_COUNTER = 1
+BUILDER_COUNTER = 1
+VALIDATOR_COUNTER = 1
 
 class Participant:
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, participant_id):
+        self.id = participant_id
         self.mempool_pbs = []
         self.mempool_pos = []
 
@@ -60,15 +60,15 @@ class Participant:
 
 class NormalUser(Participant):
     def __init__(self):
-        global user_counter
-        super().__init__(user_counter)
-        user_counter += 1
+        global USER_COUNTER
+        super().__init__(USER_COUNTER)
+        USER_COUNTER += 1
 
 class AttackUser(Participant):
     def __init__(self):
-        global user_counter
-        super().__init__(user_counter)
-        user_counter += 1
+        global USER_COUNTER
+        super().__init__(USER_COUNTER)
+        USER_COUNTER += 1
 
     def create_transaction(self, target_tx=None, block_number=None):
         if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
@@ -87,10 +87,10 @@ class AttackUser(Participant):
 
 class Builder(Participant):
     def __init__(self, is_attack):
-        global builder_counter
-        super().__init__(builder_counter)
+        global BUILDER_COUNTER
+        super().__init__(BUILDER_COUNTER)
         self.is_attack = is_attack
-        builder_counter += 1
+        BUILDER_COUNTER += 1
         self.average_bid_percentage = 0.5  # Initial average bid percentage set to 50%
 
     def bid(self, block_bid_his, block_number):
@@ -119,10 +119,10 @@ class Builder(Participant):
 
 class Validator(Participant):
     def __init__(self, is_attack):
-        global validator_counter
-        super().__init__(validator_counter)
+        global VALIDATOR_COUNTER
+        super().__init__(VALIDATOR_COUNTER)
         self.is_attack = is_attack
-        validator_counter += 1
+        VALIDATOR_COUNTER += 1
 
     def select_transactions(self, block_number):
         return select_transactions_common(self, block_number, self.mempool_pos)
@@ -159,9 +159,9 @@ def select_transactions_common(participant, block_number, mempool):
 
     return selected_transactions
 
-def run_pbs(builders, num_blocks):
+def run_pbs(builders_list, num_blocks):
     cumulative_mev_transactions = [0] * num_blocks
-    proposer_profits = {builder.id: [] for builder in builders}
+    proposer_profits = {builder.id: [] for builder in builders_list}
     block_data = []
     transaction_data = []
 
@@ -171,16 +171,16 @@ def run_pbs(builders, num_blocks):
     for block_num in range(num_blocks):
         block_bid_his = []
 
-        for counter in range(24):
+        for _ in range(24):
             counter_bids = {}
-            for builder in builders:
+            for builder in builders_list:
                 bid = builder.bid(block_bid_his, block_num + 1)
                 counter_bids[builder.id] = bid
             block_bid_his.append(counter_bids)
 
         highest_bid = max(block_bid_his[-1].values())
         winning_builder_id = max(block_bid_his[-1], key=block_bid_his[-1].get)
-        winning_builder = next(b for b in builders if b.id == winning_builder_id)
+        winning_builder = next(b for b in builders_list if b.id == winning_builder_id)
 
         selected_transactions = winning_builder.select_transactions(block_num + 1)
 
@@ -233,16 +233,16 @@ def run_pbs(builders, num_blocks):
             })
 
         # Remove included transactions from mempool
-        for builder in builders:
+        for builder in builders_list:
             builder.mempool_pbs = [tx for tx in builder.mempool_pbs if tx.id not in included_tx_ids]
 
     proposer_final_profits = {k: v[-1] for k, v in proposer_profits.items() if v}
 
     return cumulative_mev_transactions, proposer_final_profits, block_data, transaction_data
 
-def run_pos(validators, num_blocks):
+def run_pos(validators_list, num_blocks):
     cumulative_mev_transactions = []
-    validator_profits = {validator.id: 0 for validator in validators}
+    validator_profits = {validator.id: 0 for validator in validators_list}
     total_mev_transactions = 0
     block_data = []
     transaction_data = []
@@ -251,7 +251,7 @@ def run_pos(validators, num_blocks):
     targeting_tracker = {}
 
     for block_num in range(num_blocks):
-        validator = random.choice(validators)
+        validator = random.choice(validators_list)
         selected_transactions = validator.select_transactions(block_num + 1)
 
         mev_transactions_in_block = sum(tx.mev_potential > 0 for tx in selected_transactions)
@@ -303,7 +303,7 @@ def run_pos(validators, num_blocks):
             })
 
         # Remove included transactions from mempool
-        for validator in validators:
+        for validator in validators_list:
             validator.mempool_pos = [tx for tx in validator.mempool_pos if tx.id not in included_tx_ids]
 
     return cumulative_mev_transactions, validator_profits, block_data, transaction_data
@@ -320,7 +320,7 @@ if __name__ == "__main__":
         targeting_tracker = {}
 
         for block_number in range(NUM_BLOCKS):
-            for counter in range(24):
+            for _ in range(24):
                 attack_user = random.choice([u for u in users if isinstance(u, AttackUser)])
                 normal_user = random.choice([u for u in users if isinstance(u, NormalUser)])
 
@@ -347,19 +347,19 @@ if __name__ == "__main__":
         cumulative_mev_included_pos, validator_profits, block_data_pos, transaction_data_pos = run_pos(validators, NUM_BLOCKS)
 
         # Create directory for current MEV builder count
-        pbs_output_dir = f'data/vary_mev/pbs/mev{mev_count}'
-        pos_output_dir = f'data/vary_mev/pos/mev{mev_count}'
-        os.makedirs(pbs_output_dir, exist_ok=True)
-        os.makedirs(pos_output_dir, exist_ok=True)
+        PBS_OUTPUT_DIR = f'data/vary_mev/pbs/mev{mev_count}'
+        POS_OUTPUT_DIR = f'data/vary_mev/pos/mev{mev_count}'
+        os.makedirs(PBS_OUTPUT_DIR, exist_ok=True)
+        os.makedirs(POS_OUTPUT_DIR, exist_ok=True)
 
         # Save PBS results
         block_data_pbs_df = pd.DataFrame(block_data_pbs)
         transaction_data_pbs_df = pd.DataFrame(transaction_data_pbs)
-        block_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'block_data_pbs.csv'), index=False)
-        transaction_data_pbs_df.to_csv(os.path.join(pbs_output_dir, 'transaction_data_pbs.csv'), index=False)
+        block_data_pbs_df.to_csv(os.path.join(PBS_OUTPUT_DIR, 'block_data_pbs.csv'), index=False)
+        transaction_data_pbs_df.to_csv(os.path.join(PBS_OUTPUT_DIR, 'transaction_data_pbs.csv'), index=False)
 
         # Save PoS results
         block_data_pos_df = pd.DataFrame(block_data_pos)
         transaction_data_pos_df = pd.DataFrame(transaction_data_pos)
-        block_data_pos_df.to_csv(os.path.join(pos_output_dir, 'block_data_pos.csv'), index=False)
-        transaction_data_pos_df.to_csv(os.path.join(pos_output_dir, 'transaction_data_pos.csv'), index=False)
+        block_data_pos_df.to_csv(os.path.join(POS_OUTPUT_DIR, 'block_data_pos.csv'), index=False)
+        transaction_data_pos_df.to_csv(os.path.join(POS_OUTPUT_DIR, 'transaction_data_pos.csv'), index=False)

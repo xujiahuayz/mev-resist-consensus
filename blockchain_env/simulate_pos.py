@@ -3,9 +3,9 @@ import os
 import csv
 import time
 import multiprocessing as mp
+from copy import deepcopy  # (removed if unused)
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
-from copy import deepcopy
 
 # Constants
 BLOCKNUM = 1000
@@ -24,12 +24,11 @@ def transaction_number():
     random_number = random.randint(0, 100)
     if random_number < 50:
         return 1
-    elif random_number < 80:
+    if random_number < 80:
         return 0
-    elif random_number < 95:
+    if random_number < 95:
         return 2
-    else:
-        return random.randint(3, 5)
+    return random.randint(3, 5)
 
 def process_block(block_num, users, validators):
     # Pre-sample validators for each block using `random.choices`
@@ -70,9 +69,9 @@ def process_block(block_num, users, validators):
 
     return block_data, selected_validator.selected_transactions
 
-def simulate_pos(num_attacker_validators, num_attacker_users):
-    validators = [Builder(f"validator_{i}", i < num_attacker_validators) for i in range(PROPNUM)]
-    users = [User(f"user_{i}", i < num_attacker_users, validators) for i in range(USERNUM)]
+def simulate_pos(attacker_validators, attacker_users):
+    validators = [Builder(f"validator_{i}", i < attacker_validators) for i in range(PROPNUM)]
+    users = [User(f"user_{i}", i < attacker_users, validators) for i in range(USERNUM)]
 
     with mp.Pool(processes=num_processes) as pool:
         results = pool.starmap(process_block, [(block_num, users, validators) for block_num in range(BLOCKNUM)])
@@ -81,12 +80,12 @@ def simulate_pos(num_attacker_validators, num_attacker_users):
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
     # Define dynamic filenames
-    transaction_filename = f"data/same_seed/pos_visible80/pos_transactions_validators{num_attacker_validators}_users{num_attacker_users}.csv"
-    block_filename = f"data/same_seed/pos_visible80/pos_block_data_validators{num_attacker_validators}_users{num_attacker_users}.csv"
+    transaction_filename = f"data/same_seed/pos_visible80/pos_transactions_validators{attacker_validators}_users{attacker_users}.csv"
+    block_filename = f"data/same_seed/pos_visible80/pos_block_data_validators{attacker_validators}_users{attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
 
     # Save transaction data to CSV
-    with open(transaction_filename, 'w', newline='') as f:
+    with open(transaction_filename, 'w', newline='', encoding='utf-8') as f:
         if all_transactions:
             fieldnames = all_transactions[0].to_dict().keys()
             writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -95,7 +94,7 @@ def simulate_pos(num_attacker_validators, num_attacker_users):
                 writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    with open(block_filename, 'w', newline='') as f:
+    with open(block_filename, 'w', newline='', encoding='utf-8') as f:
         fieldnames = ['block_num', 'validator_id', 'total_gas_fee', 'total_mev_available']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -105,14 +104,11 @@ def simulate_pos(num_attacker_validators, num_attacker_users):
     return block_data_list
 
 if __name__ == "__main__":
-
     for num_attacker_validators in range(PROPNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
             start_time = time.time()
-
             # Run the simulation for the current parameter set
             simulate_pos(num_attacker_validators, num_attacker_users)
-
             # Calculate and print the time taken for this round
             end_time = time.time()
             round_time = end_time - start_time

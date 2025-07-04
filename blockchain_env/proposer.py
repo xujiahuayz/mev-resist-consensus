@@ -1,8 +1,11 @@
+"""Proposer module for blockchain environment."""
+
+import random
 from typing import List, Dict, Tuple, Any
+
 from blockchain_env.network import Node
 from blockchain_env.builder import Builder
 from blockchain_env.transaction import Transaction
-import random
 
 random.seed(16)
 
@@ -31,8 +34,7 @@ class Proposer(Node):
         self.end_round = self.current_round
 
     def select_winner(self) -> Tuple[int, float] | None:
-        """Select the winning bid for the current block.
-        """
+        """Select the winning bid for the current block."""
         if not self.bids:
             return None
 
@@ -55,7 +57,7 @@ class Proposer(Node):
         if prev_winning_bid is None or prev_end_round is None:
             return
 
-        prev_winning_round, prev_winning_amount = prev_winning_bid
+        _, prev_winning_amount = prev_winning_bid
 
         # Check all observed bids in the previous block
         higher_bid_after = False

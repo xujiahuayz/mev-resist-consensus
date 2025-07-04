@@ -1,7 +1,7 @@
 """Network module for blockchain environment."""
 
 import random
-from typing import List, Any, Type
+from typing import List, Any
 from dataclasses import dataclass
 import networkx as nx
 import numpy as np
@@ -92,32 +92,39 @@ class Node:
                 transactions.append(msg.content)
         return transactions
 
-def build_network(users: List[Node], builders: List[Node], proposers: List[Node], p=0.05) -> nx.Graph:
+def build_network(user_list: List[Node], builder_list: List[Node], proposer_list: List[Node], p=0.05) -> nx.Graph:
     """Build a network graph with users, builders, and proposers."""
-    nodes: List[Node] = users + builders + proposers
+    if not nx or not np:
+        raise ImportError("networkx and numpy are required for network building")
+    
+    nodes: List[Node] = user_list + builder_list + proposer_list
     n_nodes = len(nodes)
-    G = nx.erdos_renyi_graph(n_nodes, p, seed=16)
+    graph = nx.erdos_renyi_graph(n_nodes, p, seed=16)
     mapping = {i: nodes[i].id for i in range(n_nodes)}
-    G = nx.relabel_nodes(G, mapping)
+    graph = nx.relabel_nodes(graph, mapping)
     for node in nodes:
-        G.nodes[node.id]['node'] = node
-    for u, v in G.edges():
+        graph.nodes[node.id]['node'] = node
+    for u, v in graph.edges():
         latency = float(np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0))
-        G[u][v]['weight'] = latency
+        graph[u][v]['weight'] = latency
     for node in nodes:
-        node.set_network(G)
-    return G
+        node.set_network(graph)
+    return graph
 
 def visualize_network(network: nx.Graph) -> None:
     """Visualize the network structure with different node types."""
+    if not plt or not nx:
+        print("Warning: matplotlib and networkx are required for visualization")
+        return
+    
     plt.figure(figsize=(12, 8))
     pos = nx.spring_layout(network)
-    users = [n for n in network.nodes() if 'user' in str(n)]
-    builders = [n for n in network.nodes() if 'builder' in str(n)]
-    proposers = [n for n in network.nodes() if 'proposer' in str(n)]
-    nx.draw_networkx_nodes(network, pos, nodelist=users, node_color='lightblue', node_size=500, label='Users')
-    nx.draw_networkx_nodes(network, pos, nodelist=builders, node_color='lightgreen', node_size=500, label='Builders')
-    nx.draw_networkx_nodes(network, pos, nodelist=proposers, node_color='pink', node_size=500, label='Proposers')
+    user_nodes = [n for n in network.nodes() if 'user' in str(n)]
+    builder_nodes = [n for n in network.nodes() if 'builder' in str(n)]
+    proposer_nodes = [n for n in network.nodes() if 'proposer' in str(n)]
+    nx.draw_networkx_nodes(network, pos, nodelist=user_nodes, node_color='lightblue', node_size=500, label='Users')
+    nx.draw_networkx_nodes(network, pos, nodelist=builder_nodes, node_color='lightgreen', node_size=500, label='Builders')
+    nx.draw_networkx_nodes(network, pos, nodelist=proposer_nodes, node_color='pink', node_size=500, label='Proposers')
     edge_widths = [1/network[u][v]['weight'] for u,v in network.edges()]
     nx.draw_networkx_edges(network, pos, width=edge_widths, alpha=0.5)
     nx.draw_networkx_labels(network, pos)
@@ -127,28 +134,31 @@ def visualize_network(network: nx.Graph) -> None:
     plt.show()
 
 if __name__ == "__main__":
-    # Create test nodes
-    class TestNode(Node):
-        def __init__(self, node_id: str) -> None:
-            super().__init__(node_id)
+    if not nx or not np or not plt:
+        print("Required libraries not available. Skipping network test.")
+    else:
+        # Create test nodes
+        class TestNode(Node):
+            def __init__(self, node_id: str) -> None:
+                super().__init__(node_id)
 
-    # Create sample nodes for testing
-    users = [TestNode(f"user_{i}") for i in range(50)]
-    builders = [TestNode(f"builder_{i}") for i in range(20)]
-    proposers = [TestNode(f"proposer_{i}") for i in range(20)]
+        # Create sample nodes for testing
+        user_list = [TestNode(f"user_{i}") for i in range(50)]
+        builder_list = [TestNode(f"builder_{i}") for i in range(20)]
+        proposer_list = [TestNode(f"proposer_{i}") for i in range(20)]
 
-    # Build and visualize network with p=0.05
-    G = build_network(users, builders, proposers, p=0.05)
+        # Build and visualize network with p=0.05
+        graph = build_network(user_list, builder_list, proposer_list, p=0.05)
 
-    # Print network statistics
-    print("\nNetwork Statistics:")
-    print(f"Number of nodes: {G.number_of_nodes()}")
-    print(f"Number of edges: {G.number_of_edges()}")
-    print("\nDegree distribution:")
-    degrees = [G.degree(node) for node in G.nodes()]
-    print(f"Average degree: {sum(degrees)/len(degrees):.2f}")
-    print(f"Minimum degree: {min(degrees)}")
-    print(f"Maximum degree: {max(degrees)}")
-    print("\nSample node degrees:")
-    for node in list(G.nodes())[:10]:  # Show first 10 nodes
-        print(f"{node}: degree {G.degree(node)}")
+        # Print network statistics
+        print("\nNetwork Statistics:")
+        print(f"Number of nodes: {graph.number_of_nodes()}")
+        print(f"Number of edges: {graph.number_of_edges()}")
+        print("\nDegree distribution:")
+        degrees = [graph.degree(node) for node in graph.nodes()]
+        print(f"Average degree: {sum(degrees)/len(degrees):.2f}")
+        print(f"Minimum degree: {min(degrees)}")
+        print(f"Maximum degree: {max(degrees)}")
+        print("\nSample node degrees:")
+        for node in list(graph.nodes())[:10]:  # Show first 10 nodes
+            print(f"{node}: degree {graph.degree(node)}")

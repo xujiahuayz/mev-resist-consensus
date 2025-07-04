@@ -1,18 +1,21 @@
+"""PBS simulation module for blockchain environment."""
+
+import gc
 import os
 import random
 import csv
 import time
+import tracemalloc
 import multiprocessing as mp
 from typing import List, Tuple, Dict, Any
+
+import networkx as nx
+
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
 from blockchain_env.network import build_network
 from blockchain_env.transaction import Transaction
-import gc
-import tracemalloc
-import networkx as nx
-import numpy as np
 
 # Constants
 BLOCKNUM: int = 1000
@@ -28,10 +31,10 @@ num_cores: int = os.cpu_count()
 num_processes: int = max(num_cores - 1, 1)  # Use all cores except one, but at least one
 
 # Create network participants and build network once
-proposers: List[Proposer] = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
-builders: List[Builder] = [Builder(f"builder_{i}", False) for i in range(BUILDERNUM)]  # is_attacker will be set in simulation
-users: List[User] = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
-network: Any = build_network(users, builders, proposers)
+proposer_list: List[Proposer] = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
+builder_list: List[Builder] = [Builder(f"builder_{i}", False) for i in range(BUILDERNUM)]  # is_attacker will be set in simulation
+user_list: List[User] = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
+network: Any = build_network(user_list, builder_list, proposer_list)
 
 # Calculate and save network metrics once
 network_metrics = {}
@@ -54,11 +57,11 @@ for node_id in network.nodes():
     }
 
 # Save network metrics to CSV
-metrics_filename: str = f"data/same_seed/pbs_network_p0.05/network_metrics.csv"
+metrics_filename: str = "data/same_seed/pbs_network_p0.05/network_metrics.csv"
 os.makedirs(os.path.dirname(metrics_filename), exist_ok=True)
-with open(metrics_filename, 'w', newline='') as f:
+with open(metrics_filename, 'w', newline='', encoding='utf-8') as file:
     fieldnames: List[str] = ['node_id', 'avg_latency', 'degree']
-    writer: csv.DictWriter = csv.DictWriter(f, fieldnames=fieldnames)
+    writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     for node_id, metrics in network_metrics.items():
         writer.writerow({
@@ -78,16 +81,16 @@ def transaction_number() -> int:
     else:
         return random.randint(3, 5)
 
-def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Transaction]]:
+def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], List[Transaction]]:
     all_block_transactions: List[Transaction] = []
 
     # Get all users, builders, and proposers from the network
-    users: List[User] = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], User)]
-    builders: List[Builder] = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], Builder)]
-    proposers: List[Proposer] = [data['node'] for node_id, data in network.nodes(data=True) if isinstance(data['node'], Proposer)]
+    user_nodes: List[User] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], User)]
+    builder_nodes: List[Builder] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Builder)]
+    proposer_nodes: List[Proposer] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Proposer)]
 
     # Process user transactions
-    for user in users:
+    for user in user_nodes:
         num_transactions: int = transaction_number()
         for _ in range(num_transactions):
             if not user.is_attacker:
@@ -100,7 +103,7 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
 
     # Process builder bids
     builder_results: List[Tuple[str, List[Transaction], float]] = []
-    for builder in builders:
+    for builder in builder_nodes:
         # Process any received messages (transactions)
         messages: List[Any] = builder.receive_messages()
         for msg in messages:
@@ -113,16 +116,16 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
 
     # Process proposer bids
     winning_bid: Tuple[str, List[Transaction], float] = ("", [], 0.0)
-    winning_builder: Builder = builders[0]  # Default to first builder
+    winning_builder: Builder = builder_nodes[0]  # Default to first builder
 
-    for proposer in proposers:
+    for proposer in proposer_nodes:
         # Reset proposer state for new block
         proposer.reset_for_new_block()
 
         # Process each builder's bid
         for builder_id, transactions, bid_amount in builder_results:
             # Send bid to proposer through network
-            builder: Builder = next(b for b in builders if b.id == builder_id)
+            builder: Builder = next(b for b in builder_nodes if b.id == builder_id)
             builder.send_message(proposer.id, bid_amount, block_num)
 
         # Process received bids
@@ -133,9 +136,9 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
         # Select winning bid
         winner: Tuple[str, float] = proposer.select_winner()
         if winner:
-            winning_builder_id, winning_bid_amount = winner
+            winning_builder_id, _ = winner
             winning_bid = next(result for result in builder_results if result[0] == winning_builder_id)
-            winning_builder = next(b for b in builders if b.id == winning_builder_id)
+            winning_builder = next(b for b in builder_nodes if b.id == winning_builder_id)
             break  # First proposer to select a winner wins
 
     if winning_bid[0]:
@@ -162,7 +165,7 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
         }
 
     # Clear mempools for all builders
-    for builder in builders:
+    for builder in builder_nodes:
         builder.clear_mempool(block_num)
 
     return block_data, all_block_transactions
@@ -170,9 +173,9 @@ def process_block(block_num: int, network: Any) -> Tuple[Dict[str, Any], List[Tr
 
 def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Dict[str, Any]]:
     # Set attacker status for builders and users
-    for i, builder in enumerate(builders):
+    for i, builder in enumerate(builder_list):
         builder.is_attacker = i < num_attacker_builders
-    for i, user in enumerate(users):
+    for i, user in enumerate(user_list):
         user.is_attacker = i < num_attacker_users
 
     # Initialize a fresh pool for each simulation run
@@ -188,24 +191,24 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
     # Save transaction data to CSV
     transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
-    with open(transaction_filename, 'w', newline='') as f:
+    with open(transaction_filename, 'w', newline='', encoding='utf-8') as file:
         if all_transactions:
             fieldnames: List[str] = list(all_transactions[0].to_dict().keys())
-            writer: csv.DictWriter = csv.DictWriter(f, fieldnames=fieldnames)
+            writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
             for tx in all_transactions:
                 writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
     block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
-    with open(block_filename, 'w', newline='') as f:
+    with open(block_filename, 'w', newline='', encoding='utf-8') as file:
         fieldnames: List[str] = [
             'block_num',
             'builder_id',
             'total_gas_fee',
             'total_mev'
         ]
-        writer: csv.DictWriter = csv.DictWriter(f, fieldnames=fieldnames)
+        writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for block_data in block_data_list:
             writer.writerow(block_data)

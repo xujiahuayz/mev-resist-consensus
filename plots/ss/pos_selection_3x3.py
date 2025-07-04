@@ -12,7 +12,7 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
     attacking_counts = []
     non_attacking_counts = []
 
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         current_block = -1
         attacking_in_block = 0
@@ -45,7 +45,7 @@ def get_validator_counts_by_block(file_path, validator_attack_count):
 
     return attacking_counts, non_attacking_counts
 
-def plot_cumulative_selections_over_blocks(data_folder, configs):
+def plot_cumulative_selections_over_blocks(data_folder_path, configs_list):
     """
     - 3×3 subplots
     - Columns = % of attacking validators
@@ -61,8 +61,8 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     os.makedirs(output_dir, exist_ok=True)
 
     # Gather unique validator/user counts
-    validator_counts = sorted({cfg[0] for cfg in configs})
-    user_counts = sorted({cfg[1] for cfg in configs})
+    validator_counts = sorted({cfg[0] for cfg in configs_list})
+    user_counts = sorted({cfg[1] for cfg in configs_list})
 
     # Create subplots: rows=users, cols=validators
     fig, axes = plt.subplots(
@@ -83,13 +83,13 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     # For collecting single legend
     handles, labels = [], []
 
-    for validator_attack_count, user_attack_count in configs:
+    for validator_attack_count, user_attack_count in configs_list:
         row = user_counts.index(user_attack_count)
         col = validator_counts.index(validator_attack_count)
         ax = axes[row, col]
 
         filename = f"pos_block_data_validators{validator_attack_count}_users{user_attack_count}.csv"
-        file_path = os.path.join(data_folder, filename)
+        file_path = os.path.join(data_folder_path, filename)
 
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
@@ -186,10 +186,10 @@ def plot_cumulative_selections_over_blocks(data_folder, configs):
     print(f"3×3 grid plot saved to {out_path}")
 
 if __name__ == "__main__":
-    data_folder = 'data/same_seed/pos_visible80'
+    DATA_FOLDER = 'data/same_seed/pos_visible80'
     configs = [
         (5, 0), (10, 0), (15, 0),
         (5, 25), (10, 25), (15, 25),
         (5, 50), (10, 50), (15, 50)
     ]
-    plot_cumulative_selections_over_blocks(data_folder, configs)
+    plot_cumulative_selections_over_blocks(DATA_FOLDER, configs)

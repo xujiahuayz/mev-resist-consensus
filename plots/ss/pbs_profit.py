@@ -159,7 +159,7 @@ import seaborn as sns
 
 def load_data(file_path):
     """Load JSON data from a file."""
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         return json.load(file)
 
 def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_builders=20):
@@ -203,7 +203,7 @@ def create_legend_figure(save_path):
     labels = ["Users'", "Builders'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
 
-    legend = plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
+    plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
     plt.axis('off')
 
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)

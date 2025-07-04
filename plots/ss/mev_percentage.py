@@ -1,14 +1,14 @@
 """This is a file to compare the MEV transaction percentage between PBS and PoS systems."""
 
 import os
+from matplotlib.lines import Line2D
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 # Define paths
-pbs_folder = 'data/same_seed/pbs_visible80'
-pos_folder = 'data/same_seed/pos_visible80'
-output_folder = 'figures/ss'
+PBS_FOLDER = 'data/same_seed/pbs_visible80'
+POS_FOLDER = 'data/same_seed/pos_visible80'
+OUTPUT_FOLDER = 'figures/ss'
 
 # Function to load and preprocess data
 def load_data(folder, role='builders'):
@@ -65,8 +65,8 @@ def calculate_mev_stats(df, role='builders'):
     return grouped
 
 # Load PBS and PoS data
-pbs_data = load_data(pbs_folder, role='builders')  # For PBS: builders
-pos_data = load_data(pos_folder, role='validators')  # For PoS: validators
+pbs_data = load_data(PBS_FOLDER, role='builders')  # For PBS: builders
+pos_data = load_data(POS_FOLDER, role='validators')  # For PoS: validators
 
 # Calculate statistics for PBS and PoS
 pbs_stats = calculate_mev_stats(pbs_data, role='builders')
@@ -99,7 +99,6 @@ ax.set_zlabel('MEV Transaction Percentage')
 plt.title('Comparison of MEV Transaction Percentage: PBS vs PoS')
 
 # Add a legend manually
-from matplotlib.lines import Line2D
 legend_elements = [
     Line2D([0], [0], color='blue', lw=4, alpha=1, label='PBS'),
     Line2D([0], [0], color='red', lw=4, alpha=1, label='PoS'),
@@ -107,8 +106,8 @@ legend_elements = [
 ax.legend(handles=legend_elements, loc='best')
 
 # Save the figure
-os.makedirs(output_folder, exist_ok=True)
-output_path = os.path.join(output_folder, 'mev_3d_surface_plot.png')
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+output_path = os.path.join(OUTPUT_FOLDER, 'mev_3d_surface_plot.png')
 plt.savefig(output_path)
 plt.show()
 

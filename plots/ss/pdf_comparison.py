@@ -1,15 +1,13 @@
 import csv
 import os
-import json
 import matplotlib.pyplot as plt
 import numpy as np
-from collections import defaultdict
 
 def calculate_mev_distribution_for_cdf(file_path):
     """Calculate MEV distribution between builders and validators for a single transaction CSV file."""
     required_fields = {'mev_potential', 'id', 'position', 'creator_id', 'target_tx', 'included_at'}
 
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
 
         if not required_fields.issubset(reader.fieldnames):
@@ -23,7 +21,6 @@ def calculate_mev_distribution_for_cdf(file_path):
         for tx in transactions:
             try:
                 mev_potential = int(tx['mev_potential'].strip())
-                creator_id = tx['creator_id'].strip()
 
                 if mev_potential > 0:
                     mev_data["total_mev"] += mev_potential
@@ -46,14 +43,14 @@ def calculate_mev_distribution_for_cdf(file_path):
 
     return mev_data
 
-def process_all_transactions_for_cdf(data_folder, builder_attack_count, user_attack_count):
+def process_all_transactions_for_cdf(data_folder_path, builder_attack_count, user_attack_count):
     """Aggregate MEV distribution for builders and validators from all transaction files matching the specified builder and user attack counts."""
     total_validators_mev = []
     total_builders_mev = []
 
-    for filename in os.listdir(data_folder):
+    for filename in os.listdir(data_folder_path):
         if filename.startswith("pbs_transactions") and f"builders{builder_attack_count}" in filename and f"users{user_attack_count}" in filename:
-            file_path = os.path.join(data_folder, filename)
+            file_path = os.path.join(data_folder_path, filename)
             file_data = calculate_mev_distribution_for_cdf(file_path)
 
             if file_data:
@@ -68,9 +65,9 @@ def calculate_pdf(data, bins=50):
     bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
     return bin_centers, density
 
-def plot_mev_pdf(data_folder, output_folder, user_attack_count):
+def plot_mev_pdf(data_folder_path, output_folder_path, user_attack_count):
     """Plot the PDFs for MEV profit distribution between validators and builders under different conditions."""
-    os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(output_folder_path, exist_ok=True)
     plt.figure(figsize=(10, 8))
 
     # Define different attack configurations to plot
@@ -86,7 +83,7 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
     ]
 
     for idx, builder_attack_count in enumerate(builder_counts):
-        validators_mev, builders_mev = process_all_transactions_for_cdf(data_folder, builder_attack_count, user_attack_count)
+        validators_mev, builders_mev = process_all_transactions_for_cdf(data_folder_path, builder_attack_count, user_attack_count)
 
         # Calculate PDFs
         builders_bin_centers, builders_pdf = calculate_pdf(builders_mev)
@@ -105,15 +102,15 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
     plt.tight_layout()
 
     # Save and display plot
-    output_path = os.path.join(output_folder, "mev_profit_distribution_pdf.png")
+    output_path = os.path.join(output_folder_path, "mev_profit_distribution_pdf.png")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"PDF plot saved to {output_path}")
 
 if __name__ == "__main__":
-    data_folder = 'data/same_seed/pbs_visible80'
-    output_folder = 'figures/ss'
-    os.makedirs(output_folder, exist_ok=True)
-    user_attack_count = 25  # Fixed user attackers as per requirement
+    DATA_FOLDER = 'data/same_seed/pbs_visible80'
+    OUTPUT_FOLDER = 'figures/ss'
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    USER_ATTACK_COUNT = 25  # Fixed user attackers as per requirement
 
-    plot_mev_pdf(data_folder, output_folder, user_attack_count)
+    plot_mev_pdf(DATA_FOLDER, OUTPUT_FOLDER, USER_ATTACK_COUNT)

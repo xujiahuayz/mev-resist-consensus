@@ -1,10 +1,10 @@
 import os
 import csv
+from collections import defaultdict
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from collections import defaultdict
-import matplotlib.ticker as ticker
+from matplotlib import ticker
 
 def inversionen(arr):
     """
@@ -60,9 +60,6 @@ def calculate_inversion_count(transactions_by_block):
             tx_id = int(tx['id'])
             ids.append(tx_id)
 
-    # Generate the ordered list for comparison
-    ordered_list = list(range(len(ids)))
-
     # Use inversionen function to calculate inversion count between ids and ordered_list
     _, inversion_count = inversionen(ids)
     return inversion_count
@@ -73,7 +70,7 @@ def process_file(file_path):
     """
     transactions_by_block = defaultdict(list)
 
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             block_number = int(row['included_at'])
@@ -85,13 +82,13 @@ def process_file(file_path):
     inversion_count = calculate_inversion_count(sorted_blocks)
     return inversion_count
 
-def process_all_files(data_folder):
+def process_all_files(data_folder_path):
     """
     Process all transaction files in a folder for different builder and user configurations.
     """
     results = {}
 
-    for filename in os.listdir(data_folder):
+    for filename in os.listdir(data_folder_path):
         if filename.startswith("pbs_transactions") or filename.startswith("pos_transactions"):
             parts = filename.split("_")
 
@@ -106,7 +103,7 @@ def process_all_files(data_folder):
 
             user_attack_count = int(parts[3].replace("users", "").split(".")[0])
 
-            file_path = os.path.join(data_folder, filename)
+            file_path = os.path.join(data_folder_path, filename)
             inversion_count = process_file(file_path)
 
             if user_attack_count not in results:
@@ -115,14 +112,14 @@ def process_all_files(data_folder):
 
     return results
 
-def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
+def plot_heatmap(results, title, vmin_val, vmax_val, output_folder_path, x_label):
     """
     Plot a heatmap of inversion counts for each user and builder configuration with the same color scale.
     """
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
 
     plt.figure(figsize=(12, 11))
-    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin, vmax=vmax)
+    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin_val, vmax=vmax_val)
     plt.xlabel(x_label, fontsize=26)
     plt.ylabel(r"Percentage of MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=26)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=20)
@@ -141,28 +138,28 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
 
     plt.tight_layout()
 
-    output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
+    output_path = os.path.join(output_folder_path, f"{title.replace(' ', '_').lower()}.png")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"Heatmap saved to {output_path}")
 
 if __name__ == "__main__":
-    pos_data_folder = 'data/same_seed/pos_visible80'
-    pbs_data_folder = 'data/same_seed/pbs_visible80'
-    output_folder = 'figures/ss'
-    os.makedirs(output_folder, exist_ok=True)
+    POS_DATA_FOLDER = 'data/same_seed/pos_visible80'
+    PBS_DATA_FOLDER = 'data/same_seed/pbs_visible80'
+    OUTPUT_FOLDER = 'figures/ss'
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
     # Calculate inversion counts for each configuration for PoS and PBS
-    pos_results = process_all_files(pos_data_folder)
-    pbs_results = process_all_files(pbs_data_folder)
+    pos_results = process_all_files(POS_DATA_FOLDER)
+    pbs_results = process_all_files(PBS_DATA_FOLDER)
 
     # Determine shared color scale limits
     all_inversion_counts = [count for user_counts in pos_results.values() for count in user_counts.values()]
     all_inversion_counts += [count for user_counts in pbs_results.values() for count in user_counts.values()]
-    vmin, vmax = min(all_inversion_counts), max(all_inversion_counts)
+    vmin_val, vmax_val = min(all_inversion_counts), max(all_inversion_counts)
 
     # Plot heatmap of results for PoS with "Validators" as x-axis label
-    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin, vmax, output_folder, r"Percentage of MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Percentage of MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
 
     # Plot heatmap of results for PBS with "Builders" as x-axis label
-    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin, vmax, output_folder, r"Percentage of MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Percentage of MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")

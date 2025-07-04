@@ -1,8 +1,8 @@
+import os
+from typing import Dict
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
-from typing import Dict, List, Tuple
 
 def ensure_directories():
     """Ensure all required directories exist."""
@@ -49,9 +49,6 @@ def plot_network_effects():
     # Ensure directories exist
     ensure_directories()
 
-    # Set up the plot
-    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-
     # Load network metrics for both m values
     metrics_m1 = load_network_metrics(1)
     metrics_m2 = load_network_metrics(2)
@@ -64,6 +61,9 @@ def plot_network_effects():
     metrics_m1['m'] = 'm=1'
     metrics_m2['m'] = 'm=2'
     metrics_combined = pd.concat([metrics_m1, metrics_m2])
+
+    # Create subplots
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
     # Plot 1: Degree Distribution Comparison
     sns.kdeplot(data=metrics_combined, x='degree', hue='m', ax=axes[0,0])

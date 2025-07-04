@@ -1,10 +1,11 @@
 """Builder module for blockchain environment."""
 
 import random
-from blockchain_env.transaction import Transaction
 from copy import deepcopy
-from blockchain_env.network import Node
 from typing import List
+
+from blockchain_env.transaction import Transaction
+from blockchain_env.network import Node
 
 BLOCK_CAP: int = 100
 
