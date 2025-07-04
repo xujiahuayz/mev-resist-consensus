@@ -26,14 +26,14 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_u
 
     plt.stackplot(validator_percentages, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
                   colors=colors, alpha=0.9)
-    
+
 
     user_attack_percentage_map = {'0': '0', '12': '33', '24': '67', '50': '100'}
     user_attack_percentage = user_attack_percentage_map.get(str(user_attack_count), 'Check Data')
     plt.xlabel(r"Percentage of MEV-Seeking Validators (%)", fontsize=30)
     plt.ylabel(r"MEV Profit Captured (%)", fontsize=30)
     plt.title(rf"${user_attack_percentage}\%$ of MEV-Seeking Users", fontsize=30)
-    
+
     plt.xticks(ticks=[0, 25, 50, 75, 100], labels=['0', '25', '50', '75', '100'], fontsize=30)
     plt.yticks(fontsize=30)
     plt.margins(0)
@@ -46,13 +46,13 @@ def create_legend_figure(save_path):
     plt.figure(figsize=(10, 2))
     palette = sns.color_palette("Blues", 3)
     colors = [palette[2], palette[1], palette[0]]
-    
+
     labels = ["Users'", "Validators'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
-    
+
     legend = plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
     plt.axis('off')
-    
+
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
     plt.close()
 
@@ -68,7 +68,7 @@ def main():
             user_attack_count = file_name.split('_')[-1].split('.')[0]
             save_path = os.path.join(output_folder, f"pos_mev_distribution_user_attack_{user_attack_count}.png")
             plot_mev_distribution(data, user_attack_count, save_path, total_users=50)
-    
+
     legend_path = os.path.join(output_folder, "pos_mev_dis_legend.png")
     create_legend_figure(legend_path)
 

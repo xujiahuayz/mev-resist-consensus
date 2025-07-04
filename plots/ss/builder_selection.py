@@ -37,7 +37,7 @@ def plot_validator_selections(validator_counts):
 
     # Show the plot
     plt.show()
-    
+
 if __name__ == "__main__":
     # Define the file path of the CSV file
     csv_file_path = 'data/same_seed/pos_visible80/pos_block_data_validators0_users30.csv'

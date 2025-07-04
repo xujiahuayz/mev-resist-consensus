@@ -114,7 +114,7 @@ class AttackUser(Participant):
         # Prioritize creating attack transactions if possible
         if target_tx and isinstance(target_tx, Transaction) and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
             fee = target_tx.fee + 100000
-            if fee <= 0: 
+            if fee <= 0:
                 fee = max(SAMPLE_GAS_FEES)  # Ensure fee is not zero or negative
 
             mev_potential = random.choice(MEV_POTENTIALS)
@@ -376,7 +376,7 @@ def run_pos(validators, num_blocks, users):
             'total_gas': profit_from_block,
             'total_mev_captured': sum(tx.mev_potential for tx in selected_transactions if tx.mev_potential > 0),
             'validator_type': validator_type,
-            'validator_id': validator.id 
+            'validator_id': validator.id
         })
 
         included_tx_ids = set()
@@ -431,7 +431,7 @@ def run_simulation(run_id, mev_count, is_attack_all=False, is_attack_none=False,
         users = [NormalUser() if i < NUM_USERS // 2 else AttackUser() for i in range(NUM_USERS)]
         output_dir = 'data/100_runs'
     else:
-        users = [NormalUser() for _ in range(NUM_USERS)]  
+        users = [NormalUser() for _ in range(NUM_USERS)]
         output_dir = 'data/default_run'
 
     builders = [Builder(i < mev_count) for i in range(NUM_BUILDERS)]

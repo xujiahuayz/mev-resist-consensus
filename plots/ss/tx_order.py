@@ -34,7 +34,7 @@ def modified_merge(l1, l2):
     merged = []
     i, j = 0, 0
     cross_inversions = 0
-    
+
     while i < m1 and j < m2:
         if l1[i] <= l2[j]:
             merged.append(l1[i])
@@ -54,12 +54,12 @@ def calculate_inversion_count(transactions_by_block):
     Calculate the inversion count for transaction IDs compared to a perfectly ordered list.
     """
     ids = []
-    
+
     for block_transactions in transactions_by_block:
         for tx in block_transactions:
             tx_id = int(tx['id'])
             ids.append(tx_id)
-    
+
     # Generate the ordered list for comparison
     ordered_list = list(range(len(ids)))
 
@@ -72,15 +72,15 @@ def process_file(file_path):
     Process a single CSV file to group transactions by blocks and compute the inversion count.
     """
     transactions_by_block = defaultdict(list)
-    
+
     with open(file_path, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             block_number = int(row['included_at'])
             transactions_by_block[block_number].append(row)
-    
+
     sorted_blocks = [transactions_by_block[block] for block in sorted(transactions_by_block.keys())]
-    
+
     # Compute inversion count
     inversion_count = calculate_inversion_count(sorted_blocks)
     return inversion_count
@@ -90,11 +90,11 @@ def process_all_files(data_folder):
     Process all transaction files in a folder for different builder and user configurations.
     """
     results = {}
-    
+
     for filename in os.listdir(data_folder):
         if filename.startswith("pbs_transactions") or filename.startswith("pos_transactions"):
             parts = filename.split("_")
-            
+
             # Handle different naming conventions for builders (PBS) and validators (PoS)
             if "builders" in parts[2]:
                 builder_attack_count = int(parts[2].replace("builders", ""))
@@ -103,12 +103,12 @@ def process_all_files(data_folder):
             else:
                 print(f"Skipping file {filename} due to unexpected format.")
                 continue
-            
+
             user_attack_count = int(parts[3].replace("users", "").split(".")[0])
 
             file_path = os.path.join(data_folder, filename)
             inversion_count = process_file(file_path)
-            
+
             if user_attack_count not in results:
                 results[user_attack_count] = {}
             results[user_attack_count][builder_attack_count] = inversion_count
@@ -129,7 +129,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=20)
 
     plt.gca().invert_yaxis()
-    
+
     # Access the color bar and customize its label and tick size
     cbar = plt.gca().collections[0].colorbar
     cbar.set_label("Inversion Count", size=20)
@@ -140,7 +140,7 @@ def plot_heatmap(results, title, vmin, vmax, output_folder, x_label):
     cbar.update_ticks()
 
     plt.tight_layout()
-    
+
     output_path = os.path.join(output_folder, f"{title.replace(' ', '_').lower()}.png")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()

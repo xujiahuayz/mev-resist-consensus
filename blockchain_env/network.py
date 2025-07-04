@@ -131,15 +131,15 @@ if __name__ == "__main__":
     class TestNode(Node):
         def __init__(self, node_id: str) -> None:
             super().__init__(node_id)
-    
+
     # Create sample nodes for testing
     users = [TestNode(f"user_{i}") for i in range(50)]
     builders = [TestNode(f"builder_{i}") for i in range(20)]
     proposers = [TestNode(f"proposer_{i}") for i in range(20)]
-    
+
     # Build and visualize network with p=0.05
     G = build_network(users, builders, proposers, p=0.05)
-    
+
     # Print network statistics
     print("\nNetwork Statistics:")
     print(f"Number of nodes: {G.number_of_nodes()}")

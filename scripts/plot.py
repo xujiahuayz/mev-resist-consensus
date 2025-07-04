@@ -150,7 +150,7 @@ class Plotting:
         plt.xlabel('Builder ID')
         plt.ylabel('Cumulative Reward')
         plt.xticks(range(len(self.simulation.builder)))
-        plt.show()   
+        plt.show()
 
     def plot_builders_profit_distribution(self):
         builder_profits = [builder.cumulative_reward for builder in self.simulation.builders]
@@ -165,7 +165,7 @@ class Plotting:
     def plot_cumulative_reward_distribution(self):
         builders_cumulative_rewards = []
         proposers_cumulative_rewards = []
-        time_steps = list(range(len(self.simulation.block_bid_his)))  
+        time_steps = list(range(len(self.simulation.block_bid_his)))
 
         current_builders_reward = 0
         current_proposers_reward = 0

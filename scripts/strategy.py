@@ -52,7 +52,7 @@ class Builder:
             return 0
         elif self.strategy == 'bluff':
             return block_value * (1 if counter < 22 else 0.5)
-        
+
 class Proposer:
     def __init__(self, account):
         self.account = account
@@ -82,7 +82,7 @@ class Simulation:
 
         self.builders = [Builder(i, builders_strategies[i], random.uniform(5, 10), 0.5)
                          for i in range(num_builders)]
-        
+
         self.proposers = [Proposer(i) for i in range(num_proposers)]
 
     def simulate_block(self):

@@ -18,7 +18,7 @@ pbs_blocks['Builder Type'] = pbs_blocks['Builder ID'].apply(lambda x: 'MEV' if x
 pbs_blocks['Reward Type'] = pbs_blocks.apply(lambda row: 'Proposer' if row['Builder ID'] == row['Proposer ID'] else ('MEV' if row['Builder ID'] in mev_builders else 'Non-MEV'), axis=1)
 pbs_blocks['Reward Type'] = pbs_blocks['Reward Type'].astype('category')
 pbs_blocks['Calculated Reward'] = pbs_blocks.apply(lambda row: row['Winning Bid Value'] if row['Reward Type'] == 'Proposer' else row['Reward'], axis=1)
-    
+
 
 
 def plot_box_mev():

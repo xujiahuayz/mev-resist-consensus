@@ -18,7 +18,7 @@ class Transaction:
         self.created_at: int = created_at
         self.included_at: Optional[int] = None
         self.target_tx: Optional['Transaction'] = target_tx
-        self.position: Optional[int] = None 
+        self.position: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {

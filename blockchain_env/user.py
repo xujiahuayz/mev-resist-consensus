@@ -22,12 +22,12 @@ class User(Node):
         created_at: int = block_num
         target_tx: Transaction | None = None
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
-        
+
     def launch_attack(self, block_num: int) -> Transaction:
         """Launch front, back, or sandwich attack on the transaction with the highest MEV potential"""
         # Process any messages to update mempool
         self.receive_messages()
-        
+
         # Filter for transactions with MEV potential greater than zero
         profitable_txs: List[Transaction] = [tx for tx in self.mempool if tx.mev_potential > 0]
         if profitable_txs:
@@ -51,7 +51,7 @@ class User(Node):
             elif attack_type == 'back':
                 gas_fee: int = target_tx.gas_fee - 1
                 return Transaction(gas_fee, 0, self.id, block_num, target_tx)  # Back-run attack
-            
+
         # If no profitable transaction is found, create a benign transaction
         return self.create_transactions(block_num)
 
@@ -66,11 +66,11 @@ class User(Node):
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
         network = build_network([user], builders, [])
-        
+
         for block_num in range(2):
-            for i in range(2): 
+            for i in range(2):
                 tx: Transaction = user.create_transactions(block_num)
-        
+
                 print(f"Created transaction: {tx}")
                 print(f"Gas fee: {tx.gas_fee}")
                 print(f"MEV potential: {tx.mev_potential}")
@@ -84,21 +84,21 @@ class User(Node):
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(1, True)
         network = build_network([user], builders, [])
-        
+
         # Populate builders' mempools with some transactions
         for builder in builders:
             builder.receive_transaction(Transaction(10, 5, 2, 1, None))
             builder.receive_transaction(Transaction(15, 10, 3, 1, None))
 
         tx: Transaction = user.launch_attack(1)
-        
+
         assert isinstance(tx, Transaction), "Created object is not a Transaction"
         assert tx.gas_fee in [9, 11, 14, 16], "Gas fee not as expected for an attack"
         assert tx.mev_potential == 0, "MEV potential should be 0 for an attack"
         assert tx.creator_id == user.id, "Creator ID mismatch"
         assert tx.created_at == 1, "Created_at block number mismatch"
         assert tx.target_tx is not None, "Target transaction should not be None for an attack"
-        
+
         print("test_launch_attack passed!")
 
     @classmethod
@@ -107,16 +107,16 @@ class User(Node):
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
         network = build_network([user], builders, [])
-        
+
         tx: Transaction = user.create_transactions(1)
         user.broadcast_transactions(tx)
-        
+
         # Check if transaction was received by visible builders
         for node_id in user.visible_nodes:
             node = network.nodes[node_id]['node']
             if hasattr(node, 'get_mempool'):
                 assert tx in node.get_mempool(), "Transaction not found in builder's mempool"
-        
+
         print("test_broadcast_transactions passed!")
 
 # Run tests

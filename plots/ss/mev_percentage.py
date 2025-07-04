@@ -31,7 +31,7 @@ def load_data(folder, role='builders'):
         match = pd.Series(filename).str.extract(regex)
         role_count = int(match[0][0])  # Extract the count of builders/validators
         users = int(match[1][0])  # Extract the count of users
-        
+
         # Load CSV file and add columns for role and users
         df = pd.read_csv(file)
         df[role] = role_count
@@ -53,13 +53,13 @@ def calculate_mev_stats(df, role='builders'):
     """
     # A transaction is MEV if `target_tx` is not null
     df['is_mev'] = df['target_tx'].notnull()
-    
+
     # Group by role (builders/validators) and users
     grouped = df.groupby([role, 'users']).agg(
         total_transactions=('id', 'count'),
         mev_transactions=('is_mev', 'sum')
     ).reset_index()
-    
+
     # Add MEV percentage column
     grouped['mev_percentage'] = (grouped['mev_transactions'] / grouped['total_transactions']) * 100
     return grouped

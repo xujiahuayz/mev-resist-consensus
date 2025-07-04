@@ -3,7 +3,7 @@
 import random
 from blockchain_env.transaction import Transaction
 from copy import deepcopy
-from blockchain_env.network import Node 
+from blockchain_env.network import Node
 from typing import List
 
 BLOCK_CAP: int = 100
@@ -98,7 +98,7 @@ class Builder(Node):
     def get_mempool(self) -> List[Transaction]:
         """Get the builder's mempool."""
         return self.mempool
-    
+
     def clear_mempool(self, block_num: int) -> None:
         """Clear transactions included onchain or too old from the mempool."""
         timer: int = block_num - 5

@@ -8,29 +8,29 @@ from collections import defaultdict
 def calculate_mev_distribution_for_cdf(file_path):
     """Calculate MEV distribution between builders and validators for a single transaction CSV file."""
     required_fields = {'mev_potential', 'id', 'position', 'creator_id', 'target_tx', 'included_at'}
-    
+
     with open(file_path, 'r') as f:
         reader = csv.DictReader(f)
-        
+
         if not required_fields.issubset(reader.fieldnames):
             print(f"Skipping file {file_path} due to missing fields.")
             return None
 
         mev_data = {"total_mev": 0, "validators_mev": [], "builders_mev": []}
-        
+
         transactions = list(reader)
-        
+
         for tx in transactions:
             try:
                 mev_potential = int(tx['mev_potential'].strip())
                 creator_id = tx['creator_id'].strip()
-                
+
                 if mev_potential > 0:
                     mev_data["total_mev"] += mev_potential
                     targeting_txs = [
                         t for t in transactions if t.get('target_tx') == tx['id']
                     ]
-                    
+
                     if targeting_txs:
                         min_distance = min(abs(int(t['position']) - int(tx['position'])) for t in targeting_txs)
                         closest_txs = [t for t in targeting_txs if abs(int(t['position']) - int(tx['position'])) == min_distance]
@@ -55,7 +55,7 @@ def process_all_transactions_for_cdf(data_folder, builder_attack_count, user_att
         if filename.startswith("pbs_transactions") and f"builders{builder_attack_count}" in filename and f"users{user_attack_count}" in filename:
             file_path = os.path.join(data_folder, filename)
             file_data = calculate_mev_distribution_for_cdf(file_path)
-            
+
             if file_data:
                 total_validators_mev.extend(file_data["validators_mev"])
                 total_builders_mev.extend(file_data["builders_mev"])
@@ -75,7 +75,7 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
 
     # Define different attack configurations to plot
     builder_counts = [0, 10, 20]
-    
+
     # Define colors and line styles for clear distinction
     colors = ['blue', 'orange', 'green', 'purple', 'red', 'brown']
     linestyles = ['--', '-', '--', '-', '--', '-']
@@ -84,14 +84,14 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
         'PBS - Builders 10 Attackers', 'PoS - Validators 10 Attackers',
         'PBS - Builders 20 Attackers', 'PoS - Validators 20 Attackers'
     ]
-    
+
     for idx, builder_attack_count in enumerate(builder_counts):
         validators_mev, builders_mev = process_all_transactions_for_cdf(data_folder, builder_attack_count, user_attack_count)
-        
+
         # Calculate PDFs
         builders_bin_centers, builders_pdf = calculate_pdf(builders_mev)
         validators_bin_centers, validators_pdf = calculate_pdf(validators_mev)
-        
+
         # Plot PDFs with improved differentiation
         plt.plot(builders_bin_centers, builders_pdf, label=labels[idx*2], color=colors[idx*2], linestyle=linestyles[idx*2], linewidth=1.5)
         plt.plot(validators_bin_centers, validators_pdf, label=labels[idx*2 + 1], color=colors[idx*2 + 1], linestyle=linestyles[idx*2 + 1], linewidth=1.5)
@@ -103,7 +103,7 @@ def plot_mev_pdf(data_folder, output_folder, user_attack_count):
     plt.grid(True, linestyle='--', alpha=0.4)
     plt.margins(x=0, y=0)
     plt.tight_layout()
-    
+
     # Save and display plot
     output_path = os.path.join(output_folder, "mev_profit_distribution_pdf.png")
     plt.savefig(output_path, dpi=300, bbox_inches='tight')

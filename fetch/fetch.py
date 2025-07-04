@@ -46,21 +46,21 @@ def analyze_block(block_number):
     miner = block['miner']
     transactions = block['transactions']
     num_transactions = len(transactions)
-    
+
     gas_fees = []
     confirm_times = []
     transactions_data = []
-    
+
     for txn in transactions:
         txn_data = get_transaction_data(txn)
         gas_fees.append(txn_data['gas_fee_gwei'])  # Collect gas fees in Gwei
         confirm_times.append(txn_data['confirm_time'])
         transactions_data.append(txn_data)
-    
+
     avg_gas_fee = sum(gas_fees) / num_transactions if num_transactions else 0
     avg_confirm_time = sum(confirm_times) / num_transactions if num_transactions else 0
     total_gas_fees = sum(gas_fees)  # Total gas fees in Gwei
-    
+
     return {
         'block_number': block_number,
         'miner': miner,
@@ -86,22 +86,22 @@ def main():
     # Ensure the directory exists
     output_dir = 'data/fetch'
     os.makedirs(output_dir, exist_ok=True)
-    
+
     block_number = web3.eth.block_number
     blocks_to_analyze = 10
     all_gas_fees = []
-    
+
     for i in range(block_number, block_number - blocks_to_analyze, -1):
         block_data = analyze_block(i)
         all_gas_fees.extend(block_data['gas_fees_gwei'])  # Collect gas fees from all blocks
-        
+
         # Save each block's data to a JSON file
         output_file = os.path.join(output_dir, f'block_{block_data["block_number"]}.json')
         with open(output_file, 'w') as f:
             json.dump(block_data, f, indent=4, default=str)
-    
+
     print(f"Block data analysis saved in '{output_dir}'")
-    
+
     # Plot gas fee distribution
     plot_gas_fee_distribution(all_gas_fees)
 

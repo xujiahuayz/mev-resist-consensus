@@ -11,7 +11,7 @@ NON_ATTACK_BUILDERS = {f"builder_{i+3}" for i in range(2)} | {f"builder_{i+15}" 
 
 def plot_bid_dynamics(file_path, block_number):
     output_figure_path = 'figures/ss/bid_dynamics_selected_block.png'
-    
+
     # Load data
     data = pd.read_csv(file_path)
 
@@ -132,7 +132,7 @@ def analyze_data(file_path):
 
 def plot_block_value_dynamics(file_path, block_number):
     output_figure_path = 'figures/ss/block_value_dynamics_selected_block.png'
-    
+
     # Load data
     data = pd.read_csv(file_path)
 
@@ -167,7 +167,7 @@ def plot_block_value_dynamics(file_path, block_number):
         selected_builders = np.random.choice([b for b in unique_builders if b != winning_builder], size=7, replace=False)
         selected_builders = np.append(selected_builders, winning_builder)
     else:
-        selected_builders = unique_builders  
+        selected_builders = unique_builders
 
     # Plot block values for selected builders
     plt.figure(figsize=(12, 8))

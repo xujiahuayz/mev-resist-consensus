@@ -54,7 +54,7 @@ def load_total_profit_from_csv(data_folder, system_type):
 
                 user_count = int(parts[-1].split(".")[0].replace("users", ""))
                 entity_count = int(parts[-2].replace(count_field, ""))
-                
+
                 # Calculate MEV and gas fees
                 total_mev, gas_fee = calculate_mev_from_transactions(file_path)
                 total_profit = total_mev + gas_fee
@@ -64,10 +64,10 @@ def load_total_profit_from_csv(data_folder, system_type):
 
     # Convert profit data to a DataFrame
     df = pd.DataFrame(profit_data, columns=['Users', 'Entities', 'Total Profit'])
-    
+
     # Aggregate duplicate (Users, Entities) entries by summing their Total Profit
     df = df.groupby(['Users', 'Entities'], as_index=False).sum()
-    
+
     # Pivot the DataFrame
     return df.pivot(index='Users', columns='Entities', values='Total Profit')
 

@@ -36,10 +36,10 @@ def analyze_builder_performance(block_data: pd.DataFrame) -> Dict[str, float]:
     total_blocks = len(block_data)
     winning_blocks = block_data[block_data['builder_id'] != '']
     winning_rate = len(winning_blocks) / total_blocks if total_blocks > 0 else 0
-    
+
     # Calculate average profit per winning block
     avg_profit = winning_blocks['total_gas_fee'].mean() if len(winning_blocks) > 0 else 0
-    
+
     return {
         'winning_rate': winning_rate,
         'avg_profit': avg_profit
@@ -48,45 +48,45 @@ def analyze_builder_performance(block_data: pd.DataFrame) -> Dict[str, float]:
 def plot_network_effects():
     # Ensure directories exist
     ensure_directories()
-    
+
     # Set up the plot
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-    
+
     # Load network metrics for both m values
     metrics_m1 = load_network_metrics(1)
     metrics_m2 = load_network_metrics(2)
-    
+
     if metrics_m1.empty or metrics_m2.empty:
         print("Please run the simulation first to generate network metrics.")
         return
-    
+
     # Add m value to each dataframe for better plotting
     metrics_m1['m'] = 'm=1'
     metrics_m2['m'] = 'm=2'
     metrics_combined = pd.concat([metrics_m1, metrics_m2])
-    
+
     # Plot 1: Degree Distribution Comparison
     sns.kdeplot(data=metrics_combined, x='degree', hue='m', ax=axes[0,0])
     axes[0,0].set_title('Node Degree Distribution')
     axes[0,0].set_xlabel('Degree')
     axes[0,0].set_ylabel('Density')
-    
+
     # Plot 2: Latency Distribution
     sns.kdeplot(data=metrics_combined, x='avg_latency', hue='m', ax=axes[0,1])
     axes[0,1].set_title('Average Latency Distribution')
     axes[0,1].set_xlabel('Average Latency')
     axes[0,1].set_ylabel('Density')
-    
+
     # Analyze builder performance for different configurations
     builder_performance = {
         'm1': {'winning_rates': [], 'avg_profits': []},
         'm2': {'winning_rates': [], 'avg_profits': []}
     }
-    
+
     # Test configurations
     attacker_builders = [1, 5, 10, 15, 20]
     attacker_users = [0, 10, 25, 50]
-    
+
     for m in [1, 2]:
         for num_builders in attacker_builders:
             for num_users in attacker_users:
@@ -95,11 +95,11 @@ def plot_network_effects():
                     performance = analyze_builder_performance(block_data)
                     builder_performance[f'm{m}']['winning_rates'].append(performance['winning_rate'])
                     builder_performance[f'm{m}']['avg_profits'].append(performance['avg_profit'])
-    
+
     if not builder_performance['m1']['winning_rates'] or not builder_performance['m2']['winning_rates']:
         print("No block data found. Please run the simulation first.")
         return
-    
+
     # Create performance dataframe for seaborn
     performance_data = pd.DataFrame({
         'm': ['m=1', 'm=2'] * 2,
@@ -111,19 +111,19 @@ def plot_network_effects():
             sum(builder_performance['m2']['avg_profits'])/len(builder_performance['m2']['avg_profits'])
         ]
     })
-    
+
     # Plot 3: Winning Rate Comparison
-    sns.barplot(data=performance_data[performance_data['metric'] == 'Winning Rate'], 
+    sns.barplot(data=performance_data[performance_data['metric'] == 'Winning Rate'],
                 x='m', y='value', ax=axes[1,0])
     axes[1,0].set_title('Average Winning Rate')
     axes[1,0].set_ylabel('Winning Rate')
-    
+
     # Plot 4: Average Profit Comparison
-    sns.barplot(data=performance_data[performance_data['metric'] == 'Average Profit'], 
+    sns.barplot(data=performance_data[performance_data['metric'] == 'Average Profit'],
                 x='m', y='value', ax=axes[1,1])
     axes[1,1].set_title('Average Profit per Winning Block')
     axes[1,1].set_ylabel('Profit (Gas Fee)')
-    
+
     plt.tight_layout()
     plt.savefig('figures/ss/network_effects.png')
     plt.close()

@@ -46,7 +46,7 @@ def process_block(block_num, users, validators):
     # Randomly select a proposer
     selected_validator = selected_validators[block_num]
     selected_validator.selected_transactions = selected_validator.select_transactions(BLOCK_CAP)
-    
+
     # Assign transaction positions and inclusion times
     for position, tx in enumerate(selected_validator.selected_transactions):
         tx.position = position
@@ -109,10 +109,10 @@ if __name__ == "__main__":
     for num_attacker_validators in range(PROPNUM + 1):
         for num_attacker_users in range(USERNUM + 1):
             start_time = time.time()
-            
+
             # Run the simulation for the current parameter set
             simulate_pos(num_attacker_validators, num_attacker_users)
-            
+
             # Calculate and print the time taken for this round
             end_time = time.time()
             round_time = end_time - start_time

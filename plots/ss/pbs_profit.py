@@ -10,29 +10,29 @@
 # def calculate_mev_distribution_from_transactions(file_path):
 #     """Calculate MEV distribution among builders and users from a single transaction CSV file."""
 #     required_fields = {'mev_potential', 'id', 'position', 'creator_id', 'target_tx', 'included_at'}
-    
+
 #     with open(file_path, 'r') as f:
 #         reader = csv.DictReader(f)
-        
+
 #         if not required_fields.issubset(reader.fieldnames):
 #             print(f"Skipping file {file_path} due to missing fields.")
 #             return None
 
 #         mev_data = {"total_mev": 0, "builders_mev": 0, "users_mev": 0}
-        
+
 #         transactions = list(reader)
-        
+
 #         for tx in transactions:
 #             try:
 #                 mev_potential = int(tx['mev_potential'].strip())
 #                 creator_id = tx['creator_id'].strip()
-                
+
 #                 if mev_potential > 0:
 #                     mev_data["total_mev"] += mev_potential
 #                     targeting_txs = [
 #                         t for t in transactions if t.get('target_tx') == tx['id']
 #                     ]
-                    
+
 #                     if targeting_txs:
 #                         min_distance = min(abs(int(t['position']) - int(tx['position'])) for t in targeting_txs)
 #                         closest_txs = [t for t in targeting_txs if abs(int(t['position']) - int(tx['position'])) == min_distance]
@@ -63,10 +63,10 @@
 #             except (IndexError, ValueError):
 #                 print(f"Skipping file {filename} due to naming format.")
 #                 continue
-            
+
 #             file_path = os.path.join(data_folder, filename)
 #             file_data = calculate_mev_distribution_from_transactions(file_path)
-            
+
 #             if file_data:
 #                 for key in file_data:
 #                     aggregated_data[builder_attack_count][key] += file_data[key]
@@ -113,7 +113,7 @@
 #     # Set large font sizes
 #     axis_font_size = 28  # Larger font size for axis labels
 #     title_font_size = 32  # Even larger font size for the plot title
-#     tick_font_size = 22 
+#     tick_font_size = 22
 
 #     plt.figure(figsize=(10, 9))
 
@@ -124,14 +124,14 @@
 #     # Stackplot to visualize MEV distribution with adjusted data
 #     plt.stackplot(builder_counts, user_mev_percent, builder_mev_percent, uncaptured_mev_percent,
 #                   labels=["Users MEV", "Builders MEV", "Uncaptured MEV"], colors=colors, alpha=0.9)
-    
+
 #     plt.xlabel("Number of Attacking Builders", fontsize=axis_font_size)
 #     plt.ylabel("MEV Profit Distribution (%)", fontsize=axis_font_size)
 #     plt.title(f"User Attacker Number: {user_attack_count}", fontsize=title_font_size)
 #     plt.legend(loc="upper right", fontsize=tick_font_size)
 #     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 5, 10, 15, 20], fontsize=tick_font_size)
 #     plt.yticks(fontsize=tick_font_size)
-    
+
 #     # Adjust plot margins to remove extra space around the plot
 #     plt.margins(0)
 #     plt.tight_layout(pad=0)
@@ -180,7 +180,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
 
     plt.stackplot(builder_percentages, user_mev_percent, builder_mev_percent, uncaptured_mev_percent,
                   colors=colors, alpha=0.9)
-    
+
     user_attack_percentage_map = {'0': '0', '12': '33', '24': '67', '50': '100'}
     user_attack_percentage = user_attack_percentage_map.get(str(user_attack_count), 'Check Data')
     plt.xlabel(r"Percentage of MEV-Seeking Builders (%)", fontsize=30)
@@ -199,13 +199,13 @@ def create_legend_figure(save_path):
     plt.figure(figsize=(10, 2))
     palette = sns.color_palette("Blues", 3)
     colors = [palette[2], palette[1], palette[0]]
-    
+
     labels = ["Users'", "Builders'", "Uncaptured"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
-    
+
     legend = plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
     plt.axis('off')
-    
+
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0)
     plt.close()
 
@@ -221,7 +221,7 @@ def main():
             user_attack_count = file_name.split('_')[-1].split('.')[0]
             save_path = os.path.join(output_folder, f"pbs_mev_distribution_user_attack_{user_attack_count}.png")
             plot_mev_distribution(data, user_attack_count, save_path)
-    
+
     legend_path = os.path.join(output_folder, "pbs_mev_dis_legend.png")
     create_legend_figure(legend_path)
 

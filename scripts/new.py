@@ -26,7 +26,7 @@ class Transaction:
 class Participant:
     def __init__(self, id, is_attacker):
         self.id = id
-        self.is_attacker = is_attacker 
+        self.is_attacker = is_attacker
         self.transactions = []
         self.gas_fee = 0
         self.mempool = []

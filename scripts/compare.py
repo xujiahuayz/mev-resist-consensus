@@ -95,23 +95,23 @@ class Builder(Participant):
 
     def bid(self, block_bid_his, block_number):
         block_value = sum(tx.fee + tx.mev_potential for tx in self.mempool_pbs if not tx.included and tx.block_created <= block_number)
-        
+
         if block_value == 0:
             return 0
-        
+
         if block_bid_his:
             # Calculate the average bid percentage from the last block bids
             avg_percentage = np.mean([bid / block_value for round_bids in block_bid_his for bid in round_bids.values() if bid <= block_value])
             self.average_bid_percentage = avg_percentage
-        
+
         initial_bid = self.average_bid_percentage * block_value
-        
+
         # Attack builders bid slightly more aggressively
         if self.is_attack:
             bid = min(max(0, initial_bid * 1.1), block_value)
         else:
             bid = min(max(0, initial_bid), block_value)
-        
+
         return bid
 
     def select_transactions(self, block_number):
@@ -139,7 +139,7 @@ def select_transactions_common(participant, block_number, mempool):
             if len(selected_transactions) >= BLOCK_CAPACITY:
                 break
             if tx.id in targeted_tx_ids:
-                continue 
+                continue
             selected_transactions.append(tx)
             if tx.mev_potential > 0 and attack_count == 0:
                 if tx.id not in targeting_tracker:
@@ -192,7 +192,7 @@ def run_pbs(builders, num_blocks):
         cumulative_mev_transactions[block_num] = cumulative_mev_transactions[block_num - 1] + mev_transactions_in_block if block_num > 0 else mev_transactions_in_block
 
         builder_type = 'attack' if winning_builder.is_attack else 'normal'
-        
+
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': block_value,
@@ -262,7 +262,7 @@ def run_pos(validators, num_blocks):
         cumulative_mev_transactions.append(total_mev_transactions)
 
         validator_type = 'attack' if validator.is_attack else 'normal'
-        
+
         block_data.append({
             'block_id': block_num + 1,
             'total_gas': profit_from_block,

@@ -35,7 +35,7 @@ def generate_normal_users(num_users):
 def generate_transactions(normal_users, num_transactions, valid_percentage):
     transactions = []
     num_valid = int(num_transactions * valid_percentage)
-    for transaction in range(num_transactions): 
+    for transaction in range(num_transactions):
         sender = random.choice(normal_users)
         recipient = random.choice(normal_users)
         sender_address = sender.address
@@ -147,7 +147,7 @@ def simulate(chain: Chain) -> tuple[Chain, list[float], list[float], list, list]
     random_number = random.randint(1, 10)
 
     builder_data = []
-    block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee', 
+    block_data = pd.DataFrame(columns=['Discount Factor', 'Bid Amount', 'Total Transaction Fee',
                                        'Inclusion Rate', 'Credit', 'Bid Strategy', 'Builder Strategy', 'Block Number'])
     block_data_rows = []
 
@@ -394,10 +394,10 @@ def plot_strategy(block_data_df):
     # Get the total number of blocks for x-axis
     max_block_number = block_data_df['Block Number'].max() + 1
     block_numbers = list(range(max_block_number))
-    
+
     # Initialize a dictionary to store strategy counts per block
     strategy_counts = {strategy: [0] * max_block_number for strategy in block_data_df['Bid Strategy'].unique()}
-    
+
     # Populate the strategy counts for each block
     for index, row in block_data_df.iterrows():
         strategy_counts[row['Bid Strategy']][row['Block Number']] += 1
@@ -407,7 +407,7 @@ def plot_strategy(block_data_df):
 
     # Plotting a stacked graph
     plt.stackplot(block_numbers, data_for_plot, labels=strategy_counts.keys())
-    
+
     plt.xlabel('Block Number')
     plt.ylabel('Number of Builders')
     plt.title('Number of Builders per Strategy Over Blocks (Stacked)')
