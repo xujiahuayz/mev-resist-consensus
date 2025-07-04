@@ -62,7 +62,7 @@ def main():
     os.makedirs(output_folder, exist_ok=True)
 
     for file_name in os.listdir(data_folder):
-        if file_name.endswith('.json') and file_name.startswith('pos_aggregated_data_user_attack'):
+        if file_name.endswith('.json') and file_name.startswith('pos_data_user_attack'):
             file_path = os.path.join(data_folder, file_name)
             data = load_data(file_path)
             user_attack_count = file_name.split('_')[-1].split('.')[0]
