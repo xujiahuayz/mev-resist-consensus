@@ -143,22 +143,22 @@ if __name__ == "__main__":
                 super().__init__(node_id)
 
         # Create sample nodes for testing
-        user_list = [TestNode(f"user_{i}") for i in range(50)]
-        builder_list = [TestNode(f"builder_{i}") for i in range(20)]
-        proposer_list = [TestNode(f"proposer_{i}") for i in range(20)]
+        test_users = [TestNode(f"user_{i}") for i in range(50)]
+        test_builders = [TestNode(f"builder_{i}") for i in range(20)]
+        test_proposers = [TestNode(f"proposer_{i}") for i in range(20)]
 
         # Build and visualize network with p=0.05
-        graph = build_network(user_list, builder_list, proposer_list, p=0.05)
+        test_graph = build_network(test_users, test_builders, test_proposers, p=0.05)
 
         # Print network statistics
         print("\nNetwork Statistics:")
-        print(f"Number of nodes: {graph.number_of_nodes()}")
-        print(f"Number of edges: {graph.number_of_edges()}")
+        print(f"Number of nodes: {test_graph.number_of_nodes()}")
+        print(f"Number of edges: {test_graph.number_of_edges()}")
         print("\nDegree distribution:")
-        degrees = [graph.degree(node) for node in graph.nodes()]
+        degrees = [test_graph.degree(node) for node in test_graph.nodes()]
         print(f"Average degree: {sum(degrees)/len(degrees):.2f}")
         print(f"Minimum degree: {min(degrees)}")
         print(f"Maximum degree: {max(degrees)}")
         print("\nSample node degrees:")
-        for node in list(graph.nodes())[:10]:  # Show first 10 nodes
-            print(f"{node}: degree {graph.degree(node)}")
+        for test_node in list(test_graph.nodes())[:10]:  # Show first 10 nodes
+            print(f"{test_node}: degree {test_graph.degree(test_node)}")

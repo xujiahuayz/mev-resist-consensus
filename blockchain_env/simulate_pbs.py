@@ -74,12 +74,11 @@ def transaction_number() -> int:
     random_number: int = random.randint(0, 100)
     if random_number < 50:
         return 1
-    elif random_number < 80:
+    if random_number < 80:
         return 0
-    elif random_number < 95:
+    if random_number < 95:
         return 2
-    else:
-        return random.randint(3, 5)
+    return random.randint(3, 5)
 
 def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], List[Transaction]]:
     all_block_transactions: List[Transaction] = []
@@ -123,7 +122,7 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
         proposer.reset_for_new_block()
 
         # Process each builder's bid
-        for builder_id, transactions, bid_amount in builder_results:
+        for builder_id, _transactions, bid_amount in builder_results:
             # Send bid to proposer through network
             builder: Builder = next(b for b in builder_nodes if b.id == builder_id)
             builder.send_message(proposer.id, bid_amount, block_num)
@@ -191,27 +190,27 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
     # Save transaction data to CSV
     transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
-    with open(transaction_filename, 'w', newline='', encoding='utf-8') as file:
+    with open(transaction_filename, 'w', newline='', encoding='utf-8') as csv_file:
         if all_transactions:
-            fieldnames: List[str] = list(all_transactions[0].to_dict().keys())
-            writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
+            tx_fieldnames: List[str] = list(all_transactions[0].to_dict().keys())
+            tx_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=tx_fieldnames)
+            tx_writer.writeheader()
             for tx in all_transactions:
-                writer.writerow(tx.to_dict())
+                tx_writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
     block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
-    with open(block_filename, 'w', newline='', encoding='utf-8') as file:
-        fieldnames: List[str] = [
+    with open(block_filename, 'w', newline='', encoding='utf-8') as csv_file:
+        block_fieldnames: List[str] = [
             'block_num',
             'builder_id',
             'total_gas_fee',
             'total_mev'
         ]
-        writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
+        block_writer: csv.DictWriter = csv.DictWriter(csv_file, fieldnames=block_fieldnames)
+        block_writer.writeheader()
         for block_data in block_data_list:
-            writer.writerow(block_data)
+            block_writer.writerow(block_data)
 
     # Run garbage collection to clear memory
     gc.collect()

@@ -48,7 +48,7 @@ class User(Node):
     def test_create_transactions(cls) -> None:
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
-        network = build_network([user], builders, [])
+        _network = build_network([user], builders, [])
         for block_num in range(2):
             for _ in range(2):
                 tx: Transaction = user.create_transactions(block_num)
@@ -63,7 +63,7 @@ class User(Node):
     def test_launch_attack(cls) -> None:
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(1, True)
-        network = build_network([user], builders, [])
+        _network = build_network([user], builders, [])
         for builder in builders:
             builder.receive_transaction(Transaction(10, 5, 2, 1, None))
             builder.receive_transaction(Transaction(15, 10, 3, 1, None))

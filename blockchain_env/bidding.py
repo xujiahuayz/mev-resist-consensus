@@ -109,21 +109,21 @@ class ModifiedBuilder:
         self.mempool = [tx for tx in self.mempool if tx not in winning_block_transactions]
 
 
-def simulate_auction(builder_list: List[ModifiedBuilder], user_list: List[User], num_blocks: int = BLOCK_NUM) -> List[Tuple[int, int, str, str, float, float]]:
+def simulate_auction(builders: List[ModifiedBuilder], users: List[User], num_blocks: int = BLOCK_NUM) -> List[Tuple[int, int, str, str, float, float]]:
     """Simulate the auction process for a number of blocks."""
     all_block_data: List[Tuple[int, int, str, str, float, float]] = []
     for block_num in range(num_blocks):
         auction_end: int = random.randint(20, MAX_ROUNDS)
-        last_round_bids: List[float] = [0.0] * len(builder_list)
+        last_round_bids: List[float] = [0.0] * len(builders)
         for round_num in range(auction_end):
-            for user in user_list:
+            for user in users:
                 tx_count: int = random.randint(1, 5)
                 for _ in range(tx_count):
                     tx: Transaction = user.create_transactions(block_num)
                     for builder in user.visible_builders:
                         builder.receive_transaction(tx)
             round_bids: List[float] = []
-            for builder in builder_list:
+            for builder in builders:
                 builder.select_transactions(block_num)
                 block_value: float = builder.calculate_block_value()
                 bid: float = builder.place_bid(round_num, block_value, last_round_bids)
@@ -131,36 +131,36 @@ def simulate_auction(builder_list: List[ModifiedBuilder], user_list: List[User],
                 all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
             last_round_bids = round_bids
         winning_builder_index: int = round_bids.index(max(round_bids))
-        winning_builder: ModifiedBuilder = builder_list[winning_builder_index]
+        winning_builder: ModifiedBuilder = builders[winning_builder_index]
         winning_block_transactions: List[Transaction] = winning_builder.selected_transactions
-        for builder in builder_list:
+        for builder in builders:
             builder.clear_mempool(winning_block_transactions)
     return all_block_data
 
 
-def save_results(block_data: List[Tuple[int, int, str, str, float, float]], num_attack_builders: int) -> None:
+def save_results(auction_data: List[Tuple[int, int, str, str, float, float]], num_attack_builders: int) -> None:
     """Save auction results to a CSV file."""
     output_file: str = f"data/same_seed/bid_builder{num_attack_builders}.csv"
     with open(output_file, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow(["block_num", "round_num", "builder_id", "strategy", "bid", "block_value"])
-        writer.writerows(block_data)
+        writer.writerows(auction_data)
 
 
-def create_test_builders_and_users(num_attack_builders: int) -> Tuple[List[ModifiedBuilder], List[User]]:
+def create_test_builders_and_users() -> Tuple[List[ModifiedBuilder], List[User]]:
     """Create builders and users for simulation."""
-    builder_list: List[ModifiedBuilder] = (
+    builders: List[ModifiedBuilder] = (
         [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(3)] +
         [ModifiedBuilder(f"builder_{i+3}", is_attacker=False, strategy="late_enter") for i in range(2)] +
         [ModifiedBuilder(f"builder_{i+5}", is_attacker=True, strategy="reactive") for i in range(10)] +
         [ModifiedBuilder(f"builder_{i+15}", is_attacker=False, strategy="reactive") for i in range(5)]
     )
-    user_list: List[User] = [User(f"user_{i}", False, builder_list) for i in range(50)]
-    return builder_list, user_list
+    users: List[User] = [User(f"user_{i}", False) for i in range(50)]
+    return builders, users
 
 
 if __name__ == "__main__":
     for num_attack_builders in [10]:
-        builder_list, user_list = create_test_builders_and_users(num_attack_builders)
-        block_data: List[Tuple[int, int, str, str, float, float]] = simulate_auction(builder_list, user_list, BLOCK_NUM)
-        save_results(block_data, num_attack_builders)
+        test_builders, test_users = create_test_builders_and_users()
+        test_auction_data: List[Tuple[int, int, str, str, float, float]] = simulate_auction(test_builders, test_users, BLOCK_NUM)
+        save_results(test_auction_data, num_attack_builders)

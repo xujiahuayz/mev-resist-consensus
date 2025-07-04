@@ -104,5 +104,3 @@ class Builder(Node):
         """Clear transactions included onchain or too old from the mempool."""
         timer: int = block_num - 5
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
-
-

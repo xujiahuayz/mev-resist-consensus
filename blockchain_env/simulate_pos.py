@@ -3,7 +3,6 @@ import os
 import csv
 import time
 import multiprocessing as mp
-from copy import deepcopy  # (removed if unused)
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 
@@ -71,7 +70,7 @@ def process_block(block_num, users, validators):
 
 def simulate_pos(attacker_validators, attacker_users):
     validators = [Builder(f"validator_{i}", i < attacker_validators) for i in range(PROPNUM)]
-    users = [User(f"user_{i}", i < attacker_users, validators) for i in range(USERNUM)]
+    users = [User(f"user_{i}", i < attacker_users) for i in range(USERNUM)]
 
     with mp.Pool(processes=num_processes) as pool:
         results = pool.starmap(process_block, [(block_num, users, validators) for block_num in range(BLOCKNUM)])

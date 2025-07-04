@@ -17,7 +17,7 @@ class Proposer(Node):
         self.bids: Dict[int, float] = {}  # {builder_id: bid_amount}
         self.all_observed_bids: Dict[int, float] = {}  # {round: bid_amount}
         self.winning_bid: Tuple[int, float] | None = None  # (round, bid_amount)
-        self.end_round: int | None = None
+        self.end_round_num: int | None = None
 
     def receive_bid(self, builder_id: int, bid_amount: Any) -> None:
         """Receive a bid from a builder for the current round."""
@@ -31,7 +31,7 @@ class Proposer(Node):
     def end_round(self) -> None:
         """End the current round and determine if the auction should continue."""
         self.current_round += 1
-        self.end_round = self.current_round
+        self.end_round_num = self.current_round
 
     def select_winner(self) -> Tuple[int, float] | None:
         """Select the winning bid for the current block."""
@@ -99,4 +99,4 @@ class Proposer(Node):
         self.bids.clear()
         self.all_observed_bids.clear()
         self.winning_bid = None
-        self.end_round = None
+        self.end_round_num = None
