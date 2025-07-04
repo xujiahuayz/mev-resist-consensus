@@ -170,12 +170,12 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
     return block_data, all_block_transactions
 
 
-def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Dict[str, Any]]:
+def simulate_pbs(attacker_builder_count: int, attacker_user_count: int) -> List[Dict[str, Any]]:
     # Set attacker status for builders and users
     for i, builder in enumerate(builder_list):
-        builder.is_attacker = i < num_attacker_builders
+        builder.is_attacker = i < attacker_builder_count
     for i, user in enumerate(user_list):
-        user.is_attacker = i < num_attacker_users
+        user.is_attacker = i < attacker_user_count
 
     # Initialize a fresh pool for each simulation run
     with mp.Pool(processes=num_processes) as pool:
@@ -188,7 +188,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
     # Save transaction data to CSV
-    transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{attacker_builder_count}_users{attacker_user_count}.csv"
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
     with open(transaction_filename, 'w', newline='', encoding='utf-8') as csv_file:
         if all_transactions:
@@ -199,7 +199,7 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
                 tx_writer.writerow(tx.to_dict())
 
     # Save block data to a separate CSV
-    block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{num_attacker_builders}_users{num_attacker_users}.csv"
+    block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{attacker_builder_count}_users{attacker_user_count}.csv"
     with open(block_filename, 'w', newline='', encoding='utf-8') as csv_file:
         block_fieldnames: List[str] = [
             'block_num',
@@ -217,18 +217,18 @@ def simulate_pbs(num_attacker_builders: int, num_attacker_users: int) -> List[Di
 
     return block_data_list
 
-def run_simulation_in_process(num_attacker_builders: int, num_attacker_users: int) -> None:
+def run_simulation_in_process(builder_count: int, user_count: int) -> None:
     """Run each simulation in a separate process to avoid state leakage."""
-    process: mp.Process = mp.Process(target=simulate_pbs, args=(num_attacker_builders, num_attacker_users))
+    process: mp.Process = mp.Process(target=simulate_pbs, args=(builder_count, user_count))
     process.start()
     process.join()  # Wait for the process to complete
 
 if __name__ == "__main__":
     tracemalloc.start()  # Start tracking memory usage, for diagnostic purposes
 
-    for num_attacker_builders in range(1, BUILDERNUM + 1):
-        for num_attacker_users in range(USERNUM + 1):
+    for builder_count in range(1, BUILDERNUM + 1):
+        for user_count in range(USERNUM + 1):
             start_time: float = time.time()
-            run_simulation_in_process(num_attacker_builders, num_attacker_users)
+            run_simulation_in_process(builder_count, user_count)
             end_time: float = time.time()
-            print(f"Simulation with {num_attacker_builders} attacker builders and {num_attacker_users} attacker users completed in {end_time - start_time:.2f} seconds")
+            print(f"Simulation with {builder_count} attacker builders and {user_count} attacker users completed in {end_time - start_time:.2f} seconds")

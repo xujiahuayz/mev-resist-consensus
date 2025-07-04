@@ -47,16 +47,18 @@ class Participant:
         self.mempool_pos = []
 
     def create_transaction(self, is_mev=False, block_number=None):
+        global TRANSACTION_COUNTER
         fee = random.choice(SAMPLE_GAS_FEES)
         mev_potential = random.choice(MEV_POTENTIALS) if is_mev else 0
-        tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
+        block_created = block_number if block_number else 0
+        tx = Transaction(fee, mev_potential, self.id, False, None, block_created, "normal")
         self.broadcast_transaction(tx)
         return tx
 
     def broadcast_transaction(self, tx):
         for participant in all_participants:
-            participant.mempool_pbs.append(tx)
-            participant.mempool_pos.append(tx)
+            if isinstance(participant, Builder):
+                participant.receive_transaction(tx)
 
 class NormalUser(Participant):
     def __init__(self):
@@ -71,19 +73,16 @@ class AttackUser(Participant):
         USER_COUNTER += 1
 
     def create_transaction(self, target_tx=None, block_number=None):
-        if target_tx and target_tx.mev_potential > 0 and target_tx.id not in targeting_tracker:
-            higher_fees = [x for x in SAMPLE_GAS_FEES if x > target_tx.fee]
-            fee = random.choice(higher_fees) if higher_fees else target_tx.fee + 1  # Use a default value if no higher fees are found
-            mev_potential = target_tx.mev_potential
-            tx = Transaction(fee, mev_potential, self.id, targeting=True, target_tx_id=target_tx.id, block_created=block_number, transaction_type="b_attack")
-            self.broadcast_transaction(tx)
-            return tx
+        global TRANSACTION_COUNTER
+        fee = random.choice(SAMPLE_GAS_FEES)
+        mev_potential = random.choice(MEV_POTENTIALS)
+        block_created = block_number if block_number else 0
+        if target_tx:
+            tx = Transaction(fee, mev_potential, self.id, True, target_tx.id, block_created, "b_attack")
         else:
-            fee = random.choice(SAMPLE_GAS_FEES)
-            mev_potential = random.choice(MEV_POTENTIALS)
-            tx = Transaction(fee, mev_potential, self.id, block_created=block_number)
-            self.broadcast_transaction(tx)
-            return tx
+            tx = Transaction(fee, mev_potential, self.id, False, None, block_created, "normal")
+        self.broadcast_transaction(tx)
+        return tx
 
 class Builder(Participant):
     def __init__(self, is_attack):
@@ -147,7 +146,7 @@ def select_transactions_common(participant, block_number, mempool):
                     targeted_tx_ids.add(tx.id)
                     higher_fees = [x for x in SAMPLE_GAS_FEES if x > tx.fee]
                     fee = random.choice(higher_fees) if higher_fees else tx.fee + 1  # Use a default value if no higher fees are found
-                    attack_tx = Transaction(fee, tx.mev_potential, participant.id, targeting=True, target_tx_id=tx.id, block_created=tx.block_created, transaction_type="b_attack")
+                    attack_tx = Transaction(fee, tx.mev_potential, participant.id, True, tx.id, tx.block_created, "b_attack")
                     selected_transactions.append(attack_tx)
                     attack_count += 1
     else:

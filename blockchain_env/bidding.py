@@ -138,9 +138,9 @@ def simulate_auction(builders: List[ModifiedBuilder], users: List[User], num_blo
     return all_block_data
 
 
-def save_results(auction_data: List[Tuple[int, int, str, str, float, float]], num_attack_builders: int) -> None:
+def save_results(auction_data: List[Tuple[int, int, str, str, float, float]], attack_builder_count: int) -> None:
     """Save auction results to a CSV file."""
-    output_file: str = f"data/same_seed/bid_builder{num_attack_builders}.csv"
+    output_file: str = f"data/same_seed/bid_builder{attack_builder_count}.csv"
     with open(output_file, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         writer.writerow(["block_num", "round_num", "builder_id", "strategy", "bid", "block_value"])
