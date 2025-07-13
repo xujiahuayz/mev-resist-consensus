@@ -153,7 +153,7 @@ if __name__ == "__main__":
     plot_bid_dynamics(FILE_PATH, BLOCK_NUMBER)
     plot_block_value_dynamics(FILE_PATH, BLOCK_NUMBER)
 
-    match_percentage, avg_bid_block_value_ratio, avg_bid_second_highest_block_value_ratio = analyze_data(FILE_PATH)
-    print(f"The winning bid has the highest block value {match_percentage:.2f}% of the time.")
+    match_pct, avg_bid_block_value_ratio, avg_bid_second_highest_block_value_ratio = analyze_data(FILE_PATH)
+    print(f"The winning bid has the highest block value {match_pct:.2f}% of the time.")
     print(f"On average, the winning bid is {avg_bid_block_value_ratio:.2f}% of the highest block value.")
     print(f"On average, the winning bid is {avg_bid_second_highest_block_value_ratio:.2f}% of the second-highest block value.")

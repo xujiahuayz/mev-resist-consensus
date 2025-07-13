@@ -109,32 +109,53 @@ class ModifiedBuilder:
         self.mempool = [tx for tx in self.mempool if tx not in winning_block_transactions]
 
 
+def _process_round(builders: List[ModifiedBuilder], users: List[User], block_num: int, round_num: int, last_round_bids: List[float]) -> List[float]:
+    """Process a single auction round."""
+    # Process user transactions
+    for user in users:
+        tx_count: int = random.randint(1, 5)
+        for _ in range(tx_count):
+            tx: Transaction = user.create_transactions(block_num)
+            for builder in user.visible_builders:
+                builder.receive_transaction(tx)
+    
+    # Process builder bids
+    round_bids: List[float] = []
+    for builder in builders:
+        builder.select_transactions(block_num)
+        block_value: float = builder.calculate_block_value()
+        bid: float = builder.place_bid(round_num, block_value, last_round_bids)
+        round_bids.append(bid)
+    return round_bids
+
+def _finalize_block(builders: List[ModifiedBuilder], round_bids: List[float]) -> List[Transaction]:
+    """Finalize the block and clear mempools."""
+    winning_builder_index: int = round_bids.index(max(round_bids))
+    winning_builder: ModifiedBuilder = builders[winning_builder_index]
+    winning_block_transactions: List[Transaction] = winning_builder.selected_transactions
+    for builder in builders:
+        builder.clear_mempool(winning_block_transactions)
+    return winning_block_transactions
+
 def simulate_auction(builders: List[ModifiedBuilder], users: List[User], num_blocks: int = BLOCK_NUM) -> List[Tuple[int, int, str, str, float, float]]:
     """Simulate the auction process for a number of blocks."""
     all_block_data: List[Tuple[int, int, str, str, float, float]] = []
+    
     for block_num in range(num_blocks):
         auction_end: int = random.randint(20, MAX_ROUNDS)
         last_round_bids: List[float] = [0.0] * len(builders)
+        
         for round_num in range(auction_end):
-            for user in users:
-                tx_count: int = random.randint(1, 5)
-                for _ in range(tx_count):
-                    tx: Transaction = user.create_transactions(block_num)
-                    for builder in user.visible_builders:
-                        builder.receive_transaction(tx)
-            round_bids: List[float] = []
-            for builder in builders:
-                builder.select_transactions(block_num)
-                block_value: float = builder.calculate_block_value()
-                bid: float = builder.place_bid(round_num, block_value, last_round_bids)
-                round_bids.append(bid)
-                all_block_data.append((block_num, round_num, builder.id, builder.strategy, bid, block_value))
+            round_bids = _process_round(builders, users, block_num, round_num, last_round_bids)
+            
+            # Record bid data
+            for i, builder in enumerate(builders):
+                all_block_data.append((block_num, round_num, builder.id, builder.strategy, round_bids[i], builder.calculate_block_value()))
+            
             last_round_bids = round_bids
-        winning_builder_index: int = round_bids.index(max(round_bids))
-        winning_builder: ModifiedBuilder = builders[winning_builder_index]
-        winning_block_transactions: List[Transaction] = winning_builder.selected_transactions
-        for builder in builders:
-            builder.clear_mempool(winning_block_transactions)
+        
+        _finalize_block(builders, last_round_bids)
+    
     return all_block_data
 
 

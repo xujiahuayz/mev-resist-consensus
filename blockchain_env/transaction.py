@@ -6,7 +6,7 @@ random.seed(16)
 class Transaction:
     _tx_counter: int = 0
 
-    def __init__(self, gas_fee: int, mev_potential: int, creator_id: str, created_at: int, target_tx=None):
+    def __init__(self, gas_fee: int, mev_potential: int, creator_id: str, created_at: int, target_tx: Optional['Transaction'] = None):
         self.id: int = Transaction._tx_counter
         Transaction._tx_counter += 1
         self.gas_fee: int = gas_fee

@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import matplotlib.pyplot as plt
 from web3 import Web3
 
@@ -10,7 +11,7 @@ web3 = Web3(Web3.HTTPProvider(INFURA_URL))
 # Check connection
 if not web3.is_connected():
     print("Failed to connect to Ethereum node.")
-    exit()
+    sys.exit()
 
 def fetch_block_data(block_number):
     block = web3.eth.get_block(block_number, full_transactions=True)

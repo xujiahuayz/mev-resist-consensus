@@ -63,7 +63,7 @@ def plot_network_effects():
     metrics_combined = pd.concat([metrics_m1, metrics_m2])
 
     # Create subplots
-    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    _, axes = plt.subplots(2, 2, figsize=(15, 12))
 
     # Plot 1: Degree Distribution Comparison
     sns.kdeplot(data=metrics_combined, x='degree', hue='m', ax=axes[0,0])
