@@ -8,7 +8,7 @@ import numpy as np
 ATTACK_BUILDERS = {f"builder_{i}" for i in range(3)} | {f"builder_{i+5}" for i in range(10)}
 NON_ATTACK_BUILDERS = {f"builder_{i+3}" for i in range(2)} | {f"builder_{i+15}" for i in range(5)}
 
-def _get_builder_color(builder_id: str, winning_builder: str, _is_winning_attacker: bool) -> str:
+def _get_builder_color(builder_id: str, winning_builder: str, is_winning_attacker: bool) -> str:
     """Get color for a builder based on its type and winning status."""
     if builder_id == winning_builder:
         return 'red'
