@@ -16,6 +16,7 @@ class Transaction:
         self.included_at: Optional[int] = None
         self.target_tx: Optional['Transaction'] = target_tx
         self.position: Optional[int] = None
+        self.attack_type: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {

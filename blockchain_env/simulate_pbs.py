@@ -115,7 +115,7 @@ def _process_builder_bids(builder_nodes: List[Builder], block_num: int) -> List[
         builder_results.append((builder.id, selected_transactions, bid_value))
     return builder_results
 
-def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]]) -> Tuple[Tuple[str, List[Transaction], float], Builder]:
+def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]], block_num: int) -> Tuple[Tuple[str, List[Transaction], float], Builder]:
     """Process proposer bids and return winning bid and builder."""
     winning_bid: Tuple[str, List[Transaction], float] = ("", [], 0.0)
     winning_builder: Builder = builder_nodes[0]  # Default to first builder
@@ -186,7 +186,7 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
     builder_results = _process_builder_bids(builder_nodes, block_num)
     
     # Process proposer bids
-    winning_bid, winning_builder = _process_proposer_bids(proposer_nodes, builder_nodes, builder_results)
+    winning_bid, winning_builder = _process_proposer_bids(proposer_nodes, builder_nodes, builder_results, block_num)
     
     # Create block data
     block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder)
