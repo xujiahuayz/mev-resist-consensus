@@ -89,3 +89,33 @@ This project analyzes MEV (Maximal Extractable Value) dynamics in PoS and PBS sy
 | **Figure 8**<br>Inversion Count Heatmaps. | `inversion_counts_for_pos.png`<br>`inversion_counts_for_pbs.png` | `tx_order.py` | Run:<br>`python plots/ss/tx_order.py` |
 
 ---
+
+## Run scripts
+
+Below are the commands to generate each figure in the paper. Copy and paste each command into your terminal as needed.
+
+### Figure 4: Cumulative Block Production Grids
+Generates cumulative block production plots for PoS and PBS.
+```bash
+python plots/ss/pos_selection_3x3.py
+python plots/ss/pbs_selection_3x3.py
+```
+
+### Figure 5: MEV Profit Distribution
+Generates MEV profit distribution plots for PoS and PBS.
+```bash
+python plots/ss/pos_profit.py
+python plots/ss/pbs_profit.py
+```
+
+### Figure 6 & 7: Auction Bid and Block Value Dynamics
+Generates auction bid and block value dynamics plots.
+```bash
+python plots/ss/bidding_dynamic.py
+```
+
+### Figure 8: Inversion Count Heatmaps
+Generates inversion count heatmaps for PoS and PBS.
+```bash
+python plots/ss/tx_order.py
+```
