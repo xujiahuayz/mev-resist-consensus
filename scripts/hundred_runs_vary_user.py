@@ -21,6 +21,7 @@ MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 NUM_RUNS = 50
 
 TRANSACTION_COUNTER = 1
+targeting_tracker = {}  # Global tracking for targeting transactions
 
 SAMPLE_GAS_FEES = np.array(SAMPLE_GAS_FEES)
 MEV_POTENTIALS = np.array(MEV_POTENTIALS)

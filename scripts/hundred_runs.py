@@ -21,6 +21,7 @@ MEV_BUILDER_COUNTS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 NUM_RUNS = 50
 
 TRANSACTION_COUNTER = 1
+targeting_tracker = {}  # Global tracking for targeting transactions
 
 class Transaction:
     def __init__(self, fee, mev_potential, creator_id=None, targeting=False, target_tx_id=None, block_created=None, transaction_type="normal"):

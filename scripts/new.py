@@ -11,6 +11,7 @@ tx_counter = 1
 
 class Transaction:
     def __init__(self, gas_fee, mev_potential, creator_id, created_at, included_at, target_tx=None):
+        global tx_counter
         self.id = tx_counter
         tx_counter += 1
         self.gas_fee = gas_fee
@@ -32,7 +33,8 @@ class Participant:
         self.mempool = []
 
     def create_transactions(self, block_num):
-        # create normal trasnctions with random gas fee and mev potential from the sample list
+        # create normal transactions with random gas fee and mev potential from the sample list
+        num_transactions = random.randint(1, 3)  # Random number of transactions
         for _ in range(num_transactions):
             gas_fee = random.choice(SAMPLE_GAS_FEES)
             mev_potential = random.choice(MEV_POTENTIALS)
@@ -71,8 +73,8 @@ class Builder(Participant):
 
 def simulate():
 
-    for j in BLOCKNUM:
-        # create trasnation
+    for j in range(BLOCKNUM):
+        # create transaction
         tx_list = []
         for i in range(USERNUM):
             random_number = random.randint(0, 100)
@@ -90,4 +92,3 @@ def simulate():
         # the attack could be front, back, or sandwich attack, user alter gas fee to achive the attack (alteration by 1 or 2 gwei)
         # launch attack if user is an attcker
         # otherwise create benign transactions
-

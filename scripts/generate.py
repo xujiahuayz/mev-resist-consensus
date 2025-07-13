@@ -60,10 +60,10 @@ def generate_transactions(normal_users_list, num_transactions, valid_percentage)
             # Generate a valid transaction
             amount = random.uniform(0.1, 1)
             transaction = Transaction(
-                gas_fee=fee,
+                gas_fee=int(fee),
                 mev_potential=0,
                 creator_id=sender_address,
-                created_at=timestamp
+                created_at=counter if timestamp is None else timestamp
             )
         else:
             # Generate an invalid transaction if the number of valid transactions
@@ -71,10 +71,10 @@ def generate_transactions(normal_users_list, num_transactions, valid_percentage)
             amount = random.uniform(0.1, 1)
 
             transaction = Transaction(
-                gas_fee=fee,
+                gas_fee=int(fee),
                 mev_potential=0,
                 creator_id=sender_address,
-                created_at=timestamp
+                created_at=counter if timestamp is None else timestamp
             )
 
         transactions.append(transaction)

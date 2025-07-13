@@ -47,7 +47,6 @@ class Participant:
         self.mempool_pos = []
 
     def create_transaction(self, is_mev=False, block_number=None):
-        global TRANSACTION_COUNTER
         fee = random.choice(SAMPLE_GAS_FEES)
         mev_potential = random.choice(MEV_POTENTIALS) if is_mev else 0
         block_created = block_number if block_number else 0
@@ -73,7 +72,6 @@ class AttackUser(Participant):
         USER_COUNTER += 1
 
     def create_transaction(self, target_tx=None, block_number=None):
-        global TRANSACTION_COUNTER
         fee = random.choice(SAMPLE_GAS_FEES)
         mev_potential = random.choice(MEV_POTENTIALS)
         block_created = block_number if block_number else 0
@@ -315,7 +313,6 @@ if __name__ == "__main__":
 
         all_participants = users + builders + validators
 
-        global targeting_tracker
         targeting_tracker = {}
 
         for block_number in range(NUM_BLOCKS):
