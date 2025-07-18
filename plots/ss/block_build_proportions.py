@@ -185,3 +185,4 @@ def create_comparison_bar_chart():
 
 if __name__ == "__main__":
     create_comparison_bar_chart() 
+    

@@ -74,11 +74,10 @@ pre-commit install
 
 Below are the commands to generate each figure in the paper. Copy and paste each command into your terminal as needed.
 
-### Figure 4: Cumulative Block Production Grids
-Generates cumulative block production plots for PoS and PBS.
+### Figure 4: Block Build Proportions
+Generates block build proportions plots for PoS and PBS showing the percentage of attacking vs benign entities at block 1000.
 ```bash
-python plots/ss/pos_selection_3x3.py
-python plots/ss/pbs_selection_3x3.py
+python plots/ss/block_build_proportions.py
 ```
 
 ### Figure 5: MEV Profit Distribution
