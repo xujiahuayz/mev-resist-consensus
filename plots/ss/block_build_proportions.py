@@ -50,11 +50,11 @@ def create_comparison_bar_chart():
     output_dir = 'figures/ss'
     os.makedirs(output_dir, exist_ok=True)
     
-    # Configuration for the 3x3 grid
+    # Configuration for the 3x3 grid - reordered to group by builder percentage first
     configs = [
-        (5, 0), (10, 0), (15, 0),
-        (5, 25), (10, 25), (15, 25),
-        (5, 50), (10, 50), (15, 50)
+        (5, 0), (5, 25), (5, 50),    # 25% builders with 0%, 50%, 100% users
+        (10, 0), (10, 25), (10, 50), # 50% builders with 0%, 50%, 100% users  
+        (15, 0), (15, 25), (15, 50)  # 75% builders with 0%, 50%, 100% users
     ]
     
     # Data paths
