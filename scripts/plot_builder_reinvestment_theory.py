@@ -8,11 +8,11 @@ sns.set_style("whitegrid")
 palette = sns.color_palette("mako_r", 6)
 rcParams.update({
     'font.family': 'serif',
-    'font.size': 14,
-    'axes.labelsize': 18,
-    'xtick.labelsize': 16,
-    'ytick.labelsize': 16,
-    'legend.fontsize': 14
+    'font.size': 22,
+    'axes.labelsize': 24,
+    'xtick.labelsize': 22,
+    'ytick.labelsize': 22,
+    'legend.fontsize': 22
 })
 
 def builder_growth_rate(f_pi, S_Bi, total_stake, gamma_Bi, v_i_T):
@@ -54,29 +54,23 @@ def create_builder_growth_theory_plot():
                label='No Growth')
     
     # Customize the plot
-    ax.set_xlabel(r'Builder Ability $f \cdot \pi$', fontsize=16)
-    ax.set_ylabel(r'Builder Growth Rate $\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)}$', fontsize=16)
+    ax.set_xlabel(r'Builder Ability $f \cdot \pi$', fontsize=24)
+    ax.set_ylabel(r'Builder Growth Rate $\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)}$', fontsize=24)
     ax.set_xlim(0, 1)
     ax.set_ylim(1.0, 1.8)
     
-    # Legend in top left with more space
-    ax.legend(title=r'Builder Stake $s_{B_i}$', title_fontsize=13, fontsize=12, 
+    # Legend in top left with more space and smaller title
+    ax.legend(title=r'Builder Stake $s_{B_i}$', title_fontsize=20, fontsize=22, 
              loc='upper left', frameon=True, fancybox=False, shadow=False,
              bbox_to_anchor=(0.02, 0.98))
     
-    # Parameters (vertical list, before equation)
+    # Parameters (vertical list)
     param_text = (r'Parameters:' + '\n' + 
                  r'$\gamma_{B_i} = 0.8$' + '\n' + 
                  r'$v_{i,\tau} = 10$' + '\n' + 
                  r'$\sum_j s_j = 1000$')
-    ax.text(0.25, 0.95, param_text, transform=ax.transAxes, fontsize=14,
+    ax.text(0.35, 0.95, param_text, transform=ax.transAxes, fontsize=22,
             verticalalignment='top', 
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.9))
-    
-    # Formula annotation (after parameters, moved more to the left)
-    formula_text = (r'$\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)} = 1 + \gamma_{B_i} \left[\frac{v_{i,\tau}(1 - f\pi)}{\sum_j s_j} + \frac{f\pi v_{i,\tau}}{s_{B_i}}\right]$')
-    ax.text(0.45, 0.95, formula_text, transform=ax.transAxes, fontsize=16,
-            verticalalignment='top',
             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.9))
     
     plt.tight_layout()
