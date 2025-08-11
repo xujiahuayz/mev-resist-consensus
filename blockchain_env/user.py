@@ -5,6 +5,35 @@ from blockchain_env.transaction import Transaction
 from blockchain_env.network import Node, build_network
 from blockchain_env.builder import Builder
 
+# =============================================================================
+# SIMULATION PERIOD CONFIGURATION
+# =============================================================================
+# Change this parameter to test different market conditions:
+# 
+# HIGH VOLATILITY PERIODS:
+#   'USDC_DEPEG_MARCH_2023'     - Post-merge high volatility (USDC depeg)
+#   'FTX_COLLAPSE_NOV_2022'     - Post-merge high volatility (FTX collapse)
+#   'LUNA_CRASH_MAY_2022'       - Pre-merge high volatility (Luna crash)
+#
+# STABLE PERIODS:
+#   'STABLE_POST_MERGE_2023'    - Post-merge stable market
+#   'STABLE_POST_MERGE_2022'    - Post-merge stable market
+#   'STABLE_PRE_MERGE_2022'     - Pre-merge stable market
+#
+# ERA-BASED TESTING:
+#   'post_merge'                 - All post-merge periods combined
+#   'pre_merge'                  - All pre-merge periods combined
+#
+# PERIOD TYPE TESTING:
+#   'high_volatility'           - All high volatility periods combined
+#   'stable'                    - All stable periods combined
+#
+# Leave as None to use all available data
+# =============================================================================
+
+SIMULATION_PERIOD = 'USDC_DEPEG_MARCH_2023'  # Change this to test different periods
+
+# Random seed for reproducibility
 random.seed(16)
 
 class User(Node):
@@ -14,8 +43,9 @@ class User(Node):
         self.balance: int = 0
 
     def create_transactions(self, block_num: int) -> Transaction:
-        gas_fee: int = random.choice(SAMPLE_GAS_FEES)
-        mev_potential: int = random.choice(MEV_POTENTIALS)
+        # Use the configured period for gas fees and MEV potentials
+        gas_fee: int = random.choice(SAMPLE_GAS_FEES(100, SIMULATION_PERIOD))
+        mev_potential: int = random.choice(MEV_POTENTIALS(100, SIMULATION_PERIOD))
         creator_id: int = self.id
         created_at: int = block_num
         target_tx: Transaction | None = None
@@ -49,6 +79,10 @@ class User(Node):
         builders: List[Builder] = [Builder(i, False) for i in range(10)]
         user: User = cls(0, False)
         _network = build_network([user], builders, [])
+        
+        print(f"Testing with period: {SIMULATION_PERIOD or 'All periods'}")
+        print("=" * 50)
+        
         for block_num in range(2):
             for _ in range(2):
                 tx: Transaction = user.create_transactions(block_num)
@@ -58,6 +92,7 @@ class User(Node):
                 print(f"Creator ID: {tx.creator_id}")
                 print(f"Created at block number: {tx.created_at}")
                 print(f"Target transaction: {tx.target_tx}")
+                print("-" * 30)
 
     @classmethod
     def test_launch_attack(cls) -> None:
@@ -89,7 +124,44 @@ class User(Node):
                 assert tx in node.get_mempool(), "Transaction not found in builder's mempool"
         print("test_broadcast_transactions passed!")
 
+    @classmethod
+    def get_current_period_info(cls) -> str:
+        """Get information about the currently configured simulation period."""
+        if SIMULATION_PERIOD is None:
+            return "Using all available periods (mixed market conditions)"
+        
+        period_descriptions = {
+            'USDC_DEPEG_MARCH_2023': 'Post-merge high volatility (USDC depeg crisis)',
+            'FTX_COLLAPSE_NOV_2022': 'Post-merge high volatility (FTX collapse)',
+            'LUNA_CRASH_MAY_2022': 'Pre-merge high volatility (Luna crash)',
+            'STABLE_POST_MERGE_2023': 'Post-merge stable market conditions',
+            'STABLE_POST_MERGE_2022': 'Post-merge stable market conditions',
+            'STABLE_PRE_MERGE_2022': 'Pre-merge stable market conditions',
+            'post_merge': 'All post-merge periods combined (PoS consensus)',
+            'pre_merge': 'All pre-merge periods combined (PoW consensus)',
+            'high_volatility': 'All high volatility periods combined (crisis conditions)',
+            'stable': 'All stable periods combined (normal conditions)'
+        }
+        
+        return period_descriptions.get(SIMULATION_PERIOD, f"Unknown period: {SIMULATION_PERIOD}")
+
 if __name__ == "__main__":
+    print("=" * 60)
+    print("MEV RESISTANCE CONSENSUS SIMULATION")
+    print("=" * 60)
+    print(f"Current Period: {SIMULATION_PERIOD or 'All periods'}")
+    print(f"Period Description: {User.get_current_period_info()}")
+    print("=" * 60)
+    
     User.test_create_transactions()
     User.test_launch_attack()
     User.test_broadcast_transactions()
+    
+    print("\n" + "=" * 60)
+    print("To test different market conditions, change SIMULATION_PERIOD at the top of this file")
+    print("Available options:")
+    print("  - Specific periods: 'USDC_DEPEG_MARCH_2023', 'LUNA_CRASH_MAY_2022', etc.")
+    print("  - Era-based: 'post_merge', 'pre_merge'")
+    print("  - Type-based: 'high_volatility', 'stable'")
+    print("  - All data: None")
+    print("=" * 60)
