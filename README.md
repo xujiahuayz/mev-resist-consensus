@@ -1,15 +1,15 @@
 # MEV-resistant consensus mechanism
 
 [![python](https://img.shields.io/badge/Python-v3.11.3-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![build status](https://github.com/pre-commit/pre-commit/actions/workflows/main.yml/badge.svg)](https://github.com/xujiahuayz/pbs/actions/workflows/pylint.yml)
+[![build status](https://github.com/pre-commit/pre-commit/actions/workflows/main.yml/badge.svg)](https://github.com/xujiahuayz/mev-resist-consensus/actions/workflows/pylint.yml)
 
 The repository simulates maximal extractable value (MEV) attacks and models a new MEV-resistant consensus mechanism.
 
 ## Setup
 
 ```
-git clone https://github.com/xujiahuayz/pbs.git
-cd pbs
+git clone https://github.com/xujiahuayz/mev-resist-consensus.git
+cd mev-resist-consensus
 ```
 
 ### Give execute permission to your script and then run `setup_repo.sh`
@@ -74,10 +74,11 @@ pre-commit install
 
 Below are the commands to generate each figure in the paper. Copy and paste each command into your terminal as needed.
 
-### Figure 4: Block Build Proportions
-Generates block build proportions plots for PoS and PBS showing the percentage of attacking vs benign entities at block 1000.
+### Figure 4: Cumulative Block Production Grids
+Generates cumulative block production plots for PoS and PBS.
 ```bash
-python plots/ss/block_build_proportions.py
+python plots/ss/pos_selection_3x3.py
+python plots/ss/pbs_selection_3x3.py
 ```
 
 ### Figure 5: MEV Profit Distribution
