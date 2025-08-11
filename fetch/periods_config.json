@@ -1,0 +1,59 @@
+{
+    "stable_periods": {
+        "stable_period_post_merge_2023": {
+            "start": 17500000,
+            "end": 17501000,
+            "description": "Stable period 2023 (post-merge, no major events)",
+            "type": "stable",
+            "era": "post_merge"
+        },
+        "stable_period_post_merge_2022": {
+            "start": 16000000,
+            "end": 16001000,
+            "description": "Stable period 2022 (post-merge, no major events)",
+            "type": "stable",
+            "era": "post_merge"
+        },
+        "stable_period_pre_merge_2022": {
+            "start": 15000000,
+            "end": 15001000,
+            "description": "Stable period 2022 (pre-merge, no major events)",
+            "type": "stable",
+            "era": "pre_merge"
+        }
+    },
+    "high_volatility_periods": {
+        "usdc_depeg_march_2023": {
+            "start": 16900000,
+            "end": 16901000,
+            "description": "USDC depeg period (March 2023) - High volatility",
+            "type": "high_volatility",
+            "event": "USDC depeg",
+            "era": "post_merge"
+        },
+        "ftx_collapse_nov_2022": {
+            "start": 16000000,
+            "end": 16001000,
+            "description": "FTX collapse period (November 2022) - High volatility",
+            "type": "high_volatility",
+            "event": "FTX collapse",
+            "era": "post_merge"
+        },
+        "luna_crash_may_2022": {
+            "start": 14800000,
+            "end": 14801000,
+            "description": "Luna crash period (May 2022) - High volatility",
+            "type": "high_volatility",
+            "event": "Luna crash",
+            "era": "pre_merge"
+        }
+    },
+    "fetch_settings": {
+        "rate_limit_delay": 0.1,
+        "max_blocks_per_period": 1000,
+        "output_directory": "data/fetch",
+        "save_individual_blocks": true,
+        "save_period_summaries": false,
+        "create_comparison_plots": false
+    }
+}
