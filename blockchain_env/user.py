@@ -37,8 +37,8 @@ SIMULATION_PERIOD = 'USDC_DEPEG_MARCH_2023'  # Change this to test different per
 random.seed(16)
 
 class User(Node):
-    def __init__(self, user_id: int, is_attacker: bool) -> None:
-        super().__init__(user_id)
+    def __init__(self, user_id: int, is_attacker: bool, restaking_factor: float = None) -> None:
+        super().__init__(user_id, restaking_factor)
         self.is_attacker: bool = is_attacker
         self.balance: int = 0
 

@@ -20,13 +20,26 @@ class Message:
 
 class Node:
     """Node class representing a participant in the network."""
-    def __init__(self, node_id: int) -> None:
+    def __init__(self, node_id: int, restaking_factor: float = None) -> None:
         """Initialize a Node."""
         self.id: int = node_id
         self.visible_nodes: List[int] = []
         self.message_queue: List[Message] = []
         self.network: nx.Graph = None
         self.mempool: List[Any] = []
+        
+        # Restaking functionality
+        if restaking_factor is None:
+            # Default restaking factor: 50% chance of restaking
+            self.restaking_factor: float = random.random() < 0.5
+        else:
+            self.restaking_factor: float = restaking_factor
+        
+        # Restaking state
+        self.capital: int = 0  # Total accumulated capital
+        self.active_stake: int = 0  # Active stake (only full validator units)
+        self.profit_history: List[int] = []  # Track profits over time
+        self.stake_history: List[int] = []  # Track stake evolution
 
     def set_network(self, network: nx.Graph) -> None:
         """Set the network graph and update visible nodes."""
@@ -91,6 +104,38 @@ class Node:
             if hasattr(msg.content, 'creator_id'):
                 transactions.append(msg.content)
         return transactions
+    
+    def update_stake(self, profit: int, validator_threshold: int = 32 * 10**9) -> None:
+        """Update capital and active stake based on profit and reinvestment."""
+        # Add profit to capital
+        self.capital += profit
+        
+        # Apply reinvestment factor
+        if self.restaking_factor:
+            # Reinvest profit (compound)
+            reinvested_profit = profit
+        else:
+            # Extract all profit (no compounding)
+            reinvested_profit = 0
+        
+        # Update capital with reinvestment
+        self.capital += reinvested_profit
+        
+        # Update active stake only when crossing threshold boundaries
+        # s_i(ℓ+1) = (32 × 10^9) × ⌊k_i(ℓ+1) / (32 × 10^9)⌋
+        self.active_stake = validator_threshold * (self.capital // validator_threshold)
+        
+        # Record history
+        self.profit_history.append(profit)
+        self.stake_history.append(self.active_stake)
+    
+    def get_validator_count(self, validator_threshold: int = 32 * 10**9) -> int:
+        """Get number of active validators this participant can run."""
+        return self.active_stake // validator_threshold
+    
+    def get_stake_ratio(self, total_network_stake: int) -> float:
+        """Get ratio of this participant's stake to total network stake."""
+        return self.active_stake / total_network_stake if total_network_stake > 0 else 0.0
 
 def build_network(user_list: List[Node], builder_list: List[Node], proposer_list: List[Node], p=0.05) -> nx.Graph:
     """Build a network graph with users, builders, and proposers."""

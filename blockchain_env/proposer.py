@@ -10,8 +10,8 @@ from blockchain_env.transaction import Transaction
 random.seed(16)
 
 class Proposer(Node):
-    def __init__(self, proposer_id: int) -> None:
-        super().__init__(proposer_id)
+    def __init__(self, proposer_id: int, restaking_factor: float = None) -> None:
+        super().__init__(proposer_id, restaking_factor)
         self.current_round: int = 0
         self.max_rounds: int = 24  # Maximum number of rounds per block
         self.bids: Dict[int, float] = {}  # {builder_id: bid_amount}
@@ -100,3 +100,7 @@ class Proposer(Node):
         self.all_observed_bids.clear()
         self.winning_bid = None
         self.end_round_num = None
+    
+    def receive_proposer_reward(self, proposer_reward: int) -> None:
+        """Receive proposer reward and update stake."""
+        self.update_stake(proposer_reward)
