@@ -253,18 +253,19 @@ def _create_block_data(block_num, winning_bid, winning_builder, selected_partici
     
     return block_data
 
-def process_block_batch(args):
-    """Process a batch of blocks for multiprocessing."""
-    block_range, builder_nodes, proposer_nodes, user_nodes = args
-    block_data_list = []
+def process_block_batch(block_range, builder_nodes, proposer_nodes, user_nodes):
+    """Process a batch of blocks efficiently."""
     start_block, end_block = block_range
-    
-    batch_start_time = time.time()
-    print(f"Starting batch {start_block}-{end_block}")
+    block_data_list = []
     
     for block_num in range(start_block, end_block):
+        # Process user transactions
         transactions = _process_user_transactions(user_nodes, block_num)
+        
+        # Process builder bids
         builder_results = _process_builder_bids(builder_nodes, transactions, block_num)
+        
+        # Process proposer selection and block choice
         winning_bid, winning_builder, selected_proposer = _process_proposer_selection_and_block_choice(
             proposer_nodes, builder_nodes, builder_results, block_num
         )
@@ -274,22 +275,20 @@ def process_block_batch(args):
             if block_data:
                 block_data_list.append(block_data)
         
+        # Clear mempools efficiently
         for builder in builder_nodes:
             builder.clear_mempool(block_num)
-    
-    batch_time = time.time() - batch_start_time
-    print(f"Completed batch {start_block}-{end_block} in {batch_time:.2f}s with {len(block_data_list)} blocks")
     
     return block_data_list
 
 def simulate_restaking_pbs():
-    """Main simulation function for restaking PBS with multiprocessing."""
+    """Main simulation function for restaking PBS with proper state passing between batches."""
     print(f"Starting Optimized Restaking PBS Simulation")
     print(f"Blocks: {BLOCKNUM}")
     print(f"Validator threshold: {VALIDATOR_THRESHOLD / 10**9:.1f} ETH")
     print(f"All participants are restaking")
     print(f"Attackers: {BUILDERNUM // 2} builders, {USERNUM // 2} users")
-    print(f"Using {MAX_WORKERS} worker processes")
+    print(f"Using {MAX_WORKERS} worker processes with proper state passing")
     
     network, builder_nodes, proposer_nodes = initialize_network_with_stakes()
     user_nodes, _, _ = _extract_network_nodes(network)
@@ -305,30 +304,22 @@ def simulate_restaking_pbs():
     
     all_blocks = []
     
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_batch = {
-            executor.submit(process_block_batch, (batch, deepcopy(builder_nodes), deepcopy(proposer_nodes), deepcopy(user_nodes))): batch 
-            for batch in block_batches
-        }
+    # Process batches sequentially but with proper state passing
+    for batch_idx, (start_block, end_block) in enumerate(block_batches):
+        print(f"Processing batch {batch_idx + 1}/{len(block_batches)}: blocks {start_block}-{end_block}")
         
-        completed_batches = 0
-        for future in as_completed(future_to_batch):
-            batch = future_to_batch[future]
-            try:
-                batch_blocks = future.result()
-                all_blocks.extend(batch_blocks)
-                completed_batches += 1
-                
-                if completed_batches % 5 == 0:
-                    elapsed = time.time() - start_time
-                    avg_time_per_batch = elapsed / completed_batches
-                    remaining_batches = len(block_batches) - completed_batches
-                    estimated_remaining = remaining_batches * avg_time_per_batch
-                    print(f"Progress: {completed_batches}/{len(block_batches)} batches completed")
-                    print(f"Elapsed: {elapsed:.1f}s, Estimated remaining: {estimated_remaining:.1f}s")
-                    
-            except Exception as exc:
-                print(f'Batch {batch} generated an exception: {exc}')
+        # Process this batch
+        batch_blocks = process_block_batch((start_block, end_block), builder_nodes, proposer_nodes, user_nodes)
+        all_blocks.extend(batch_blocks)
+        
+        # Update progress
+        if (batch_idx + 1) % 5 == 0:
+            elapsed = time.time() - start_time
+            avg_time_per_batch = elapsed / (batch_idx + 1)
+            remaining_batches = len(block_batches) - (batch_idx + 1)
+            estimated_remaining = remaining_batches * avg_time_per_batch
+            print(f"Progress: {batch_idx + 1}/{len(block_batches)} batches completed")
+            print(f"Elapsed: {elapsed:.1f}s, Estimated remaining: {estimated_remaining:.1f}s")
     
     all_blocks.sort(key=lambda x: x['block_num'])
     

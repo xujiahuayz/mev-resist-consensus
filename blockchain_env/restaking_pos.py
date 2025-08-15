@@ -125,48 +125,68 @@ def process_block_batch(args):
     return block_data_list
 
 def simulate_restaking_pos():
-    print(f"Starting Optimized Restaking PoS Simulation")
+    print(f"Starting Sequential Restaking PoS Simulation")
     print(f"Blocks: {BLOCKNUM}")
     print(f"Validator threshold: {VALIDATOR_THRESHOLD / 10**9:.1f} ETH")
     print(f"Reinvestment probability: {REINVESTMENT_PROBABILITY:.1%}")
     print(f"Attackers: {PROPNUM // 2} validators, {USERNUM // 2} users")
-    print(f"Using {MAX_WORKERS} worker processes")
+    print(f"Running sequentially to avoid multiprocessing race conditions")
     
     validators = initialize_validators_with_stakes()
     users = [User(f"user_{i}", i < USERNUM // 2) for i in range(USERNUM)]
     
     start_time = time.time()
     
-    block_batches = []
-    for i in range(0, BLOCKNUM, BATCH_SIZE):
-        end_block = min(i + BATCH_SIZE, BLOCKNUM)
-        block_batches.append((i, end_block))
-    
-    print(f"Processing {len(block_batches)} batches of {BATCH_SIZE} blocks each")
-    
     all_blocks = []
     
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_batch = {
-            executor.submit(process_block_batch, (batch, deepcopy(users), deepcopy(validators))): batch 
-            for batch in block_batches
+    # Run simulation sequentially to avoid multiprocessing race conditions
+    for block_num in range(BLOCKNUM):
+        if block_num % 1000 == 0:
+            print(f"Processing block {block_num}/{BLOCKNUM}")
+        
+        # Process single block
+        validator_weights = [v.active_stake / TOTAL_NETWORK_STAKE + 0.01 for v in validators]
+        selected_validator = random.choices(validators, weights=validator_weights, k=1)[0]
+        
+        for user in users:
+            num_transactions = transaction_number()
+            for _ in range(num_transactions):
+                tx = user.launch_attack(block_num) if user.is_attacker else user.create_transactions(block_num)
+                if tx:
+                    user.broadcast_transactions(tx)
+                    selected_validator.mempool.append(tx)
+        
+        selected_validator.selected_transactions = selected_validator.select_transactions(block_num)
+        
+        for position, tx in enumerate(selected_validator.selected_transactions):
+            tx.position = position
+            tx.included_at = block_num
+        
+        total_gas_fee = sum(tx.gas_fee for tx in selected_validator.selected_transactions)
+        total_mev = sum(tx.mev_potential for tx in selected_validator.selected_transactions)
+        block_reward = total_gas_fee + total_mev
+        
+        if selected_validator.restaking_factor:
+            # Restaking: add profit to capital, keep accumulating
+            selected_validator.capital += block_reward
+            # Update active stake based on total accumulated capital
+            selected_validator.active_stake = VALIDATOR_THRESHOLD * (selected_validator.capital // VALIDATOR_THRESHOLD)
+        
+        block_data = {
+            "block_num": block_num,
+            "validator_id": selected_validator.id,
+            "validator_capital": selected_validator.capital,
+            "validator_restaking_factor": selected_validator.restaking_factor,
+            "total_gas_fee": total_gas_fee,
+            "total_mev_available": total_mev,
+            "block_reward": block_reward,
+            "is_attacker": selected_validator.is_attacker
         }
         
-        completed_batches = 0
-        for future in as_completed(future_to_batch):
-            batch = future_to_batch[future]
-            try:
-                batch_blocks = future.result()
-                all_blocks.extend(batch_blocks)
-                completed_batches += 1
-                
-                if completed_batches % 5 == 0:
-                    print(f"Completed {completed_batches}/{len(block_batches)} batches")
-                    
-            except Exception as exc:
-                print(f'Batch {batch} generated an exception: {exc}')
-    
-    all_blocks.sort(key=lambda x: x['block_num'])
+        all_blocks.append(block_data)
+        
+        for validator in validators:
+            validator.clear_mempool(block_num)
     
     end_time = time.time()
     
