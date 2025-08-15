@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import List, Optional
 from blockchain_env.constants import SAMPLE_GAS_FEES, MEV_POTENTIALS
 from blockchain_env.transaction import Transaction
 from blockchain_env.network import Node, build_network
@@ -44,11 +44,18 @@ class User(Node):
 
     def create_transactions(self, block_num: int) -> Transaction:
         # Use the configured period for gas fees and MEV potentials
-        gas_fee: int = random.choice(SAMPLE_GAS_FEES(100, SIMULATION_PERIOD))
-        mev_potential: int = random.choice(MEV_POTENTIALS(100, SIMULATION_PERIOD))
+        try:
+            gas_fee: int = random.choice(SAMPLE_GAS_FEES(100, SIMULATION_PERIOD))
+            mev_potential: int = random.choice(MEV_POTENTIALS(100, SIMULATION_PERIOD))
+        except (IndexError, TypeError):
+            # Fallback to stable period data if dynamic loading fails
+            from blockchain_env.constants import get_fallback_gas_fees, get_fallback_mev_potentials
+            gas_fee: int = random.choice(get_fallback_gas_fees(100))
+            mev_potential: int = random.choice(get_fallback_mev_potentials(100))
+        
         creator_id: int = self.id
         created_at: int = block_num
-        target_tx: Transaction | None = None
+        target_tx: Optional[Transaction] = None
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
 
     def launch_attack(self, block_num: int) -> Transaction:

@@ -1,7 +1,7 @@
 """Proposer module for blockchain environment."""
 
 import random
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Optional, Union
 
 from blockchain_env.network import Node
 from blockchain_env.builder import Builder
@@ -16,8 +16,8 @@ class Proposer(Node):
         self.max_rounds: int = 24  # Maximum number of rounds per block
         self.bids: Dict[int, float] = {}  # {builder_id: bid_amount}
         self.all_observed_bids: Dict[int, float] = {}  # {round: bid_amount}
-        self.winning_bid: Tuple[int, float] | None = None  # (round, bid_amount)
-        self.end_round_num: int | None = None
+        self.winning_bid: Optional[Tuple[int, float]] = None  # (round, bid_amount)
+        self.end_round_num: Optional[int] = None
 
     def receive_bid(self, builder_id: int, bid_amount: Any) -> None:
         """Receive a bid from a builder for the current round."""
@@ -33,7 +33,7 @@ class Proposer(Node):
         self.current_round += 1
         self.end_round_num = self.current_round
 
-    def select_winner(self) -> Tuple[int, float] | None:
+    def select_winner(self) -> Optional[Tuple[int, float]]:
         """Select the winning bid for the current block."""
         if not self.bids:
             return None
@@ -52,7 +52,7 @@ class Proposer(Node):
 
         return (winning_builder, highest_bid)
 
-    def adjust_auction_duration(self, prev_winning_bid: Tuple[int, float] | None, prev_end_round: int | None) -> None:
+    def adjust_auction_duration(self, prev_winning_bid: Optional[Tuple[int, float]], prev_end_round: Optional[int]) -> None:
         """Adjust the auction duration based on the adaptive termination strategy."""
         if prev_winning_bid is None or prev_end_round is None:
             return
@@ -76,7 +76,7 @@ class Proposer(Node):
         elif higher_bid_before:
             self.max_rounds = max(1, self.max_rounds - 1)
 
-    def get_block(self, builders: List[Builder]) -> List[Transaction] | None:
+    def get_block(self, builders: List[Builder]) -> Optional[List[Transaction]]:
         """Get the block from the winning builder."""
         winner = self.select_winner()
         if winner is None:
