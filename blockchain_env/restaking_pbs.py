@@ -20,11 +20,11 @@ from blockchain_env.network import build_network
 from blockchain_env.transaction import Transaction
 
 # Constants for optimized analysis
-BLOCKNUM: int = 1000  # Reduced from 10,000 for faster execution
+BLOCKNUM: int = 10000  # Increased from 1000 for better growth visualization
 BLOCK_CAP: int = 100
 USERNUM: int = 50
-BUILDERNUM: int = 20
-PROPOSERNUM: int = 20
+BUILDERNUM: int = 50  # Increased to 50 builders for comparability
+PROPOSERNUM: int = 50  # Increased to 50 proposers for comparability
 
 # Restaking parameters
 VALIDATOR_THRESHOLD: int = 32 * 10**9  # 32 ETH in gwei
@@ -110,15 +110,33 @@ def initialize_network_with_stakes() -> Tuple[Any, List[RestakingBuilder], List[
     proposer_list = []
     builder_list = []
     
+    # Realistic stake distribution: most people have 1-2 nodes, fewer have many nodes
+    # This mimics real-world where few people have massive amounts of ETH to stake
+    stake_distribution = [
+        (1, 0.40),   # 40% have 1 validator (32 ETH)
+        (2, 0.25),   # 25% have 2 validators (64 ETH)
+        (3, 0.15),   # 15% have 3 validators (96 ETH)
+        (5, 0.10),   # 10% have 5 validators (160 ETH)
+        (8, 0.05),   # 5% have 8 validators (256 ETH)
+        (15, 0.03),  # 3% have 15 validators (480 ETH)
+        (25, 0.02),  # 2% have 25 validators (800 ETH)
+    ]
+    
     # Initialize proposers with varying initial stakes
     for i in range(PROPOSERNUM):
-        # Realistic stake distribution: some have 32 ETH, some have multiples
-        initial_stake = random.choice([
-            VALIDATOR_THRESHOLD,      # 32 ETH
-            VALIDATOR_THRESHOLD * 2,  # 64 ETH
-            VALIDATOR_THRESHOLD * 5,  # 160 ETH
-            VALIDATOR_THRESHOLD * 10, # 320 ETH
-        ])
+        # Select stake level based on distribution
+        rand_val = random.random()
+        cumulative_prob = 0
+        selected_stake_multiplier = 1  # Default to 1 validator
+        
+        for stake_multiplier, probability in stake_distribution:
+            cumulative_prob += probability
+            if rand_val <= cumulative_prob:
+                selected_stake_multiplier = stake_multiplier
+                break
+        
+        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
+        
         # Set half of proposers as attackers
         is_attacker = i < PROPOSERNUM // 2
         proposer = RestakingProposer(f"proposer_{i}", is_attacker, initial_stake)
@@ -126,12 +144,19 @@ def initialize_network_with_stakes() -> Tuple[Any, List[RestakingBuilder], List[
     
     # Initialize builders with varying initial stakes
     for i in range(BUILDERNUM):
-        initial_stake = random.choice([
-            VALIDATOR_THRESHOLD,      # 32 ETH
-            VALIDATOR_THRESHOLD * 2,  # 64 ETH
-            VALIDATOR_THRESHOLD * 3,  # 96 ETH
-            VALIDATOR_THRESHOLD * 8,  # 256 ETH
-        ])
+        # Select stake level based on distribution
+        rand_val = random.random()
+        cumulative_prob = 0
+        selected_stake_multiplier = 1  # Default to 1 validator
+        
+        for stake_multiplier, probability in stake_distribution:
+            cumulative_prob += probability
+            if rand_val <= cumulative_prob:
+                selected_stake_multiplier = stake_multiplier
+                break
+        
+        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
+        
         # Set half of builders as attackers
         is_attacker = i < BUILDERNUM // 2
         builder = RestakingBuilder(f"builder_{i}", is_attacker, initial_stake)
@@ -262,13 +287,23 @@ def _create_block_data(block_num: int,
         "block_num": block_num,
         "builder_id": builder_id,
         "proposer_id": selected_proposer.id,
-        "builder_stake": winning_builder.active_stake,
-        "proposer_stake": selected_proposer.active_stake,
+        "builder_initial_stake": winning_builder.stake_history[0] if winning_builder.stake_history else 0,
+        "builder_current_stake": winning_builder.active_stake,
+        "builder_stake_change": winning_builder.active_stake - (winning_builder.stake_history[0] if winning_builder.stake_history else 0),
+        "builder_initial_validator_count": winning_builder.stake_history[0] // VALIDATOR_THRESHOLD if winning_builder.stake_history else 0,
+        "builder_current_validator_count": winning_builder.get_validator_count(),
+        "builder_reinvestment_factor": winning_builder.reinvestment_factor,
+        "builder_is_attacker": winning_builder.is_attacker,
+        "proposer_initial_stake": selected_proposer.stake_history[0] if selected_proposer.stake_history else 0,
+        "proposer_current_stake": selected_proposer.active_stake,
+        "proposer_stake_change": selected_proposer.active_stake - (selected_proposer.stake_history[0] if selected_proposer.stake_history else 0),
+        "proposer_initial_validator_count": selected_proposer.stake_history[0] // VALIDATOR_THRESHOLD if selected_proposer.stake_history else 0,
+        "proposer_current_validator_count": selected_proposer.get_validator_count(),
+        "proposer_reinvestment_factor": selected_proposer.reinvestment_factor,
+        "proposer_is_attacker": selected_proposer.is_attacker,
         "total_gas_fee": total_gas_fee,
         "total_mev_available": total_mev_available,
-        "bid_value": bid_value,
-        "builder_reinvestment_factor": winning_builder.reinvestment_factor,
-        "proposer_reinvestment_factor": selected_proposer.reinvestment_factor
+        "bid_value": bid_value
     }
     
     return block_data
@@ -382,7 +417,7 @@ def simulate_restaking_pbs() -> List[Dict[str, Any]]:
     
     # Save results
     _save_block_data(all_blocks)
-    _save_stake_evolution(builder_nodes, proposer_nodes)
+    # Removed stake evolution saving - only block data is useful
     
     print(f"Results saved to data/same_seed/restaking_pbs/")
     
@@ -402,46 +437,6 @@ def _save_block_data(block_data_list: List[Dict[str, Any]]) -> None:
         writer.writeheader()
         for block_data in block_data_list:
             writer.writerow(block_data)
-
-def _save_stake_evolution(builder_nodes: List[RestakingBuilder], 
-                         proposer_nodes: List[RestakingProposer]) -> None:
-    """Save stake evolution data for analysis."""
-    filename = f"data/same_seed/restaking_pbs/restaking_pbs_stake_evolution.csv"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    
-    with open(filename, 'w', newline='', encoding='utf-8') as f:
-        fieldnames = ['participant_id', 'participant_type', 'is_attacker', 'reinvestment_factor', 
-                     'initial_stake', 'final_stake', 'final_capital', 'total_profit', 'validator_count']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        # Save builder data
-        for builder in builder_nodes:
-            writer.writerow({
-                'participant_id': builder.id,
-                'participant_type': 'builder',
-                'is_attacker': builder.is_attacker,
-                'reinvestment_factor': builder.reinvestment_factor,
-                'initial_stake': builder.stake_history[0] if builder.stake_history else 0,
-                'final_stake': builder.active_stake,
-                'final_capital': builder.capital,
-                'total_profit': sum(builder.profit_history),
-                'validator_count': builder.get_validator_count()
-            })
-        
-        # Save proposer data
-        for proposer in proposer_nodes:
-            writer.writerow({
-                'participant_id': proposer.id,
-                'participant_type': 'proposer',
-                'is_attacker': proposer.is_attacker,
-                'reinvestment_factor': proposer.reinvestment_factor,
-                'initial_stake': proposer.stake_history[0] if proposer.stake_history else 0,
-                'final_stake': proposer.active_stake,
-                'final_capital': proposer.capital,
-                'total_profit': sum(proposer.profit_history),
-                'validator_count': proposer.get_validator_count()
-            })
 
 if __name__ == "__main__":
     # Example usage

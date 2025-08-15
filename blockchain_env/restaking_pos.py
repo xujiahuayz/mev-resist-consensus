@@ -13,10 +13,10 @@ from blockchain_env.user import User
 from blockchain_env.network import Node
 
 # Constants for optimized analysis
-BLOCKNUM = 1000  # Reduced from 10,000 for faster execution
+BLOCKNUM = 10000  # Increased from 1000 for better growth visualization
 BLOCK_CAP = 100
 USERNUM = 50
-PROPNUM = 20
+PROPNUM = 50  # Increased to 50 validators for comparability
 
 # Restaking parameters
 VALIDATOR_THRESHOLD: int = 32 * 10**9  # 32 ETH in gwei
@@ -94,15 +94,32 @@ def initialize_validators_with_stakes() -> List[RestakingValidator]:
     
     validators = []
     
+    # Realistic stake distribution: most people have 1-2 nodes, fewer have many nodes
+    # This mimics real-world where few people have massive amounts of ETH to stake
+    stake_distribution = [
+        (1, 0.40),   # 40% have 1 validator (32 ETH)
+        (2, 0.25),   # 25% have 2 validators (64 ETH)
+        (3, 0.15),   # 15% have 3 validators (96 ETH)
+        (5, 0.10),   # 10% have 5 validators (160 ETH)
+        (8, 0.05),   # 5% have 8 validators (256 ETH)
+        (15, 0.03),  # 3% have 15 validators (480 ETH)
+        (25, 0.02),  # 2% have 25 validators (800 ETH)
+    ]
+    
     for i in range(PROPNUM):
-        # Realistic stake distribution: some have 32 ETH, some have multiples
-        initial_stake = random.choice([
-            VALIDATOR_THRESHOLD,      # 32 ETH
-            VALIDATOR_THRESHOLD * 2,  # 64 ETH
-            VALIDATOR_THRESHOLD * 5,  # 160 ETH
-            VALIDATOR_THRESHOLD * 10, # 320 ETH
-            VALIDATOR_THRESHOLD * 15, # 480 ETH
-        ])
+        # Select stake level based on distribution
+        rand_val = random.random()
+        cumulative_prob = 0
+        selected_stake_multiplier = 1  # Default to 1 validator
+        
+        for stake_multiplier, probability in stake_distribution:
+            cumulative_prob += probability
+            if rand_val <= cumulative_prob:
+                selected_stake_multiplier = stake_multiplier
+                break
+        
+        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
+        
         # Set half of validators as attackers
         is_attacker = i < PROPNUM // 2
         validator = RestakingValidator(f"validator_{i}", is_attacker, initial_stake)
@@ -165,12 +182,16 @@ def process_block_batch(block_range: Tuple[int, int],
         block_data = {
             "block_num": block_num,
             "validator_id": selected_validator.id,
-            "validator_stake": selected_validator.active_stake,
+            "validator_initial_stake": selected_validator.stake_history[0] if selected_validator.stake_history else 0,
+            "validator_current_stake": selected_validator.active_stake,
+            "validator_stake_change": selected_validator.active_stake - (selected_validator.stake_history[0] if selected_validator.stake_history else 0),
+            "validator_initial_validator_count": selected_validator.stake_history[0] // VALIDATOR_THRESHOLD if selected_validator.stake_history else 0,
+            "validator_current_validator_count": selected_validator.get_validator_count(),
+            "validator_reinvestment_factor": selected_validator.reinvestment_factor,
             "total_gas_fee": total_gas_fee,
             "total_mev_available": total_mev,
             "block_reward": block_reward,
-            "validator_reinvestment_factor": selected_validator.reinvestment_factor,
-            "validator_validator_count": selected_validator.get_validator_count()
+            "is_attacker": selected_validator.is_attacker
         }
         
         block_data_list.append(block_data)
@@ -244,7 +265,7 @@ def simulate_restaking_pos() -> List[Dict[str, Any]]:
     
     # Save results
     _save_block_data(all_blocks)
-    _save_stake_evolution(validators)
+    # Removed stake evolution saving - only block data is useful
     
     return all_blocks
 
@@ -262,31 +283,6 @@ def _save_block_data(block_data_list: List[Dict[str, Any]]) -> None:
         writer.writeheader()
         for block_data in block_data_list:
             writer.writerow(block_data)
-
-def _save_stake_evolution(validators: List[RestakingValidator]) -> None:
-    """Save stake evolution data for analysis."""
-    filename = f"data/same_seed/restaking_pos/restaking_pos_stake_evolution.csv"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    
-    with open(filename, 'w', newline='', encoding='utf-8') as f:
-        fieldnames = ['participant_id', 'participant_type', 'is_attacker', 'reinvestment_factor', 
-                     'initial_stake', 'final_stake', 'final_capital', 'total_profit', 'validator_count']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        # Save validator data
-        for validator in validators:
-            writer.writerow({
-                'participant_id': validator.id,
-                'participant_type': 'validator',
-                'is_attacker': validator.is_attacker,
-                'reinvestment_factor': validator.reinvestment_factor,
-                'initial_stake': validator.stake_history[0] if validator.stake_history else 0,
-                'final_stake': validator.active_stake,
-                'final_capital': validator.capital,
-                'total_profit': sum(validator.profit_history),
-                'validator_count': validator.get_validator_count()
-            })
 
 if __name__ == "__main__":
     # Example usage
