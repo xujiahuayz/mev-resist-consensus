@@ -1,356 +1,333 @@
-"""PBS simulation with restaking dynamics for long-term centralization analysis."""
+"""Simple optimized PBS simulation with restaking using existing classes."""
 
-import gc
 import os
 import random
 import csv
 import time
-import multiprocessing as mp
-import numpy as np
-from typing import List, Tuple, Dict, Any
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from copy import deepcopy
-
-import networkx as nx
+from typing import List, Dict, Any
 
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
-from blockchain_env.network import build_network
 from blockchain_env.transaction import Transaction
 
+# Constants
 BLOCKNUM = 10000
 BLOCK_CAP = 100
 USERNUM = 50
 BUILDERNUM = 50
 PROPOSERNUM = 50
+MAX_ROUNDS = 12  # Reduced from 24
 
-VALIDATOR_THRESHOLD = 32 * 10**9
-TOTAL_NETWORK_STAKE = 1000 * VALIDATOR_THRESHOLD
-
-MAX_WORKERS = mp.cpu_count()
-BATCH_SIZE = 500
+VALIDATOR_THRESHOLD = 100000000  # 0.1 ETH instead of 1 ETH for better visibility
 
 random.seed(16)
 
-def initialize_network_with_stakes():
-    """Initialize network with all participants doing restaking."""
-    proposer_list = []
-    builder_list = []
-    
-    stake_distribution = [
-        (1, 0.45),
-        (2, 0.25),
-        (3, 0.15),
-        (5, 0.10),
-        (8, 0.05),
-    ]
-    
-    for i in range(PROPOSERNUM):
-        rand_val = random.random()
-        cumulative_prob = 0
-        selected_stake_multiplier = 1
-        
-        for stake_multiplier, probability in stake_distribution:
-            cumulative_prob += probability
-            if rand_val <= cumulative_prob:
-                selected_stake_multiplier = stake_multiplier
-                break
-        
-        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
-        proposer = Proposer(f"proposer_{i}", restaking_factor=True)  # All restaking
-        proposer.capital = initial_stake
-        proposer.active_stake = initial_stake
-        proposer_list.append(proposer)
-    
+def create_participants():
+    """Create participants with restaking enabled."""
+    # Create builders
+    builders = []
     for i in range(BUILDERNUM):
-        rand_val = random.random()
-        cumulative_prob = 0
-        selected_stake_multiplier = 1
-        
-        for stake_multiplier, probability in stake_distribution:
-            cumulative_prob += probability
-            if rand_val <= cumulative_prob:
-                selected_stake_multiplier = stake_multiplier
-                break
-        
-        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
         is_attacker = i < BUILDERNUM // 2
-        builder = Builder(f"builder_{i}", is_attacker, initial_stake, restaking_factor=True)  # All restaking
-        builder_list.append(builder)
+        builder = Builder(f"builder_{i}", is_attacker)
+        
+        # Add restaking properties
+        builder.capital = random.choice([
+            VALIDATOR_THRESHOLD,
+            VALIDATOR_THRESHOLD * 2,
+            VALIDATOR_THRESHOLD * 3,
+            VALIDATOR_THRESHOLD * 5,
+        ])
+        builder.active_stake = builder.capital
+        builder.reinvestment_factor = random.random()
+        builder.profit_history = []
+        builder.stake_history = [builder.capital]
+        
+        builders.append(builder)
     
-    user_list = [User(f"user_{i}", i < USERNUM // 2) for i in range(USERNUM)]
-    network = build_network(user_list, builder_list, proposer_list)
+    # Create proposers
+    proposers = []
+    for i in range(PROPOSERNUM):
+        proposer = Proposer(f"proposer_{i}")
+        
+        # Add restaking properties
+        proposer.capital = random.choice([
+            VALIDATOR_THRESHOLD,
+            VALIDATOR_THRESHOLD * 2,
+            VALIDATOR_THRESHOLD * 5,
+            VALIDATOR_THRESHOLD * 10,
+        ])
+        proposer.active_stake = proposer.capital
+        proposer.reinvestment_factor = random.random()
+        proposer.profit_history = []
+        proposer.stake_history = [proposer.capital]
+        
+        proposers.append(proposer)
     
-    return network, builder_list, proposer_list
+    # Create users
+    users = []
+    for i in range(USERNUM):
+        is_attacker = i < USERNUM // 2
+        user = User(f"user_{i}", is_attacker)
+        users.append(user)
+    
+    return builders, proposers, users
 
-def _extract_network_nodes(network_graph):
-    """Extract users, builders, and proposers from the network graph."""
-    user_nodes = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], User)]
-    builder_nodes = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Builder)]
-    proposer_nodes = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Proposer)]
-    return user_nodes, builder_nodes, proposer_nodes
+def update_stake(participant, profit: int):
+    """Update participant stake with restaking."""
+    participant.capital += profit
+    
+    # Apply reinvestment factor
+    reinvested = int(profit * participant.reinvestment_factor)
+    extracted = profit - reinvested
+    participant.capital -= extracted
+    
+    # Update active stake
+    participant.active_stake = VALIDATOR_THRESHOLD * (participant.capital // VALIDATOR_THRESHOLD)
+    
+    participant.profit_history.append(profit)
+    participant.stake_history.append(participant.active_stake)
 
-def _process_user_transactions(user_nodes, block_num):
-    """Process user transactions for the block."""
+def get_stake_ratio(participant, total_stake):
+    """Get participant's stake ratio."""
+    return participant.active_stake / total_stake if total_stake > 0 else 0
+
+def process_block(builders, proposers, users, block_num):
+    """Process a single block efficiently."""
+    # 1. Generate user transactions (simplified)
     all_transactions = []
-    
-    for user in user_nodes:
-        num_transactions = random.randint(0, 5)
-        for _ in range(num_transactions):
-            if not user.is_attacker:
-                tx = user.create_transactions(block_num)
-            else:
+    for user in users:
+        num_tx = random.randint(0, 2)  # Reduced for speed
+        for _ in range(num_tx):
+            if user.is_attacker:
                 tx = user.launch_attack(block_num)
-
+            else:
+                tx = user.create_transactions(block_num)
             if tx:
-                user.broadcast_transactions(tx)
                 all_transactions.append(tx)
     
-    return all_transactions
-
-def _process_builder_bids(builder_nodes, transactions, block_num):
-    """Process builder bids using existing bidding mechanism."""
-    builder_results = []
+    # 2. Distribute transactions to ALL participants (builders get them for potential building)
+    for i, tx in enumerate(all_transactions):
+        builder_idx = i % len(builders)
+        builders[builder_idx].receive_transaction(tx)
     
-    # Distribute transactions to builders
-    for i, tx in enumerate(transactions):
-        builder_idx = i % len(builder_nodes)
-        builder_nodes[builder_idx].mempool.append(tx)
+    # 3. First select proposer based on stake weights
+    all_participants = builders + proposers
+    total_stake = sum(p.active_stake for p in all_participants)
+    weights = [get_stake_ratio(p, total_stake) + 0.001 for p in all_participants]
+    selected_proposer = random.choices(all_participants, weights=weights, k=1)[0]
     
-    for builder in builder_nodes:
-        # Use existing transaction selection logic
-        selected_transactions = builder.select_transactions(block_num)
+    # 4. Check if selected proposer is a builder
+    if selected_proposer in builders:
+        # Builder-proposer case: they choose themselves as block builder
+        winning_builder = selected_proposer
         
-        if selected_transactions:
-            # Use existing bidding logic
-            bid_value = builder.bid(selected_transactions)
-            
-            builder_results.append((builder.id, selected_transactions, bid_value))
-    
-    return builder_results
-
-def _process_proposer_selection_and_block_choice(proposer_nodes, builder_nodes, builder_results, block_num):
-    """Process proposer selection and implement simplified builder-proposer logic."""
-    if not builder_results:
-        return None, None, None
-    
-    # All participants (builders + proposers) can be selected as proposers
-    # Selection probability is proportional to their stake
-    all_participants = []
-    all_stakes = []
-    
-    # Add builders
-    for builder in builder_nodes:
-        all_participants.append(('builder', builder))
-        all_stakes.append(builder.active_stake)
-    
-    # Add pure proposers
-    for proposer in proposer_nodes:
-        all_participants.append(('proposer', proposer))
-        all_stakes.append(proposer.active_stake)
-    
-    # Normalize stakes to avoid zero weights
-    min_stake = min(all_stakes) if all_stakes else 1
-    normalized_stakes = [stake / min_stake + 0.01 for stake in all_stakes]
-    
-    # Select proposer based on stake-weighted probability
-    selected_participant_type, selected_participant = random.choices(all_participants, weights=normalized_stakes, k=1)[0]
-    
-    # Handle proposer selection and block choice
-    if selected_participant_type == 'builder':
-        # Builder is also proposer - they build their own block and take full reward
-        selected_builder = selected_participant
+        # Builder selects their own transactions
+        selected_txs = winning_builder.select_transactions(block_num)
         
-        # Check if selected builder has a block in this round
-        selected_builder_has_block = any(bid[0] == selected_builder.id for bid in builder_results)
-        
-        if selected_builder_has_block:
-            # Builder has a block - they choose their own block and get full reward
-            selected_builder_bid = next(bid for bid in builder_results if bid[0] == selected_builder.id)
-            winning_bid = selected_builder_bid
-            winning_builder = selected_builder
+        if selected_txs:
+            # Calculate block value
+            block_value = sum(tx.gas_fee for tx in selected_txs)
+            if winning_builder.is_attacker:
+                block_value += sum(getattr(tx, 'mev_potential', 0) for tx in selected_txs)
             
-            # Builder gets the full block value (no proposer fee)
-            if selected_builder.restaking_factor:
-                selected_builder.capital += winning_bid[2]
-                selected_builder.active_stake = VALIDATOR_THRESHOLD * (selected_builder.capital // VALIDATOR_THRESHOLD)
+            winning_bid = block_value  # They get full block value
             
-            return winning_bid, winning_builder, selected_builder
+            # Builder-proposer gets full reward (no split)
+            update_stake(winning_builder, int(winning_bid))
         else:
-            # Selected builder doesn't have a block - choose highest bid from others
-            winning_bid = max(builder_results, key=lambda x: x[2])
-            winning_builder_id = winning_bid[0]
-            winning_builder = next(b for b in builder_nodes if b.id == winning_builder_id)
-            
-            # Award rewards: 90% to winning builder, 10% to proposer
-            if winning_builder.restaking_factor:
-                winning_builder.capital += winning_bid[2] * 0.9
-                winning_builder.active_stake = VALIDATOR_THRESHOLD * (winning_builder.capital // VALIDATOR_THRESHOLD)
-            
-            if selected_builder.restaking_factor:
-                selected_builder.capital += winning_bid[2] * 0.1
-                selected_builder.active_stake = VALIDATOR_THRESHOLD * (selected_builder.capital // VALIDATOR_THRESHOLD)
-            
-            return winning_bid, winning_builder, selected_builder
-        
+            return None
     else:
-        # Pure proposer was selected - normal auction mechanism
-        selected_proposer = selected_participant
+        # Pure proposer case: run proper auction with MEV strategies and reactive bidding
+        auction_end = random.randint(8, MAX_ROUNDS)
+        last_round_bids = [0.0] * len(builders)
         
-        # Select winning builder bid (highest bid value)
-        winning_bid = max(builder_results, key=lambda x: x[2])
-        winning_builder_id = winning_bid[0]
-        winning_builder = next(b for b in builder_nodes if b.id == winning_builder_id)
+        # Initialize builder strategies and bid history if not exists
+        for builder in builders:
+            if not hasattr(builder, 'strategy'):
+                builder.strategy = "reactive" if random.random() < 0.7 else "late_enter"
+            if not hasattr(builder, 'bid_history'):
+                builder.bid_history = []
         
-        block_reward = winning_bid[2]
-        proposer_reward = block_reward * 0.1  # 10% to proposer
+        for round_num in range(auction_end):
+            round_bids = []
+            
+            for builder in builders:
+                # Select transactions using MEV strategy
+                selected_txs = builder.select_transactions(block_num)
+                
+                # Calculate block value (gas fees + MEV for attackers)
+                if selected_txs:
+                    gas_fee = sum(tx.gas_fee for tx in selected_txs)
+                    mev_value = 0.0
+                    if builder.is_attacker:
+                        # MEV value from attack transactions targeting profitable txs
+                        for tx in selected_txs:
+                            if hasattr(tx, 'target_tx') and tx.target_tx:
+                                mev_value += tx.target_tx.mev_potential
+                    
+                    block_value = gas_fee + mev_value
+                    
+                    # Reactive bidding strategy (from bidding.py)
+                    if builder.strategy == "reactive":
+                        highest_last_bid = max(last_round_bids, default=0.0)
+                        my_last_bid = builder.bid_history[-1] if builder.bid_history else 0.0
+                        second_highest_last_bid = sorted(last_round_bids, reverse=True)[1] if len(last_round_bids) > 1 else 0.0
+                        
+                        if my_last_bid < highest_last_bid:
+                            bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
+                        elif my_last_bid == highest_last_bid:
+                            bid = my_last_bid + random.random() * (block_value - my_last_bid)
+                        else:
+                            bid = my_last_bid - 0.7 * (my_last_bid - second_highest_last_bid)
+                    elif builder.strategy == "late_enter":
+                        if round_num < random.randint(7, 10):  # Adjusted for MAX_ROUNDS=12
+                            bid = 0.0
+                        else:
+                            highest_last_bid = max(last_round_bids, default=0.0)
+                            bid = min(1.05 * highest_last_bid, block_value)
+                    else:
+                        bid = 0.5 * block_value
+                    
+                    # Ensure bid doesn't exceed block value
+                    bid = max(0, min(bid, block_value))
+                    
+                    builder.bid_history.append(bid)
+                else:
+                    bid = 0.0
+                    builder.bid_history.append(bid)
+                
+                round_bids.append(bid)
+            
+            last_round_bids = round_bids
         
-        # Winning builder gets 90% of block value
-        if winning_builder.restaking_factor:
-            winning_builder.capital += block_reward - proposer_reward
-            winning_builder.active_stake = VALIDATOR_THRESHOLD * (winning_builder.capital // VALIDATOR_THRESHOLD)
+        # Select winning builder
+        if not last_round_bids or max(last_round_bids) == 0:
+            return None
         
-        # Proposer gets 10%
-        if selected_proposer.restaking_factor:
-            selected_proposer.capital += proposer_reward
-            selected_proposer.active_stake = VALIDATOR_THRESHOLD * (selected_proposer.capital // VALIDATOR_THRESHOLD)
+        winning_idx = last_round_bids.index(max(last_round_bids))
+        winning_builder = builders[winning_idx]
+        winning_bid = last_round_bids[winning_idx]
         
-        return winning_bid, winning_builder, selected_proposer
-
-def _create_block_data(block_num, winning_bid, winning_builder, selected_participant):
-    """Create block data with restaking information."""
-    if not winning_bid:
-        return {}
+        # Split reward: 90% to builder, 10% to proposer
+        builder_reward = int(winning_bid * 0.9)
+        proposer_reward = int(winning_bid * 0.1)
+        
+        update_stake(winning_builder, builder_reward)
+        update_stake(selected_proposer, proposer_reward)
     
-    builder_id, transactions, bid_value = winning_bid
-    
-    for position, tx in enumerate(transactions):
-        tx.position = position
-        tx.included_at = block_num
-    
-    total_gas_fee = sum(tx.gas_fee for tx in transactions)
-    total_mev_available = sum(tx.mev_potential for tx in transactions)
-    
-    # Determine if selected participant is a builder or proposer
-    is_builder_proposer = hasattr(selected_participant, 'is_attacker')
-    
-    block_data = {
-        "block_num": block_num,
-        "builder_id": builder_id,
-        "proposer_id": selected_participant.id,
-        "proposer_type": "builder" if is_builder_proposer else "proposer",
-        "builder_initial_stake": winning_builder.capital - sum(winning_builder.profit_history) if hasattr(winning_builder, 'profit_history') else winning_builder.capital,
-        "builder_current_stake": winning_builder.capital,
-        "builder_is_attacker": winning_builder.is_attacker,
-        "proposer_initial_stake": selected_participant.capital - sum(selected_participant.profit_history) if hasattr(selected_participant, 'profit_history') else selected_participant.capital,
-        "proposer_current_stake": selected_participant.capital,
-        "total_gas_fee": total_gas_fee,
-        "total_mev_available": total_mev_available,
-        "bid_value": bid_value,
-        "block_reward": bid_value
-    }
-    
-    return block_data
-
-def process_block_batch(block_range, builder_nodes, proposer_nodes, user_nodes):
-    """Process a batch of blocks efficiently."""
-    start_block, end_block = block_range
-    block_data_list = []
-    
-    for block_num in range(start_block, end_block):
-        # Process user transactions
-        transactions = _process_user_transactions(user_nodes, block_num)
-        
-        # Process builder bids
-        builder_results = _process_builder_bids(builder_nodes, transactions, block_num)
-        
-        # Process proposer selection and block choice
-        winning_bid, winning_builder, selected_proposer = _process_proposer_selection_and_block_choice(
-            proposer_nodes, builder_nodes, builder_results, block_num
-        )
-        
-        if winning_bid and winning_builder and selected_proposer:
-            block_data = _create_block_data(block_num, winning_bid, winning_builder, selected_proposer)
-            if block_data:
-                block_data_list.append(block_data)
-        
-        # Clear mempools efficiently
-        for builder in builder_nodes:
+    # 5. Clear mempools
+    included_txs = winning_builder.selected_transactions
+    for builder in builders:
+        if hasattr(builder, 'clear_mempool'):
             builder.clear_mempool(block_num)
+        else:
+            # Simple mempool clearing
+            if included_txs:
+                included_ids = {tx.id for tx in included_txs}
+                builder.mempool = [tx for tx in builder.mempool if tx.id not in included_ids]
     
-    return block_data_list
+    # 6. Create block data
+    total_gas = sum(tx.gas_fee for tx in winning_builder.selected_transactions)
+    total_mev = sum(getattr(tx, 'mev_potential', 0) for tx in winning_builder.selected_transactions)
+    
+    return {
+        "block_num": block_num,
+        "builder_id": winning_builder.id,
+        "proposer_id": selected_proposer.id,
+        "proposer_type": "builder" if selected_proposer in builders else "proposer",
+        "builder_stake": winning_builder.active_stake,
+        "proposer_stake": selected_proposer.active_stake,
+        "builder_is_attacker": winning_builder.is_attacker,
+        "total_gas_fee": total_gas,
+        "total_mev_available": total_mev,
+        "bid_value": winning_bid,
+        "num_transactions": len(winning_builder.selected_transactions)
+    }
 
 def simulate_restaking_pbs():
-    """Main simulation function for restaking PBS with proper state passing between batches."""
-    print(f"Starting Optimized Restaking PBS Simulation")
+    """Main simulation function."""
+    print(f"Starting Simple Restaking PBS Simulation")
     print(f"Blocks: {BLOCKNUM}")
-    print(f"Validator threshold: {VALIDATOR_THRESHOLD / 10**9:.1f} ETH")
-    print(f"All participants are restaking")
-    print(f"Attackers: {BUILDERNUM // 2} builders, {USERNUM // 2} users")
-    print(f"Using {MAX_WORKERS} worker processes with proper state passing")
+    print(f"Participants: {BUILDERNUM} builders, {PROPOSERNUM} proposers, {USERNUM} users")
     
-    network, builder_nodes, proposer_nodes = initialize_network_with_stakes()
-    user_nodes, _, _ = _extract_network_nodes(network)
+    # Create participants
+    builders, proposers, users = create_participants()
     
     start_time = time.time()
-    
-    block_batches = []
-    for i in range(0, BLOCKNUM, BATCH_SIZE):
-        end_block = min(i + BATCH_SIZE, BLOCKNUM)
-        block_batches.append((i, end_block))
-    
-    print(f"Processing {len(block_batches)} batches of {BATCH_SIZE} blocks each")
-    
     all_blocks = []
     
-    # Process batches sequentially but with proper state passing
-    for batch_idx, (start_block, end_block) in enumerate(block_batches):
-        print(f"Processing batch {batch_idx + 1}/{len(block_batches)}: blocks {start_block}-{end_block}")
+    # Process blocks
+    for block_num in range(BLOCKNUM):
+        block_data = process_block(builders, proposers, users, block_num)
         
-        # Process this batch
-        batch_blocks = process_block_batch((start_block, end_block), builder_nodes, proposer_nodes, user_nodes)
-        all_blocks.extend(batch_blocks)
+        if block_data:
+            all_blocks.append(block_data)
         
-        # Update progress
-        if (batch_idx + 1) % 5 == 0:
+        # Progress reporting every 1000 blocks
+        if (block_num + 1) % 1000 == 0:
             elapsed = time.time() - start_time
-            avg_time_per_batch = elapsed / (batch_idx + 1)
-            remaining_batches = len(block_batches) - (batch_idx + 1)
-            estimated_remaining = remaining_batches * avg_time_per_batch
-            print(f"Progress: {batch_idx + 1}/{len(block_batches)} batches completed")
-            print(f"Elapsed: {elapsed:.1f}s, Estimated remaining: {estimated_remaining:.1f}s")
-    
-    all_blocks.sort(key=lambda x: x['block_num'])
+            blocks_per_second = (block_num + 1) / elapsed
+            remaining = (BLOCKNUM - block_num - 1) / blocks_per_second / 60
+            
+            print(f"Block {block_num + 1}/{BLOCKNUM} | "
+                  f"Speed: {blocks_per_second:.1f} blocks/s | "
+                  f"ETA: {remaining:.1f} min")
     
     end_time = time.time()
+    total_time = end_time - start_time
     
-    print(f"Simulation completed in {end_time - start_time:.2f} seconds")
-    print(f"Processed {len(all_blocks)} blocks")
+    print(f"\nCompleted in {total_time:.1f}s ({total_time/60:.1f} min)")
+    print(f"Speed: {BLOCKNUM/total_time:.1f} blocks/second")
     
-    _save_block_data(all_blocks)
-    
-    print(f"Results saved to data/same_seed/restaking_pbs/")
+    # Save results
+    save_results(all_blocks, builders, proposers)
     
     return all_blocks
 
-def _save_block_data(block_data_list):
-    """Save block data to CSV under data/same_seed/restaking_pbs/."""
-    if not block_data_list:
-        return
+def save_results(block_data, builders, proposers):
+    """Save results to CSV files."""
+    output_dir = "data/same_seed/restaking_pbs/"
+    os.makedirs(output_dir, exist_ok=True)
     
-    filename = f"data/same_seed/restaking_pbs/restaking_pbs_blocks.csv"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    # Save block data
+    if block_data:
+        with open(f"{output_dir}restaking_pbs_blocks.csv", 'w', newline='') as f:
+            fieldnames = block_data[0].keys()
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(block_data)
     
-    with open(filename, 'w', newline='', encoding='utf-8') as f:
-        fieldnames = block_data_list[0].keys()
+    # Save stake evolution
+    with open(f"{output_dir}stake_evolution.csv", 'w', newline='') as f:
+        fieldnames = ['participant_id', 'participant_type', 'is_attacker', 'reinvestment_factor',
+                     'initial_stake', 'final_stake', 'total_profit']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        for block_data in block_data_list:
-            writer.writerow(block_data)
+        
+        for builder in builders:
+            writer.writerow({
+                'participant_id': builder.id,
+                'participant_type': 'builder',
+                'is_attacker': builder.is_attacker,
+                'reinvestment_factor': builder.reinvestment_factor,
+                'initial_stake': builder.stake_history[0],
+                'final_stake': builder.active_stake,
+                'total_profit': sum(builder.profit_history)
+            })
+        
+        for proposer in proposers:
+            writer.writerow({
+                'participant_id': proposer.id,
+                'participant_type': 'proposer',
+                'is_attacker': False,
+                'reinvestment_factor': proposer.reinvestment_factor,
+                'initial_stake': proposer.stake_history[0],
+                'final_stake': proposer.active_stake,
+                'total_profit': sum(proposer.profit_history)
+            })
+    
+    print(f"Results saved to {output_dir}")
 
 if __name__ == "__main__":
-    print("Optimized Restaking PBS Simulation for Long-term Centralization Analysis")
-    print("=" * 70)
-    
-    simulate_restaking_pbs() 
+    simulate_restaking_pbs()

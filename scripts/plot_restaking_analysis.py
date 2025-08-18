@@ -145,7 +145,7 @@ def plot_builder_growth(pbs_data):
     
     # Calculate growth from baseline
     pbs_growth = calculate_growth_from_baseline(
-        pbs_data, 'builder_id', 'builder_initial_stake', 'builder_current_stake'
+        pbs_data, 'builder_id', 'builder_stake', 'builder_stake'
     )
     
     # Get initial parameters for each builder
@@ -154,9 +154,9 @@ def plot_builder_growth(pbs_data):
     }).reset_index()
     
     # Get initial capital for each builder (use first value, not minimum)
-    initial_capitals = pbs_data.groupby('builder_id')['builder_initial_stake'].first().reset_index()
+    initial_capitals = pbs_data.groupby('builder_id')['builder_stake'].first().reset_index()
     builders = builders.merge(initial_capitals, on='builder_id')
-    builders = builders.rename(columns={'builder_initial_stake': 'initial_capital'})
+    builders = builders.rename(columns={'builder_stake': 'initial_capital'})
     
     # Create stake level categories
     builders['stake_level'] = (builders['initial_capital'] // VALIDATOR_THRESHOLD).astype(int)
@@ -222,7 +222,7 @@ def plot_proposer_growth(pbs_data):
     
     # Calculate growth from baseline
     pbs_growth = calculate_growth_from_baseline(
-        pbs_data, 'proposer_id', 'proposer_initial_stake', 'proposer_current_stake'
+        pbs_data, 'proposer_id', 'proposer_stake', 'proposer_stake'
     )
     
     # Get initial parameters for each proposer
@@ -231,9 +231,9 @@ def plot_proposer_growth(pbs_data):
     }).reset_index()
     
     # Get initial capital for each proposer (use first value, not minimum)
-    initial_capitals = pbs_data.groupby('proposer_id')['proposer_initial_stake'].first().reset_index()
+    initial_capitals = pbs_data.groupby('proposer_id')['proposer_stake'].first().reset_index()
     proposers = proposers.merge(initial_capitals, on='proposer_id')
-    proposers = proposers.rename(columns={'proposer_initial_stake': 'initial_capital'})
+    proposers = proposers.rename(columns={'proposer_stake': 'initial_capital'})
     
     # Create stake level categories
     proposers['stake_level'] = (proposers['initial_capital'] // VALIDATOR_THRESHOLD).astype(int)
