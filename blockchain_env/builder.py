@@ -118,3 +118,19 @@ class Builder(Node):
     def get_selected_transactions(self) -> List[Transaction]:
         """Get the selected transactions for this block."""
         return self.selected_transactions.copy()
+    
+    def calculate_block_value(self) -> float:
+        """Calculate the value of the block exactly like in bidding.py."""
+        if not self.selected_transactions:
+            return 0.0
+        
+        gas_fee = sum(tx.gas_fee for tx in self.selected_transactions)
+        mev_value = 0.0
+        
+        if self.is_attacker:
+            # MEV value from attack transactions (like in bidding.py)
+            for tx in self.selected_transactions:
+                if hasattr(tx, 'target_tx') and tx.target_tx:
+                    mev_value += getattr(tx.target_tx, 'mev_potential', 0)
+        
+        return gas_fee + mev_value

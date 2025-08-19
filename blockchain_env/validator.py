@@ -23,6 +23,16 @@ class Validator(Node):
         if initial_stake > 0:
             self.capital = initial_stake
             self.active_stake = initial_stake
+            self.initial_stake = initial_stake  # Store initial stake separately
+        else:
+            self.capital = 0
+            self.active_stake = 0
+            self.initial_stake = 0
+        
+        # Add restaking properties like in PBS
+        self.reinvestment_factor = restaking_factor if restaking_factor is not None else random.random()
+        self.profit_history = []
+        self.stake_history = [self.capital]
 
     def launch_attack(self, block_num: int, target_transaction: Transaction, attack_type: str) -> Transaction:
         """Launch an attack transaction targeting a specific transaction."""
