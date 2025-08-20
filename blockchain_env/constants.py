@@ -1,6 +1,6 @@
 """This file contains the configuration settings for the market environment."""
 
-from blockchain_env.settings import PROJECT_ROOT
+from settings import PROJECT_ROOT
 
 DATA_PATH = PROJECT_ROOT / "data"
 FIGURE_PATH = PROJECT_ROOT / "figures"
@@ -15,7 +15,7 @@ PROPOSER_STRATEGY_LIST = ["greedy", "random", "cheap"]
 def get_dynamic_gas_fees(n_samples: int = 100, period_name: str = None):
     """Get real gas fees from fetched Ethereum data."""
     try:
-        from blockchain_env.data_loader import get_real_gas_fees
+        from data_loader import get_real_gas_fees
         return get_real_gas_fees(period_name, n_samples)
     except ImportError:
         # Fallback to hardcoded values if data loader not available
@@ -24,7 +24,7 @@ def get_dynamic_gas_fees(n_samples: int = 100, period_name: str = None):
 def get_simulation_gas_fees(period_type: str = None, era: str = None, n_samples: int = 100):
     """Get gas fees for simulation testing from specific period types or eras."""
     try:
-        from blockchain_env.data_loader import get_simulation_data
+        from data_loader import get_simulation_data
         data = get_simulation_data(period_type, era, n_samples)
         return data.get('gas_fees', [])
     except ImportError:
@@ -33,7 +33,7 @@ def get_simulation_gas_fees(period_type: str = None, era: str = None, n_samples:
 def get_dynamic_mev_potentials(n_samples: int = 100, period_name: str = None):
     """Get MEV potentials from real transaction data."""
     try:
-        from blockchain_env.data_loader import get_real_mev_potentials
+        from data_loader import get_real_mev_potentials
         return get_real_mev_potentials(period_name, n_samples)
     except ImportError:
         # Fallback to hardcoded values if data loader not available
@@ -42,7 +42,7 @@ def get_dynamic_mev_potentials(n_samples: int = 100, period_name: str = None):
 def get_simulation_mev_potentials(period_type: str = None, era: str = None, n_samples: int = 100):
     """Get MEV potentials for simulation testing from specific period types or eras."""
     try:
-        from blockchain_env.data_loader import get_simulation_data
+        from data_loader import get_simulation_data
         data = get_simulation_data(period_type, era, n_samples)
         return data.get('mev_potentials', [])
     except ImportError:

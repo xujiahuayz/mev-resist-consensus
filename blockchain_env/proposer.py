@@ -3,9 +3,9 @@
 import random
 from typing import List, Dict, Tuple, Any, Optional, Union
 
-from blockchain_env.network import Node
-from blockchain_env.builder import Builder
-from blockchain_env.transaction import Transaction
+from network import Node
+from builder import Builder
+from transaction import Transaction
 
 random.seed(16)
 

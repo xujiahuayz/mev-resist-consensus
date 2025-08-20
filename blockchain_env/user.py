@@ -1,8 +1,8 @@
 import random
 from typing import List, Optional
-from blockchain_env.transaction import Transaction
-from blockchain_env.network import Node, build_network
-from blockchain_env.builder import Builder
+from transaction import Transaction
+from network import Node, build_network
+from builder import Builder
 
 # Random seed for reproducibility
 random.seed(16)
@@ -15,7 +15,7 @@ class User(Node):
 
     def create_transactions(self, block_num: int) -> Transaction:
         # Use fallback hardcoded values to avoid data loading warnings
-        from blockchain_env.constants import get_fallback_gas_fees, get_fallback_mev_potentials
+        from constants import get_fallback_gas_fees, get_fallback_mev_potentials
         gas_fee: int = random.choice(get_fallback_gas_fees(100))
         mev_potential: int = random.choice(get_fallback_mev_potentials(100))
         
