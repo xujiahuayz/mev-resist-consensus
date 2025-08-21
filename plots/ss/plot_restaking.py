@@ -16,8 +16,8 @@ sns.set_style("whitegrid")
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 def plot_pos_validators():
-    """Create PoS validator stake evolution plot."""
-    print("Creating PoS validator stake evolution plot...")
+    """Create PoS validator stake plot."""
+    print("Creating PoS validator stake plot...")
     
     # Set random seed for reproducible sampling
     import random
@@ -137,8 +137,8 @@ def plot_pos_validators():
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     
-    # Set plot to start at (0,0)
-    plt.xlim(left=0)
+    # Set plot to start at (0,0) and end at 10000 blocks
+    plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
@@ -146,14 +146,14 @@ def plot_pos_validators():
     plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
     
     plt.tight_layout()
-    plt.savefig(PROJECT_ROOT / 'figures/restake/pos_validator_stake_evolution.png', 
+    plt.savefig(PROJECT_ROOT / 'figures/restake/pos_validator_stake.png', 
                 dpi=300, bbox_inches='tight')
     plt.close()
-    print("Saved: pos_validator_stake_evolution.png")
+    print("Saved: pos_validator_stake.png")
 
 def plot_pbs_builders():
-    """Create PBS builder stake evolution plot."""
-    print("Creating PBS builder stake evolution plot...")
+    """Create PBS builder stake plot."""
+    print("Creating PBS builder stake plot...")
     
     # Set random seed for reproducible sampling
     import random
@@ -292,8 +292,8 @@ def plot_pbs_builders():
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     
-    # Set plot to start at (0,0)
-    plt.xlim(left=0)
+    # Set plot to start at (0,0) and end at 10000 blocks
+    plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
@@ -301,14 +301,14 @@ def plot_pbs_builders():
     plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
     
     plt.tight_layout()
-    plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_builder_stake_evolution.png', 
+    plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_builder_stake.png', 
                 dpi=300, bbox_inches='tight')
     plt.close()
-    print("Saved: pbs_builder_stake_evolution.png")
+    print("Saved: pbs_builder_stake.png")
 
 def plot_pbs_proposers():
-    """Create PBS proposer stake evolution plot."""
-    print("Creating PBS proposer stake evolution plot...")
+    """Create PBS proposer stake plot."""
+    print("Creating PBS proposer stake plot...")
     
     # Set random seed for reproducible sampling
     import random
@@ -390,8 +390,8 @@ def plot_pbs_proposers():
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     
-    # Set plot to start at (0,0)
-    plt.xlim(left=0)
+    # Set plot to start at (0,0) and end at 10000 blocks
+    plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
@@ -399,14 +399,14 @@ def plot_pbs_proposers():
     plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
     
     plt.tight_layout()
-    plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_proposer_stake_evolution.png', 
+    plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_proposer_stake.png', 
                 dpi=300, bbox_inches='tight')
     plt.close()
-    print("Saved: pbs_proposer_stake_evolution.png")
+    print("Saved: pbs_proposer_stake.png")
 
 def main():
     """Generate all three Seaborn-based plots."""
-    print("Generating three separate stake evolution plots...")
+    print("Generating three separate stake plots...")
     
     # Create figures/restake directory
     figures_dir = PROJECT_ROOT / 'figures/restake'
