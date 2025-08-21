@@ -60,7 +60,7 @@ def plot_pos_validators():
     print(f"Missing: {20 - len(all_sampled)} validators due to insufficient data at some stake levels")
     
     # Create the plot
-    plt.figure(figsize=(16, 10))
+    plt.figure(figsize=(18, 12))
     
     # Color palettes: flare for attackers, crest for non-attackers
     attack_colors = sns.color_palette("flare", n_colors=5)
@@ -86,6 +86,7 @@ def plot_pos_validators():
     nonattack_validators_ordered.sort(key=lambda x: x[1], reverse=True)
     
     # Plot attack validators first (high to low stake)
+    attack_labels_added = set()
     for i, (validator_id, initial_stake) in enumerate(attack_validators_ordered):
         validator_data = pos_blocks[pos_blocks['validator_id'] == validator_id]
         
@@ -94,8 +95,9 @@ def plot_pos_validators():
         color = attack_colors[stake_idx]
         
         # Only add label for first occurrence of each stake level
-        if i == 0 or attack_validators_ordered[i-1][1] != initial_stake:
-            label = f"Attack ({initial_stake:.0f} ETH)"
+        if initial_stake not in attack_labels_added:
+            label = f"{initial_stake:.0f} ETH"
+            attack_labels_added.add(initial_stake)
         else:
             label = None
         
@@ -108,6 +110,7 @@ def plot_pos_validators():
                     label=label)
     
     # Then plot non-attack validators (high to low stake)
+    nonattack_labels_added = set()
     for i, (validator_id, initial_stake) in enumerate(nonattack_validators_ordered):
         validator_data = pos_blocks[pos_blocks['validator_id'] == validator_id]
         
@@ -116,8 +119,9 @@ def plot_pos_validators():
         color = nonattack_colors[stake_idx]
         
         # Only add label for first occurrence of each stake level
-        if i == 0 or nonattack_validators_ordered[i-1][1] != initial_stake:
-            label = f"Non-Attack ({initial_stake:.0f} ETH)"
+        if initial_stake not in nonattack_labels_added:
+            label = f"{initial_stake:.0f} ETH"
+            nonattack_labels_added.add(initial_stake)
         else:
             label = None
         
@@ -129,21 +133,72 @@ def plot_pos_validators():
                     alpha=0.8,
                     label=label)
     
-    # Customize the plot with larger fonts
-    plt.xlabel('Block Number', fontsize=24, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=24, fontweight='bold')
+    # Customize the plot with much larger fonts
+    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    # Increase tick label font sizes significantly
+    plt.xticks(fontsize=36)
+    plt.yticks(fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
-    # Position legend within the plot area at top left with larger font
-    plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
+    
+    # Create custom table-like legend with proper alignment (no box)
+    # Get all unique stakes for both categories
+    attack_stakes = sorted(list(attack_labels_added), reverse=True)
+    benign_stakes = sorted(list(nonattack_labels_added), reverse=True)
+    max_stakes = max(len(attack_stakes), len(benign_stakes))
+    
+    # Position for the legend table with precise spacing
+    legend_x = 0.02
+    legend_y = 0.98
+    row_height = 0.05
+    col_width = 0.18
+    line_length = 0.03
+    
+    # Add column headers with consistent font size and perfect alignment
+    plt.text(legend_x, legend_y, r'$\tau_{V_i} = \text{attack}$:', 
+             transform=plt.gca().transAxes, fontsize=32, weight='bold', va='top')
+    plt.text(legend_x + col_width, legend_y, r'$\tau_{V_i} = \text{benign}$:', 
+             transform=plt.gca().transAxes, fontsize=32, weight='bold', va='top')
+    
+    # Add entries in table format with perfect alignment and more spacing from headers
+    for i in range(max_stakes):
+        row_y = legend_y - row_height * (i + 1.8)
+        
+        # Attack column
+        if i < len(attack_stakes):
+            stake = attack_stakes[i]
+            stake_idx = stake_levels.index(int(stake * 1e9))
+            color = attack_colors[stake_idx]
+            # Colored line
+            plt.plot([legend_x, legend_x + line_length], [row_y, row_y], 
+                    color=color, linewidth=4, transform=plt.gca().transAxes)
+            # Text with perfect alignment
+            plt.text(legend_x + line_length + 0.02, row_y, f'{stake:.0f} ETH', 
+                    transform=plt.gca().transAxes, fontsize=32, va='center', ha='left')
+        
+        # Benign column
+        if i < len(benign_stakes):
+            stake = benign_stakes[i]
+            stake_idx = stake_levels.index(int(stake * 1e9))
+            color = nonattack_colors[stake_idx]
+            # Colored line
+            plt.plot([legend_x + col_width, legend_x + col_width + line_length], [row_y, row_y], 
+                    color=color, linewidth=4, transform=plt.gca().transAxes)
+            # Text with perfect alignment
+            plt.text(legend_x + col_width + line_length + 0.02, row_y, f'{stake:.0f} ETH', 
+                    transform=plt.gca().transAxes, fontsize=32, va='center', ha='left')
+    
+    # Remove any automatic legend that might appear
+    try:
+        plt.gca().legend().remove()
+    except:
+        pass
     
     plt.tight_layout()
     plt.savefig(PROJECT_ROOT / 'figures/restake/pos_validator_stake.png', 
@@ -209,7 +264,7 @@ def plot_pbs_builders():
         print(f"{stake_level} ETH: {attack_count} attack, {nonattack_count} non-attack")
     
     # Create the plot
-    plt.figure(figsize=(16, 10))
+    plt.figure(figsize=(18, 12))
     
     # Color palettes: flare for attackers, crest for non-attackers
     attack_colors = sns.color_palette("flare", n_colors=5)
@@ -235,6 +290,7 @@ def plot_pbs_builders():
     nonattack_builders_ordered.sort(key=lambda x: x[1], reverse=True)
     
     # Plot attack builders first (high to low stake)
+    attack_labels_added = set()
     for i, (participant_id, initial_stake) in enumerate(attack_builders_ordered):
         participant_info = participants_df[participants_df['participant_id'] == participant_id].iloc[0]
         continuous_data = continuous_stake_df[continuous_stake_df['participant_id'] == participant_id]
@@ -245,8 +301,9 @@ def plot_pbs_builders():
             color = attack_colors[stake_idx]
             
             # Only add label for first occurrence of each stake level
-            if i == 0 or attack_builders_ordered[i-1][1] != initial_stake:
-                label = f"Attack ({initial_stake:.0f} ETH)"
+            if initial_stake not in attack_labels_added:
+                label = f"{initial_stake:.0f} ETH"
+                attack_labels_added.add(initial_stake)
             else:
                 label = None
             
@@ -260,6 +317,7 @@ def plot_pbs_builders():
                         label=label)
     
     # Then plot non-attack builders (high to low stake)
+    nonattack_labels_added = set()
     for i, (participant_id, initial_stake) in enumerate(nonattack_builders_ordered):
         participant_info = participants_df[participants_df['participant_id'] == participant_id].iloc[0]
         continuous_data = continuous_stake_df[continuous_stake_df['participant_id'] == participant_id]
@@ -270,8 +328,9 @@ def plot_pbs_builders():
             color = nonattack_colors[stake_idx]
             
             # Only add label for first occurrence of each stake level
-            if i == 0 or nonattack_builders_ordered[i-1][1] != initial_stake:
-                label = f"Non-Attack ({initial_stake:.0f} ETH)"
+            if initial_stake not in nonattack_labels_added:
+                label = f"{initial_stake:.0f} ETH"
+                nonattack_labels_added.add(initial_stake)
             else:
                 label = None
             
@@ -284,21 +343,72 @@ def plot_pbs_builders():
                         alpha=0.8,
                         label=label)
     
-    # Customize the plot with larger fonts
-    plt.xlabel('Block Number', fontsize=24, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=24, fontweight='bold')
+    # Customize the plot with much larger fonts
+    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    # Increase tick label font sizes significantly
+    plt.xticks(fontsize=36)
+    plt.yticks(fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
-    # Position legend within the plot area at top left with larger font
-    plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
+    
+    # Create custom table-like legend with proper alignment (no box)
+    # Get all unique stakes for both categories
+    attack_stakes = sorted(list(attack_labels_added), reverse=True)
+    benign_stakes = sorted(list(nonattack_labels_added), reverse=True)
+    max_stakes = max(len(attack_stakes), len(benign_stakes))
+    
+    # Position for the legend table with precise spacing
+    legend_x = 0.02
+    legend_y = 0.98
+    row_height = 0.05
+    col_width = 0.18
+    line_length = 0.03
+    
+    # Add column headers with consistent font size and perfect alignment
+    plt.text(legend_x, legend_y, r'$\tau_{B_i} = \text{attack}$:', 
+             transform=plt.gca().transAxes, fontsize=32, weight='bold', va='top')
+    plt.text(legend_x + col_width, legend_y, r'$\tau_{B_i} = \text{benign}$:', 
+             transform=plt.gca().transAxes, fontsize=32, weight='bold', va='top')
+    
+    # Add entries in table format with perfect alignment and more spacing from headers
+    for i in range(max_stakes):
+        row_y = legend_y - row_height * (i + 1.8)
+        
+        # Attack column
+        if i < len(attack_stakes):
+            stake = attack_stakes[i]
+            stake_idx = stake_levels.index(int(stake))
+            color = attack_colors[stake_idx]
+            # Colored line
+            plt.plot([legend_x, legend_x + line_length], [row_y, row_y], 
+                    color=color, linewidth=4, transform=plt.gca().transAxes)
+            # Text with perfect alignment
+            plt.text(legend_x + line_length + 0.02, row_y, f'{stake:.0f} ETH', 
+                    transform=plt.gca().transAxes, fontsize=32, va='center', ha='left')
+        
+        # Benign column
+        if i < len(benign_stakes):
+            stake = benign_stakes[i]
+            stake_idx = stake_levels.index(int(stake))
+            color = nonattack_colors[stake_idx]
+            # Colored line
+            plt.plot([legend_x + col_width, legend_x + col_width + line_length], [row_y, row_y], 
+                    color=color, linewidth=4, transform=plt.gca().transAxes)
+            # Text with perfect alignment
+            plt.text(legend_x + col_width + line_length + 0.02, row_y, f'{stake:.0f} ETH', 
+                    transform=plt.gca().transAxes, fontsize=32, va='center', ha='left')
+    
+    # Remove any automatic legend that might appear
+    try:
+        plt.gca().legend().remove()
+    except:
+        pass
     
     plt.tight_layout()
     plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_builder_stake.png', 
@@ -351,7 +461,7 @@ def plot_pbs_proposers():
     proposers_ordered.sort(key=lambda x: x[1], reverse=True)
     
     # Create the plot
-    plt.figure(figsize=(16, 10))
+    plt.figure(figsize=(18, 12))
     
     # Color palette: crest for non-attackers (all proposers are non-attack)
     nonattack_colors = sns.color_palette("crest", n_colors=5)
@@ -382,21 +492,22 @@ def plot_pbs_proposers():
                         alpha=0.8,
                         label=label)
     
-    # Customize the plot with larger fonts
-    plt.xlabel('Block Number', fontsize=24, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=24, fontweight='bold')
+    # Customize the plot with much larger fonts
+    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
+    # Increase tick label font sizes significantly
+    plt.xticks(fontsize=36)
+    plt.yticks(fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
     plt.ylim(bottom=0)
     
     plt.grid(True, alpha=0.3)
-    # Position legend within the plot area at top left with larger font
-    plt.legend(loc='upper left', fontsize=18, bbox_to_anchor=(0.02, 0.98))
+    
+    # Position legend within the plot area at top left with much larger font (no box)
+    plt.legend(loc='upper left', fontsize=32, bbox_to_anchor=(0.02, 0.98), frameon=False)
     
     plt.tight_layout()
     plt.savefig(PROJECT_ROOT / 'figures/restake/pbs_proposer_stake.png', 
