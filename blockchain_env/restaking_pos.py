@@ -1,5 +1,3 @@
-"""Corrected PoS simulation with restaking dynamics using proper 32 ETH validator threshold and uniform node selection."""
-
 import random
 import os
 import csv
@@ -12,11 +10,11 @@ from blockchain_env.validator import Validator
 
 BLOCKNUM = 10000
 BLOCK_CAP = 100
-USERNUM = 100  # Increased to 100 users as requested
+USERNUM = 100
 PROPNUM = 50
 
-VALIDATOR_THRESHOLD = 32 * 10**9  # 32 ETH in gwei - CORRECTED
-MIN_VALIDATOR_NODES = 1  # Must have at least 1 node to be a validator
+VALIDATOR_THRESHOLD = 32 * 10**9
+MIN_VALIDATOR_NODES = 1
 TOTAL_NETWORK_STAKE = 1000 * VALIDATOR_THRESHOLD
 REINVESTMENT_PROBABILITY = 0.5
 
@@ -26,16 +24,14 @@ BATCH_SIZE = 500
 random.seed(16)
 
 def initialize_validators_with_stakes():
-    """Initialize validators with proper stake requirements."""
     validator_list = []
     
-    # Validators must have at least 1 node (32 ETH)
     stake_distribution = [
-        (1, 0.45),   # 1 node (32 ETH)
-        (2, 0.25),   # 2 nodes (64 ETH)
-        (3, 0.15),   # 3 nodes (96 ETH)
-        (5, 0.10),   # 5 nodes (160 ETH)
-        (8, 0.05),   # 8 nodes (256 ETH)
+        (1, 0.45),
+        (2, 0.25),
+        (3, 0.15),
+        (5, 0.10),
+        (8, 0.05),
     ]
     
     for i in range(PROPNUM):
@@ -52,17 +48,14 @@ def initialize_validators_with_stakes():
         initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
         is_attacker = i < PROPNUM // 2
         
-        # All validators are restaking
         validator = Validator(f"validator_{i}", is_attacker, initial_stake, restaking_factor=True)
         validator_list.append(validator)
     
     return validator_list
 
 def get_validator_nodes(validators):
-    """Get all validator nodes for uniform selection."""
     nodes = []
     for validator in validators:
-        # Each validator can have multiple validator nodes
         num_nodes = validator.active_stake // VALIDATOR_THRESHOLD
         if num_nodes >= MIN_VALIDATOR_NODES:
             for _ in range(num_nodes):
@@ -70,23 +63,17 @@ def get_validator_nodes(validators):
     return nodes
 
 def update_stake(participant, profit: int):
-    """Update participant stake with restaking - SAME AS PBS."""
     participant.capital += profit
     
-    # Apply reinvestment factor
     reinvested = int(profit * participant.reinvestment_factor)
     extracted = profit - reinvested
-    # participant.capital -= extracted  # ❌ BUG: This was wrong!
-    # The capital should keep the reinvested amount, only extract the non-reinvested portion
-    
-    # Update active stake based on validator nodes
+
     participant.active_stake = VALIDATOR_THRESHOLD * (participant.capital // VALIDATOR_THRESHOLD)
     
     participant.profit_history.append(profit)
     participant.stake_history.append(participant.active_stake)
 
 def transaction_number():
-    """Generate transaction count like in bidding.py."""
     random_number = random.randint(0, 100)
     if random_number < 50:
         return 1
@@ -102,14 +89,12 @@ def process_block_batch(args):
     start_block, end_block = block_range
     
     for block_num in range(start_block, end_block):
-        # Select validator uniformly among validator nodes (not weighted by stake)
         validator_nodes = get_validator_nodes(validators)
         if not validator_nodes:
             continue
             
         selected_validator = random.choice(validator_nodes)
         
-        # Users create multiple transactions over time (like in bidding.py)
         for user in users:
             num_transactions = transaction_number()
             for _ in range(num_transactions):
@@ -118,7 +103,6 @@ def process_block_batch(args):
                     user.broadcast_transactions(tx)
                     selected_validator.mempool.append(tx)
         
-        # Validator selects transactions using MEV strategy (like in bidding.py)
         selected_validator.selected_transactions = selected_validator.select_transactions(block_num)
         
         for position, tx in enumerate(selected_validator.selected_transactions):
@@ -130,10 +114,8 @@ def process_block_batch(args):
         block_reward = total_gas_fee + total_mev
         
         if selected_validator.restaking_factor:
-            # Restaking: use update_stake function - SAME AS PBS
             update_stake(selected_validator, int(block_reward))
         else:
-            # Non-restaking: profit is extracted, but initial stake remains
             pass
         
         block_data = {
@@ -170,28 +152,24 @@ def simulate_restaking_pos():
     
     all_blocks = []
     
-    # Run simulation sequentially to avoid multiprocessing race conditions
     for block_num in range(BLOCKNUM):
         if block_num % 1000 == 0:
             print(f"Processing block {block_num}/{BLOCKNUM}")
         
-        # Select validator uniformly among validator nodes (not weighted by stake)
         validator_nodes = get_validator_nodes(validators)
         if not validator_nodes:
             continue
             
         selected_validator = random.choice(validator_nodes)
         
-        # Users create multiple transactions over time (like in bidding.py) - SAME AS PBS
         for user in users:
-            num_tx = random.randint(1, 5)  # 1-5 transactions per user per block - SAME AS PBS
+            num_tx = random.randint(1, 5)
             for _ in range(num_tx):
                 tx = user.launch_attack(block_num) if user.is_attacker else user.create_transactions(block_num)
                 if tx:
                     user.broadcast_transactions(tx)
                     selected_validator.mempool.append(tx)
         
-        # Validator selects transactions using MEV strategy (like in bidding.py)
         selected_validator.selected_transactions = selected_validator.select_transactions(block_num)
         
         for position, tx in enumerate(selected_validator.selected_transactions):
@@ -203,10 +181,8 @@ def simulate_restaking_pos():
         block_reward = total_gas_fee + total_mev
         
         if selected_validator.restaking_factor:
-            # Restaking: use update_stake function - SAME AS PBS
             update_stake(selected_validator, int(block_reward))
         
-        # Create block data AFTER updating stakes
         block_data = {
             "block_num": block_num,
             "validator_id": selected_validator.id,
@@ -229,17 +205,14 @@ def simulate_restaking_pos():
     print(f"Simulation completed in {end_time - start_time:.2f} seconds")
     print(f"Processed {len(all_blocks)} blocks")
     
-    # Save results like in PBS
     save_results(all_blocks, validators)
     
     return all_blocks
 
 def save_results(block_data, validators):
-    """Save results to CSV files - SAME AS PBS."""
     output_dir = "data/same_seed/restaking_pos/"
     os.makedirs(output_dir, exist_ok=True)
     
-    # Save block data
     if block_data:
         with open(f"{output_dir}restaking_pos_blocks.csv", 'w', newline='') as f:
             fieldnames = block_data[0].keys()
@@ -247,7 +220,6 @@ def save_results(block_data, validators):
             writer.writeheader()
             writer.writerows(block_data)
     
-    # Save stake evolution
     with open(f"{output_dir}stake_evolution.csv", 'w', newline='') as f:
         fieldnames = ['participant_id', 'participant_type', 'is_attacker', 'reinvestment_factor',
                      'initial_stake', 'final_stake', 'total_profit', 'num_validator_nodes']
