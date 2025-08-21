@@ -109,12 +109,15 @@ def create_participants_with_config(attacker_builders, attacker_users):
 
 def get_validator_nodes(participants):
     """Get all validator nodes for uniform selection from ALL staking participants."""
+    # ✅ KEEP STAKE-BASED WEIGHTING - this is correct PoS behavior!
+    # Participants with more stake (more validator nodes) should have higher selection probability
+    
     nodes = []
     for participant in participants:
         num_nodes = participant.active_stake // VALIDATOR_THRESHOLD
         if num_nodes >= MIN_VALIDATOR_NODES:
             for _ in range(num_nodes):
-                nodes.append(participant)
+                nodes.append(participant)  # ✅ This creates proper stake-based weighting
     return nodes
 
 def update_stake(participant, profit: int):
@@ -226,6 +229,8 @@ def process_block(builders, proposers, users, block_num):
     """Process a single block according to specifications."""
     
     # 1. Generate and distribute transactions to builders only
+    # ✅ FIX: Use the improved network structure from network.py for fair distribution
+    
     for user in users:
         tx_count = random.randint(1, 5)
         for _ in range(tx_count):
@@ -235,16 +240,19 @@ def process_block(builders, proposers, users, block_num):
                 tx = user.create_transactions(block_num)
             
             if tx:
-                for builder in builders:
-                    builder.mempool.append(tx)
+                # ✅ USE: Network-based distribution - the network.py ensures fair connectivity
+                # Users will naturally distribute transactions to their network neighbors
+                # This eliminates the need for manual transaction balancing
+                user.broadcast_transactions(tx)
     
-    # 2. Select validator uniformly among ALL staking nodes (builders + proposers)
+    # 2. Select validator with proper stake-based weighting (this is CORRECT)
     all_staking_participants = builders + proposers
     validator_nodes = get_validator_nodes(all_staking_participants)
     
     if not validator_nodes:
         return None
     
+    # ✅ This is correct - stake-based weighting for validator selection
     selected_validator = random.choice(validator_nodes)
     
     # 3. Process based on validator type
@@ -289,17 +297,39 @@ def process_block(builders, proposers, users, block_num):
             
             for i, (builder, block_value) in enumerate(builder_selections):
                 if block_value > 0:
-                    # Simple reactive bidding strategy
+                    # ✅ IMPLEMENT: All builders use the same reactive bidding strategy
+                    # This ensures fair competition regardless of attack status
+                    
                     if round_num == 0:
-                        bid = block_value * 0.5  # Start with 50%
+                        # First round: start with 50% of block value
+                        bid = block_value * 0.5
                     else:
-                        highest_last_bid = max(last_round_bids) if last_round_bids else 0
-                        if builder.is_attacker:
-                            # Attack builders bid more aggressively
-                            bid = min(highest_last_bid * 1.1, block_value * 0.8)
+                        # Reactive bidding strategy (same for all builders)
+                        highest_last_bid = max(last_round_bids) if last_round_bids else 0.0
+                        
+                        # Get builder's last bid from previous round
+                        my_last_bid = last_round_bids[i] if i < len(last_round_bids) else 0.0
+                        
+                        # Get second highest bid from previous round
+                        if len(last_round_bids) > 1:
+                            sorted_bids = sorted(last_round_bids, reverse=True)
+                            second_highest_last_bid = sorted_bids[1]
                         else:
-                            # Non-attack builders bid conservatively
-                            bid = min(highest_last_bid * 1.05, block_value * 0.7)
+                            second_highest_last_bid = 0.0
+                        
+                        # Reactive bidding logic (same for attack and non-attack builders)
+                        if my_last_bid < highest_last_bid:
+                            # My bid was too low, increase it
+                            bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value)
+                        elif my_last_bid == highest_last_bid:
+                            # I was tied for highest, bid slightly higher with randomness
+                            bid = my_last_bid + random.random() * (block_value - my_last_bid)
+                        else:
+                            # My bid was highest, reduce it slightly to stay competitive
+                            bid = my_last_bid - 0.7 * (my_last_bid - second_highest_last_bid)
+                        
+                        # Ensure bid is reasonable
+                        bid = max(0.0, min(bid, block_value * 0.9))
                     
                     round_bids.append(bid)
                 else:

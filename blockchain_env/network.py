@@ -144,39 +144,40 @@ def build_network(user_list: List[Node], builder_list: List[Node], proposer_list
     
     nodes: List[Node] = user_list + builder_list + proposer_list
     n_nodes = len(nodes)
-    graph = nx.erdos_renyi_graph(n_nodes, p, seed=16)
+    # graph = nx.erdos_renyi_graph(n_nodes, p, seed=16)
+    
+    # Simple approach: use higher probability for better connectivity
+    graph = nx.erdos_renyi_graph(n_nodes, p=0.15, seed=16)
+    
+    # Ensure graph is connected
+    if not nx.is_connected(graph):
+        components = list(nx.connected_components(graph))
+        while len(components) > 1:
+            comp1, comp2 = components[0], components[1]
+            node1 = list(comp1)[0]
+            node2 = list(comp2)[0]
+            graph.add_edge(node1, node2)
+            components = list(nx.connected_components(graph))
+    
+    # Map node indices to actual node IDs
     mapping = {i: nodes[i].id for i in range(n_nodes)}
     graph = nx.relabel_nodes(graph, mapping)
+    
+    # Add node objects and set network properties
     for node in nodes:
         graph.nodes[node.id]['node'] = node
+    
+    # Add edge weights (latency)
     for u, v in graph.edges():
-        latency = float(np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0))
+        # latency = float(np.clip(np.random.normal(1.0, 1.0), 0.1, 3.0))
+        latency = float(np.clip(np.random.normal(1.0, 0.5), 0.5, 2.0))
         graph[u][v]['weight'] = latency
+    
+    # Set network for each node
     for node in nodes:
         node.set_network(graph)
-    return graph
-
-def visualize_network(network: nx.Graph) -> None:
-    """Visualize the network structure with different node types."""
-    if not plt or not nx:
-        print("Warning: matplotlib and networkx are required for visualization")
-        return
     
-    plt.figure(figsize=(12, 8))
-    pos = nx.spring_layout(network)
-    user_nodes = [n for n in network.nodes() if 'user' in str(n)]
-    builder_nodes = [n for n in network.nodes() if 'builder' in str(n)]
-    proposer_nodes = [n for n in network.nodes() if 'proposer' in str(n)]
-    nx.draw_networkx_nodes(network, pos, nodelist=user_nodes, node_color='lightblue', node_size=500, label='Users')
-    nx.draw_networkx_nodes(network, pos, nodelist=builder_nodes, node_color='lightgreen', node_size=500, label='Builders')
-    nx.draw_networkx_nodes(network, pos, nodelist=proposer_nodes, node_color='pink', node_size=500, label='Proposers')
-    edge_widths = [1/network[u][v]['weight'] for u,v in network.edges()]
-    nx.draw_networkx_edges(network, pos, width=edge_widths, alpha=0.5)
-    nx.draw_networkx_labels(network, pos)
-    plt.title("Network Visualization with Latency-Based Edge Widths")
-    plt.legend()
-    plt.axis('off')
-    plt.show()
+    return graph
 
 if __name__ == "__main__":
     if not nx or not np or not plt:
@@ -192,18 +193,11 @@ if __name__ == "__main__":
         test_builders = [TestNode(f"builder_{i}") for i in range(20)]
         test_proposers = [TestNode(f"proposer_{i}") for i in range(20)]
 
-        # Build and visualize network with p=0.05
         test_graph = build_network(test_users, test_builders, test_proposers, p=0.05)
-
-        # Print network statistics
-        print("\nNetwork Statistics:")
-        print(f"Number of nodes: {test_graph.number_of_nodes()}")
-        print(f"Number of edges: {test_graph.number_of_edges()}")
-        print("\nDegree distribution:")
-        degrees = [test_graph.degree(node) for node in test_graph.nodes()]
-        print(f"Average degree: {sum(degrees)/len(degrees):.2f}")
-        print(f"Minimum degree: {min(degrees)}")
-        print(f"Maximum degree: {max(degrees)}")
-        print("\nSample node degrees:")
-        for test_node in list(test_graph.nodes())[:10]:  # Show first 10 nodes
-            print(f"{test_node}: degree {test_graph.degree(test_node)}")
+        
+        # Print basic stats
+        print(f"Network built successfully:")
+        print(f"  Nodes: {test_graph.number_of_nodes()}")
+        print(f"  Edges: {test_graph.number_of_edges()}")
+        print(f"  Connected: {nx.is_connected(test_graph)}")
+        print(f"  Density: {nx.density(test_graph):.4f}")
