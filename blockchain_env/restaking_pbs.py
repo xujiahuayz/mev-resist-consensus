@@ -358,7 +358,7 @@ def process_block(builders, proposers, users, block_num):
 
 def save_block_data(block_data_list, attacker_builders, attacker_users):
     """Save block data to CSV."""
-    filename = f"data/restaking_pbs/pbs_restaking_blocks_builders{attacker_builders}_users{attacker_users}.csv"
+    filename = f"data/same_seed/restaking_pbs/pbs_restaking_blocks_builders{attacker_builders}_users{attacker_users}.csv"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     
     with open(filename, 'w', newline='', encoding='utf-8') as f:
@@ -371,7 +371,7 @@ def save_block_data(block_data_list, attacker_builders, attacker_users):
 
 def save_participant_evolution(builders, proposers, attacker_builders, attacker_users):
     """Save participant evolution data."""
-    filename = f"data/restaking_pbs/pbs_restaking_participants_builders{attacker_builders}_users{attacker_users}.csv"
+    filename = f"data/same_seed/restaking_pbs/pbs_restaking_participants_builders{attacker_builders}_users{attacker_users}.csv"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     
     with open(filename, 'w', newline='', encoding='utf-8') as f:
@@ -403,7 +403,7 @@ def save_participant_evolution(builders, proposers, attacker_builders, attacker_
             writer.writerow({
                 'participant_id': proposer.id,
                 'participant_type': 'proposer',
-                'is_attacker': False,
+                'is_attacker': False,  # Proposers are never attackers
                 'initial_stake_eth': proposer.initial_stake / 1e9,
                 'final_stake_eth': proposer.active_stake / 1e9,
                 'final_capital_eth': proposer.capital / 1e9,
@@ -414,8 +414,8 @@ def save_participant_evolution(builders, proposers, attacker_builders, attacker_
             })
 
 def save_metrics_evolution(metrics_history, attacker_builders, attacker_users):
-    """Save centralization metrics evolution."""
-    filename = f"data/restaking_pbs/pbs_restaking_metrics_builders{attacker_builders}_users{attacker_users}.csv"
+    """Save metrics evolution data."""
+    filename = f"data/same_seed/restaking_pbs/pbs_restaking_metrics_builders{attacker_builders}_users{attacker_users}.csv"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     
     with open(filename, 'w', newline='', encoding='utf-8') as f:
@@ -426,6 +426,36 @@ def save_metrics_evolution(metrics_history, attacker_builders, attacker_users):
             row = {'block_num': block_num}
             row.update(metrics)
             writer.writerow(row)
+
+def record_continuous_stake_data(builders, proposers, block_num, continuous_stake_data):
+    """Record stake data for every participant at every block for continuous plotting."""
+    all_participants = builders + proposers
+    
+    for participant in all_participants:
+        # Record stake data for this participant at this block
+        participant_block_data = {
+            'block_num': block_num,
+            'participant_id': participant.id,
+            'participant_type': 'builder' if participant in builders else 'proposer',
+            'is_attacker': getattr(participant, 'is_attacker', False),  # False for proposers
+            'current_stake': participant.active_stake,
+            'current_capital': participant.capital,
+            'current_nodes': participant.active_stake // VALIDATOR_THRESHOLD
+        }
+        continuous_stake_data.append(participant_block_data)
+
+def save_continuous_stake_data(continuous_stake_data, attacker_builders, attacker_users):
+    """Save continuous stake data for every participant at every block."""
+    filename = f"data/same_seed/restaking_pbs/pbs_restaking_continuous_stake_builders{attacker_builders}_users{attacker_users}.csv"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    
+    with open(filename, 'w', newline='', encoding='utf-8') as f:
+        fieldnames = ['block_num', 'participant_id', 'participant_type', 'is_attacker', 
+                     'current_stake', 'current_capital', 'current_nodes']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for stake_data in continuous_stake_data:
+            writer.writerow(stake_data)
 
 def run_pbs_restaking_simulation(attacker_builders, attacker_users):
     """Run the complete PBS restaking simulation."""
@@ -441,6 +471,7 @@ def run_pbs_restaking_simulation(attacker_builders, attacker_users):
     
     # Initialize tracking
     block_data_list = []
+    continuous_stake_data = []  # New: for continuous stake recording
     metrics_history = []
     
     start_time = time.time()
@@ -461,14 +492,18 @@ def run_pbs_restaking_simulation(attacker_builders, attacker_users):
             }
             metrics_history.append(metrics)
         
+        # NEW: Record continuous stake data for every participant at every block
+        record_continuous_stake_data(builders, proposers, block_num, continuous_stake_data)
+        
         # Progress update
         if block_num % 100 == 0:
             print(f"Processed block {block_num}/{BLOCKNUM}")
     
     end_time = time.time()
     
-    # Save all data
+    # Save all data to data/same_seed/restaking_pbs/ folder
     save_block_data(block_data_list, attacker_builders, attacker_users)
+    save_continuous_stake_data(continuous_stake_data, attacker_builders, attacker_users)  # New
     save_participant_evolution(builders, proposers, attacker_builders, attacker_users)
     save_metrics_evolution(metrics_history, attacker_builders, attacker_users)
     
