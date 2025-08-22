@@ -130,8 +130,8 @@ def plot_pos_validators():
                     label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42)
+    plt.ylabel('Stake (ETH)', fontsize=42)
     
     # Set x-axis ticks in thousands
     x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
@@ -357,16 +357,16 @@ def plot_pbs_builders():
                         label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42)
+    plt.ylabel('Stake (ETH)', fontsize=42)
     
     # Set x-axis ticks in thousands
     x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
     x_labels = ['0', '2', '4', '6', '8', '10']
     plt.xticks(x_ticks, x_labels, fontsize=36)
     
-    # Set y-axis to stop at 1000 ETH for PBS builders with 200 ETH intervals
-    y_max = 1000
+    # Set y-axis to stop at 800 ETH for PBS builders with 200 ETH intervals
+    y_max = 800
     
     # Set explicit y-axis ticks with consistent formatting (every 200 ETH)
     y_ticks = list(range(0, y_max + 1, 200))
@@ -512,8 +512,8 @@ def plot_pbs_proposers():
                         label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
-    plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42)
+    plt.ylabel('Stake (ETH)', fontsize=42)
     
     # Set x-axis ticks in thousands
     x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
