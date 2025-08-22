@@ -37,27 +37,23 @@ def plot_pos_validators():
     for stake_level in stake_levels:
         # Sample attack validators at this stake level
         attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == True) & (stake_evolution['initial_stake'] == stake_level)]
-        if len(attack_at_stake) >= 2:
-            sampled_attack = attack_at_stake.sample(2, random_state=16)['participant_id'].tolist()
+        if len(attack_at_stake) >= 1:
+            sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
-        elif len(attack_at_stake) == 1:
-            all_sampled.extend(attack_at_stake['participant_id'].tolist())
         else:
             print(f"Warning: No attack validators at {stake_level/1e9} ETH stake level")
         
         # Sample non-attack validators at this stake level
         nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == False) & (stake_evolution['initial_stake'] == stake_level)]
-        if len(nonattack_at_stake) >= 2:
-            sampled_nonattack = nonattack_at_stake.sample(2, random_state=16)['participant_id'].tolist()
+        if len(nonattack_at_stake) >= 1:
+            sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
-        elif len(nonattack_at_stake) == 1:
-            all_sampled.extend(nonattack_at_stake['participant_id'].tolist())
         else:
             print(f"Warning: No non-attack validators at {stake_level/1e9} ETH stake level")
     
     print(f"Total validators sampled: {len(all_sampled)}")
-    print(f"Expected: 20 (5 levels × 2 attack × 2 non-attack)")
-    print(f"Missing: {20 - len(all_sampled)} validators due to insufficient data at some stake levels")
+    print(f"Expected: 10 (5 levels × 1 attack × 1 non-attack)")
+    print(f"Missing: {10 - len(all_sampled)} validators due to insufficient data at some stake levels")
     
     # Create the plot
     plt.figure(figsize=(18, 12))
@@ -151,11 +147,11 @@ def plot_pos_validators():
             max_val = validator_data['validator_capital'].max() / 1e9
             max_stake = max(max_stake, max_val)
     
-    # Set y-axis to stop at 1400 ETH for PoS
-    y_max = 1400
+    # Set y-axis to stop at 600 ETH for PoS
+    y_max = 600
     
-    # Set explicit y-axis ticks with consistent formatting (every 200 ETH)
-    y_ticks = list(range(0, y_max + 1, 200))
+    # Set explicit y-axis ticks with consistent formatting (every 100 ETH)
+    y_ticks = list(range(0, y_max + 1, 100))
     plt.yticks(y_ticks, fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
@@ -241,24 +237,24 @@ def plot_pbs_builders():
     # Define the 5 initial stake levels (in ETH) - same as PoS
     stake_levels = [32, 64, 96, 160, 256]  # 1, 2, 3, 5, 8 nodes respectively
     
-    # Sample 2 builders from each stake level for both attack and non-attack
+    # Sample 1 builder from each stake level for both attack and non-attack
     all_sampled = []
     
     for stake_level in stake_levels:
-        # Sample 2 attack builders at this stake level
+        # Sample 1 attack builder at this stake level
         attack_at_stake = builders[(builders['is_attacker'] == True) & (builders['initial_stake_eth'] == stake_level)]
-        if len(attack_at_stake) >= 2:
-            sampled_attack = attack_at_stake.sample(2, random_state=16)['participant_id'].tolist()
+        if len(attack_at_stake) >= 1:
+            sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
         elif len(attack_at_stake) == 1:
             all_sampled.extend(attack_at_stake['participant_id'].tolist())
         else:
             print(f"Warning: No attack builders at {stake_level} ETH stake level")
         
-        # Sample 2 non-attack builders at this stake level
+        # Sample 1 non-attack builder at this stake level
         nonattack_at_stake = builders[(builders['is_attacker'] == False) & (builders['initial_stake_eth'] == stake_level)]
-        if len(nonattack_at_stake) >= 2:
-            sampled_nonattack = nonattack_at_stake.sample(2, random_state=16)['participant_id'].tolist()
+        if len(nonattack_at_stake) >= 1:
+            sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
         elif len(nonattack_at_stake) == 1:
             all_sampled.extend(nonattack_at_stake['participant_id'].tolist())
@@ -266,8 +262,8 @@ def plot_pbs_builders():
             print(f"Warning: No non-attack builders at {stake_level} ETH stake level")
     
     print(f"Total builders sampled: {len(all_sampled)}")
-    print(f"Expected: 20 (5 levels × 2 attack × 2 non-attack)")
-    print(f"Missing: {20 - len(all_sampled)} builders due to insufficient data at some stake levels")
+    print(f"Expected: 10 (5 levels × 1 attack × 1 non-attack)")
+    print(f"Missing: {10 - len(all_sampled)} builders due to insufficient data at some stake levels")
     
     # Debug: Check what was sampled
     print("\nSampled builders by stake level:")
@@ -464,17 +460,15 @@ def plot_pbs_proposers():
     
     for stake_level in stake_levels:
         proposers_at_stake = proposers[proposers['initial_stake_eth'] == stake_level]
-        if len(proposers_at_stake) >= 2:
-            sampled_proposers = proposers_at_stake.sample(2, random_state=16)['participant_id'].tolist()
+        if len(proposers_at_stake) >= 1:
+            sampled_proposers = proposers_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_proposers)
-        elif len(proposers_at_stake) == 1:
-            all_sampled.extend(proposers_at_stake['participant_id'].tolist())
         else:
             print(f"Warning: No proposers at {stake_level} ETH stake level")
     
     print(f"Total proposers sampled: {len(all_sampled)}")
-    print(f"Expected: 10 (5 levels × 2 proposers)")
-    print(f"Missing: {10 - len(all_sampled)} proposers due to insufficient data at some stake levels")
+    print(f"Expected: 5 (5 levels × 1 proposer)")
+    print(f"Missing: {5 - len(all_sampled)} proposers due to insufficient data at some stake levels")
     
     # Sort proposers by stake level (high to low)
     proposers_ordered = []

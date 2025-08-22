@@ -11,7 +11,7 @@ from validator import Validator
 BLOCKNUM = 10000
 BLOCK_CAP = 100
 USERNUM = 100
-PROPNUM = 50
+PROPNUM = 100  # Back to 100 to match PBS total nodes
 
 VALIDATOR_THRESHOLD = 32 * 10**9
 MIN_VALIDATOR_NODES = 1
@@ -27,11 +27,12 @@ def initialize_validators_with_stakes():
     validator_list = []
     
     # Define specific stake levels with guaranteed attack/benign distribution
+    # Match PBS builder distribution exactly: 2 of each for 8, 4 of each for 5, 6 of each for 3, 10 of each for 2, rest for 1
     stake_levels = [
-        (8, 1, 1),  # 8 ETH: 1 attack, 1 benign
-        (5, 1, 1),  # 5 ETH: 1 attack, 1 benign  
-        (3, 1, 1),  # 3 ETH: 1 attack, 1 benign
-        (2, 1, 1),  # 2 ETH: 1 attack, 1 benign
+        (8, 2, 2),   # 8 ETH: 2 attack, 2 benign
+        (5, 4, 4),   # 5 ETH: 4 attack, 4 benign  
+        (3, 6, 6),   # 3 ETH: 6 attack, 6 benign
+        (2, 10, 10), # 2 ETH: 10 attack, 10 benign
     ]
     
     validator_count = 0
