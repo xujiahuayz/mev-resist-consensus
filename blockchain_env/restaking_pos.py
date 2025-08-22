@@ -5,8 +5,8 @@ import time
 import multiprocessing as mp
 import numpy as np
 
-from blockchain_env.user import User
-from blockchain_env.validator import Validator
+from user import User
+from validator import Validator
 
 BLOCKNUM = 10000
 BLOCK_CAP = 100
@@ -26,30 +26,61 @@ random.seed(16)
 def initialize_validators_with_stakes():
     validator_list = []
     
-    stake_distribution = [
-        (1, 0.45),
-        (2, 0.25),
-        (3, 0.15),
-        (5, 0.10),
-        (8, 0.05),
+    # Define specific stake levels with guaranteed attack/benign distribution
+    stake_levels = [
+        (8, 1, 1),  # 8 ETH: 1 attack, 1 benign
+        (5, 1, 1),  # 5 ETH: 1 attack, 1 benign  
+        (3, 1, 1),  # 3 ETH: 1 attack, 1 benign
+        (2, 1, 1),  # 2 ETH: 1 attack, 1 benign
     ]
     
-    for i in range(PROPNUM):
-        rand_val = random.random()
-        cumulative_prob = 0
-        selected_stake_multiplier = 1
+    validator_count = 0
+    attack_count = 0
+    benign_count = 0
+    
+    # Create validators with specific stake levels first
+    for stake_multiplier, num_attack, num_benign in stake_levels:
+        initial_stake = VALIDATOR_THRESHOLD * stake_multiplier
         
-        for stake_multiplier, probability in stake_distribution:
-            cumulative_prob += probability
-            if rand_val <= cumulative_prob:
-                selected_stake_multiplier = stake_multiplier
+        # Create attack validators for this stake level
+        for _ in range(num_attack):
+            if validator_count >= PROPNUM:
                 break
+            validator = Validator(f"validator_{validator_count}", True, initial_stake, restaking_factor=True)
+            validator_list.append(validator)
+            validator_count += 1
+            attack_count += 1
         
-        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
-        is_attacker = i < PROPNUM // 2
-        
-        validator = Validator(f"validator_{i}", is_attacker, initial_stake, restaking_factor=True)
+        # Create benign validators for this stake level
+        for _ in range(num_benign):
+            if validator_count >= PROPNUM:
+                break
+            validator = Validator(f"validator_{validator_count}", False, initial_stake, restaking_factor=True)
+            validator_list.append(validator)
+            validator_count += 1
+            benign_count += 1
+    
+    # Fill remaining validator slots with 1 ETH stake validators
+    # Ensure we maintain the requested attack/benign ratio for remaining slots
+    remaining_slots = PROPNUM - validator_count
+    remaining_attack_needed = PROPNUM // 2 - attack_count
+    remaining_benign_needed = (PROPNUM - PROPNUM // 2) - benign_count
+    
+    # Create remaining attack validators with 1 ETH stake
+    for _ in range(min(remaining_attack_needed, remaining_slots)):
+        if validator_count >= PROPNUM:
+            break
+        validator = Validator(f"validator_{validator_count}", True, VALIDATOR_THRESHOLD, restaking_factor=True)
         validator_list.append(validator)
+        validator_count += 1
+    
+    # Create remaining benign validators with 1 ETH stake
+    for _ in range(min(remaining_benign_needed, PROPNUM - validator_count)):
+        if validator_count >= PROPNUM:
+            break
+        validator = Validator(f"validator_{validator_count}", False, VALIDATOR_THRESHOLD, restaking_factor=True)
+        validator_list.append(validator)
+        validator_count += 1
     
     return validator_list
 

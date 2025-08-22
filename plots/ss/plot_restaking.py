@@ -134,16 +134,33 @@ def plot_pos_validators():
                     label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
     plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes significantly
-    plt.xticks(fontsize=36)
-    plt.yticks(fontsize=36)
+    # Set x-axis ticks in thousands
+    x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
+    x_labels = ['0', '2', '4', '6', '8', '10']
+    plt.xticks(x_ticks, x_labels, fontsize=36)
+    
+    # Get the actual data range to set appropriate y-axis limits
+    # Find the maximum value across all plotted data
+    max_stake = 0
+    for validator_id in all_sampled:
+        validator_data = pos_blocks[pos_blocks['validator_id'] == validator_id]
+        if len(validator_data) > 0:
+            max_val = validator_data['validator_capital'].max() / 1e9
+            max_stake = max(max_stake, max_val)
+    
+    # Set y-axis to stop at 1400 ETH for PoS
+    y_max = 1400
+    
+    # Set explicit y-axis ticks with consistent formatting (every 200 ETH)
+    y_ticks = list(range(0, y_max + 1, 200))
+    plt.yticks(y_ticks, fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=0, top=y_max)
     
     plt.grid(True, alpha=0.3)
     
@@ -344,16 +361,24 @@ def plot_pbs_builders():
                         label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
     plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes significantly
-    plt.xticks(fontsize=36)
-    plt.yticks(fontsize=36)
+    # Set x-axis ticks in thousands
+    x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
+    x_labels = ['0', '2', '4', '6', '8', '10']
+    plt.xticks(x_ticks, x_labels, fontsize=36)
+    
+    # Set y-axis to stop at 1000 ETH for PBS builders with 200 ETH intervals
+    y_max = 1000
+    
+    # Set explicit y-axis ticks with consistent formatting (every 200 ETH)
+    y_ticks = list(range(0, y_max + 1, 200))
+    plt.yticks(y_ticks, fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=0, top=y_max)
     
     plt.grid(True, alpha=0.3)
     
@@ -493,16 +518,33 @@ def plot_pbs_proposers():
                         label=label)
     
     # Customize the plot with much larger fonts
-    plt.xlabel('Block Number', fontsize=42, fontweight='bold')
+    plt.xlabel('Block Number (thousands)', fontsize=42, fontweight='bold')
     plt.ylabel('Stake (ETH)', fontsize=42, fontweight='bold')
     
-    # Increase tick label font sizes significantly
-    plt.xticks(fontsize=36)
-    plt.yticks(fontsize=36)
+    # Set x-axis ticks in thousands
+    x_ticks = [0, 2000, 4000, 6000, 8000, 10000]
+    x_labels = ['0', '2', '4', '6', '8', '10']
+    plt.xticks(x_ticks, x_labels, fontsize=36)
+    
+    # Get the actual data range to set appropriate y-axis limits
+    # Find the maximum value across all plotted data
+    max_stake = 0
+    for participant_id in all_sampled:
+        continuous_data = continuous_stake_df[continuous_stake_df['participant_id'] == participant_id]
+        if len(continuous_data) > 0:
+            max_val = continuous_data['current_capital'].max() / 1e9
+            max_stake = max(max_stake, max_val)
+    
+    # Round up to the nearest 100 and add some padding
+    y_max = int((max_stake + 99) // 100) * 100 + 100
+    
+    # Set explicit y-axis ticks with consistent formatting
+    y_ticks = list(range(0, y_max + 1, 100))
+    plt.yticks(y_ticks, fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
     plt.xlim(left=0, right=10000)
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=0, top=y_max)
     
     plt.grid(True, alpha=0.3)
     

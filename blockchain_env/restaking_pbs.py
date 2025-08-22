@@ -24,34 +24,75 @@ random.seed(16)
 
 def create_participants_with_config(attacker_builders, attacker_users):
     builders = []
-    for i in range(BUILDERNUM):
-        is_attacker = i < attacker_builders
+    
+    # Define specific stake levels with guaranteed attack/benign distribution
+    stake_levels = [
+        (8, 1, 1),  # 8 ETH: 1 attack, 1 benign
+        (5, 1, 1),  # 5 ETH: 1 attack, 1 benign  
+        (3, 1, 1),  # 3 ETH: 1 attack, 1 benign
+        (2, 1, 1),  # 2 ETH: 1 attack, 1 benign
+    ]
+    
+    builder_count = 0
+    attack_count = 0
+    benign_count = 0
+    
+    # Create builders with specific stake levels first
+    for stake_multiplier, num_attack, num_benign in stake_levels:
+        initial_stake = VALIDATOR_THRESHOLD * stake_multiplier
         
-        stake_distribution = [
-            (1, 0.45),
-            (2, 0.25),
-            (3, 0.15),
-            (5, 0.10),
-            (8, 0.05),
-        ]
-        
-        rand_val = random.random()
-        cumulative_prob = 0
-        selected_stake_multiplier = 1
-        
-        for stake_multiplier, probability in stake_distribution:
-            cumulative_prob += probability
-            if rand_val <= cumulative_prob:
-                selected_stake_multiplier = stake_multiplier
+        # Create attack builders for this stake level
+        for _ in range(num_attack):
+            if builder_count >= BUILDERNUM:
                 break
+            builder = Builder(f"builder_{builder_count}", True)  # is_attacker = True
+            builder.capital = initial_stake
+            builder.active_stake = initial_stake
+            builder.initial_stake = initial_stake
+            builder.reinvestment_factor = 1.0
+            builder.profit_history = []
+            builder.stake_history = [builder.capital]
+            builder.strategy = "reactive" if random.random() < 0.7 else "late_enter"
+            builder.bid_history = []
+            builder.mempool = []
+            builder.selected_transactions = []
+            builders.append(builder)
+            builder_count += 1
+            attack_count += 1
         
-        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
-        
-        builder = Builder(f"builder_{i}", is_attacker)
-        
-        builder.capital = initial_stake
-        builder.active_stake = initial_stake
-        builder.initial_stake = initial_stake
+        # Create benign builders for this stake level
+        for _ in range(num_benign):
+            if builder_count >= BUILDERNUM:
+                break
+            builder = Builder(f"builder_{builder_count}", False)  # is_attacker = False
+            builder.capital = initial_stake
+            builder.active_stake = initial_stake
+            builder.initial_stake = initial_stake
+            builder.reinvestment_factor = 1.0
+            builder.profit_history = []
+            builder.stake_history = [builder.capital]
+            builder.strategy = "reactive" if random.random() < 0.7 else "late_enter"
+            builder.bid_history = []
+            builder.mempool = []
+            builder.selected_transactions = []
+            builders.append(builder)
+            builder_count += 1
+            benign_count += 1
+    
+    # Fill remaining builder slots with 1 ETH stake builders
+    # Ensure we maintain the requested attack/benign ratio for remaining slots
+    remaining_slots = BUILDERNUM - builder_count
+    remaining_attack_needed = attacker_builders - attack_count
+    remaining_benign_needed = (BUILDERNUM - attacker_builders) - benign_count
+    
+    # Create remaining attack builders with 1 ETH stake
+    for _ in range(min(remaining_attack_needed, remaining_slots)):
+        if builder_count >= BUILDERNUM:
+            break
+        builder = Builder(f"builder_{builder_count}", True)
+        builder.capital = VALIDATOR_THRESHOLD  # 1 ETH
+        builder.active_stake = VALIDATOR_THRESHOLD
+        builder.initial_stake = VALIDATOR_THRESHOLD
         builder.reinvestment_factor = 1.0
         builder.profit_history = []
         builder.stake_history = [builder.capital]
@@ -59,33 +100,61 @@ def create_participants_with_config(attacker_builders, attacker_users):
         builder.bid_history = []
         builder.mempool = []
         builder.selected_transactions = []
-        
         builders.append(builder)
+        builder_count += 1
+    
+    # Create remaining benign builders with 1 ETH stake
+    for _ in range(min(remaining_benign_needed, BUILDERNUM - builder_count)):
+        if builder_count >= BUILDERNUM:
+            break
+        builder = Builder(f"builder_{builder_count}", False)
+        builder.capital = VALIDATOR_THRESHOLD  # 1 ETH
+        builder.active_stake = VALIDATOR_THRESHOLD
+        builder.initial_stake = VALIDATOR_THRESHOLD
+        builder.reinvestment_factor = 1.0
+        builder.profit_history = []
+        builder.stake_history = [builder.capital]
+        builder.strategy = "reactive" if random.random() < 0.7 else "late_enter"
+        builder.bid_history = []
+        builder.mempool = []
+        builder.selected_transactions = []
+        builders.append(builder)
+        builder_count += 1
     
     proposers = []
-    for i in range(PROPOSERNUM):
-        proposer = Proposer(f"proposer_{i}")
+    
+    # Define proposer stake levels (no attack/benign distinction)
+    proposer_stake_levels = [8, 5, 3, 2]  # ETH values
+    
+    proposer_count = 0
+    
+    # Create proposers with specific stake levels first
+    for stake_multiplier in proposer_stake_levels:
+        if proposer_count >= PROPOSERNUM:
+            break
+        initial_stake = VALIDATOR_THRESHOLD * stake_multiplier
         
-        rand_val = random.random()
-        cumulative_prob = 0
-        selected_stake_multiplier = 1
-        
-        for stake_multiplier, probability in stake_distribution:
-            cumulative_prob += probability
-            if rand_val <= cumulative_prob:
-                selected_stake_multiplier = stake_multiplier
-                break
-        
-        initial_stake = VALIDATOR_THRESHOLD * selected_stake_multiplier
-        
+        proposer = Proposer(f"proposer_{proposer_count}")
         proposer.capital = initial_stake
         proposer.active_stake = initial_stake
         proposer.initial_stake = initial_stake
         proposer.reinvestment_factor = 1.0
         proposer.profit_history = []
         proposer.stake_history = [proposer.capital]
-        
         proposers.append(proposer)
+        proposer_count += 1
+    
+    # Fill remaining proposer slots with 1 ETH stake
+    for _ in range(PROPOSERNUM - proposer_count):
+        proposer = Proposer(f"proposer_{proposer_count}")
+        proposer.capital = VALIDATOR_THRESHOLD  # 1 ETH
+        proposer.active_stake = VALIDATOR_THRESHOLD
+        proposer.initial_stake = VALIDATOR_THRESHOLD
+        proposer.reinvestment_factor = 1.0
+        proposer.profit_history = []
+        proposer.stake_history = [proposer.capital]
+        proposers.append(proposer)
+        proposer_count += 1
     
     users = []
     for i in range(USERNUM):
@@ -192,6 +261,7 @@ def clear_mempool_efficiently(builder, included_tx_ids: Set[int]):
         builder.mempool = list(builder.mempool)[-5000:]
 
 def process_block(builders, proposers, users, block_num):
+    # First, create transactions and add them to ALL builders' mempools
     for user in users:
         tx_count = random.randint(1, 5)
         for _ in range(tx_count):
@@ -201,7 +271,9 @@ def process_block(builders, proposers, users, block_num):
                 tx = user.create_transactions(block_num)
             
             if tx:
-                user.broadcast_transactions(tx)
+                # Add transaction to ALL builders' mempools (not just the selected validator)
+                for builder in builders:
+                    builder.mempool.append(tx)
     
     all_staking_participants = builders + proposers
     validator_nodes = get_validator_nodes(all_staking_participants)
