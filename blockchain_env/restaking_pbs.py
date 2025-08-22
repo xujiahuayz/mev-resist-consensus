@@ -123,29 +123,39 @@ def create_participants_with_config(attacker_builders, attacker_users):
     
     proposers = []
     
-    # Define proposer stake levels (no attack/benign distinction)
-    proposer_stake_levels = [8, 5, 3, 2]  # ETH values
+    # Define proposer stake levels with counts (no attack/benign distinction)
+    # More logical distribution: 2 at 8 ETH, 4 at 5 ETH, 6 at 3 ETH, 10 at 2 ETH, 28 at 1 ETH
+    proposer_stake_distribution = [
+        (8, 2),   # 8 ETH: 2 proposers
+        (5, 4),   # 5 ETH: 4 proposers
+        (3, 6),   # 3 ETH: 6 proposers
+        (2, 10),  # 2 ETH: 10 proposers
+        (1, 28),  # 1 ETH: 28 proposers (fills remaining slots)
+    ]
     
     proposer_count = 0
     
-    # Create proposers with specific stake levels first
-    for stake_multiplier in proposer_stake_levels:
+    # Create proposers with specific stake levels and counts
+    for stake_multiplier, count in proposer_stake_distribution:
         if proposer_count >= PROPOSERNUM:
             break
         initial_stake = VALIDATOR_THRESHOLD * stake_multiplier
         
-        proposer = Proposer(f"proposer_{proposer_count}")
-        proposer.capital = initial_stake
-        proposer.active_stake = initial_stake
-        proposer.initial_stake = initial_stake
-        proposer.reinvestment_factor = 1.0
-        proposer.profit_history = []
-        proposer.stake_history = [proposer.capital]
-        proposers.append(proposer)
-        proposer_count += 1
+        for _ in range(count):
+            if proposer_count >= PROPOSERNUM:
+                break
+            proposer = Proposer(f"proposer_{proposer_count}")
+            proposer.capital = initial_stake
+            proposer.active_stake = initial_stake
+            proposer.initial_stake = initial_stake
+            proposer.reinvestment_factor = 1.0
+            proposer.profit_history = []
+            proposer.stake_history = [proposer.capital]
+            proposers.append(proposer)
+            proposer_count += 1
     
-    # Fill remaining proposer slots with 1 ETH stake
-    for _ in range(PROPOSERNUM - proposer_count):
+    # Ensure we have exactly PROPOSERNUM proposers
+    while len(proposers) < PROPOSERNUM:
         proposer = Proposer(f"proposer_{proposer_count}")
         proposer.capital = VALIDATOR_THRESHOLD  # 1 ETH
         proposer.active_stake = VALIDATOR_THRESHOLD

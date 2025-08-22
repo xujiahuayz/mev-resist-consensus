@@ -526,20 +526,11 @@ def plot_pbs_proposers():
     x_labels = ['0', '2', '4', '6', '8', '10']
     plt.xticks(x_ticks, x_labels, fontsize=36)
     
-    # Get the actual data range to set appropriate y-axis limits
-    # Find the maximum value across all plotted data
-    max_stake = 0
-    for participant_id in all_sampled:
-        continuous_data = continuous_stake_df[continuous_stake_df['participant_id'] == participant_id]
-        if len(continuous_data) > 0:
-            max_val = continuous_data['current_capital'].max() / 1e9
-            max_stake = max(max_stake, max_val)
+    # Set y-axis to stop at 600 ETH for PBS proposers with 200 ETH intervals
+    y_max = 600
     
-    # Round up to the nearest 100 and add some padding
-    y_max = int((max_stake + 99) // 100) * 100 + 100
-    
-    # Set explicit y-axis ticks with consistent formatting
-    y_ticks = list(range(0, y_max + 1, 100))
+    # Set explicit y-axis ticks with consistent formatting (every 200 ETH)
+    y_ticks = list(range(0, y_max + 1, 200))
     plt.yticks(y_ticks, fontsize=36)
     
     # Set plot to start at (0,0) and end at 10000 blocks
