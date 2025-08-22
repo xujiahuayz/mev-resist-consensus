@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
+# Set Seaborn style for light frame and grid
+sns.set_style("whitegrid")
+
 # random.seed(16)
 
 ATTACK_BUILDERS = {f"builder_{i}" for i in range(3)} | {f"builder_{i+5}" for i in range(10)}
@@ -11,10 +14,10 @@ NON_ATTACK_BUILDERS = {f"builder_{i+3}" for i in range(2)} | {f"builder_{i+15}" 
 def _get_builder_color(builder_id: str, winning_builder: str, is_winning_attacker: bool) -> str:
     """Get color for a builder based on its type and winning status."""
     if builder_id == winning_builder:
-        return 'red'
+        return '#8B0000'  # Dark red (darker purple in red scheme)
     if builder_id in ATTACK_BUILDERS:
-        return 'lightblue'
-    return 'orange'
+        return '#4682B4'  # Steel blue (middle blue)
+    return '#FF7F50'  # Coral (lighter coral in red scheme)
 
 def _select_builders_to_plot(unique_builders: np.ndarray, winning_builder: str) -> np.ndarray:
     """Select which builders to plot based on count."""
@@ -28,12 +31,12 @@ def _select_builders_to_plot(unique_builders: np.ndarray, winning_builder: str) 
 def _create_legend_handles(is_winning_attacker: bool) -> list:
     """Create legend handles for the plot."""
     legend_labels = {
-        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "red" if not is_winning_attacker else None,
-        r"$\tau_{B_i} = \mathtt{benign},\ B_w$": "red" if is_winning_attacker else None,
-        r"$\tau_{B_i} = \mathtt{attack}$": "orange",
-        r"$\tau_{B_i} = \mathtt{benign}$": "lightblue"
+        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "#8B0000" if not is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{benign},\ B_w$": "#8B0000" if is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{attack}$": "#FF7F50",
+        r"$\tau_{B_i} = \mathtt{benign}$": "#4682B4"
     }
-    return [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
+    return [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items() if color is not None]
 
 def plot_bid_dynamics(file_path_input, block_number_input):
     """Plot bid dynamics for a selected block."""
@@ -61,12 +64,14 @@ def plot_bid_dynamics(file_path_input, block_number_input):
     for builder_id in selected_builders:
         builder_data = block_data[block_data['builder_id'] == builder_id]
         color = _get_builder_color(builder_id, winning_builder, is_winning_attacker)
+        # Use thicker line for winning builder
+        line_width = 2.5 if builder_id == winning_builder else 1.5
         sns.lineplot(
             data=builder_data,
             x='round_num',
             y='bid',
             marker='o',
-            linewidth=1.5,
+            linewidth=line_width,
             color=color,
             markersize=4,
             label=f"{builder_id} ({'Winning Attacker' if is_winning_attacker else 'Winning Non-Attacker'})" if builder_id == winning_builder else ""
@@ -79,6 +84,13 @@ def plot_bid_dynamics(file_path_input, block_number_input):
     plt.ylabel('Bid Value $b_{i,t}$ (gwei)', fontsize=26)
     plt.tick_params(axis='both', which='major', labelsize=24)
     plt.gca().yaxis.get_offset_text().set_fontsize(24)
+    
+    # Add grid styling to match restake plots
+    plt.grid(True, alpha=0.3)
+    
+    # Set x-axis to start exactly at 0 with no extra space
+    plt.xlim(left=0)
+    
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
@@ -116,11 +128,11 @@ def analyze_data(file_path_input):
 def _create_block_value_legend_handles(is_winning_attacker: bool) -> list:
     """Create legend handles for block value plot."""
     legend_labels = {
-        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "red" if not is_winning_attacker else None,
-        r"$\tau_{B_i} = \mathtt{attack}$": "orange",
-        r"$\tau_{B_i} = \mathtt{benign}$": "lightblue"
+        r"$\tau_{B_i} = \mathtt{attack},\ B_w$": "#8B0000" if not is_winning_attacker else None,
+        r"$\tau_{B_i} = \mathtt{attack}$": "#FF7F50",
+        r"$\tau_{B_i} = \mathtt{benign}$": "#4682B4"
     }
-    return [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items()]
+    return [plt.Line2D([0], [0], color=color, lw=4, label=label) for label, color in legend_labels.items() if color is not None]
 
 def plot_block_value_dynamics(file_path_input, block_number_input):
     """Plot block value dynamics for a selected block."""
@@ -147,12 +159,14 @@ def plot_block_value_dynamics(file_path_input, block_number_input):
     for builder_id in selected_builders:
         builder_data = block_data[block_data['builder_id'] == builder_id]
         color = _get_builder_color(builder_id, winning_builder, is_winning_attacker)
+        # Use thicker line for winning builder
+        line_width = 2.5 if builder_id == winning_builder else 1.5
         sns.lineplot(
             data=builder_data,
             x='round_num',
             y='block_value',
             marker='o',
-            linewidth=1.5,
+            linewidth=line_width,
             color=color,
             markersize=4,
             label=f"{builder_id} ({'Winning Attacker' if is_winning_attacker else 'Winning Non-Attacker'})" if builder_id == winning_builder else ""
@@ -165,6 +179,13 @@ def plot_block_value_dynamics(file_path_input, block_number_input):
     plt.ylabel('Block Value $v_{i,t}$ (gwei)', fontsize=26)
     plt.tick_params(axis='both', which='major', labelsize=24)
     plt.gca().yaxis.get_offset_text().set_fontsize(24)
+    
+    # Add grid styling to match restake plots
+    plt.grid(True, alpha=0.3)
+    
+    # Set x-axis to start exactly at 0 with no extra space
+    plt.xlim(left=0)
+    
     plt.tight_layout()
     plt.savefig(output_figure_path)
     plt.show()
