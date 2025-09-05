@@ -130,7 +130,7 @@ def create_heatmap_visualization():
     # Plot POS heatmap
     plot_heatmap(
         pos_results, 
-        "PoS Block Build Proportions - Attacking Validators", 
+        "pos_block_build_proportions", 
         output_dir,
         r"Percentage of Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
         r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
@@ -140,7 +140,7 @@ def create_heatmap_visualization():
     # Plot PBS heatmap
     plot_heatmap(
         pbs_results, 
-        "PBS Block Build Proportions - Attacking Builders", 
+        "pbs_block_build_proportions", 
         output_dir,
         r"Percentage of Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
         r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
