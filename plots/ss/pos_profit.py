@@ -24,7 +24,7 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_v
     palette = sns.color_palette("Blues", 3)
     colors = [palette[2], palette[1], palette[0]]
 
-    plt.stackplot(validator_percentages, user_mev_percent, validator_mev_percent, uncaptured_mev_percent,
+    plt.stackplot(validator_percentages, validator_mev_percent, user_mev_percent, uncaptured_mev_percent,
                   colors=colors, alpha=0.9)
 
 
@@ -45,9 +45,9 @@ def create_legend_figure(save_path):
     """Generate and save a separate figure containing only the legend."""
     plt.figure(figsize=(10, 2))
     palette = sns.color_palette("Blues", 3)
-    colors = [palette[2], palette[1], palette[0]]
+    colors = [palette[0], palette[1], palette[2]]
 
-    labels = ["Users'", "Validators'", "Uncaptured"]
+    labels = ["Uncaptured", "Users'", "Validators'"]
     handles = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
 
     plt.legend(handles, labels, loc='center', fontsize=30, frameon=False)
