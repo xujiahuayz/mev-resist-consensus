@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
+from matplotlib import ticker
 
 # Constants
 TOTAL_VALIDATORS = 20
@@ -41,148 +43,116 @@ def get_final_percentages(file_path, attack_count):
     
     return attacking_pct, non_attacking_pct
 
-def create_comparison_bar_chart():
-    """Create separate stacked bar charts for POS and PBS."""
-    # Set seaborn style
+def process_all_files(data_folder_path, system_type):
+    """
+    Process all block data files in a folder for different builder/validator and user configurations.
+    Returns a dictionary with attacking percentages for each configuration.
+    """
+    results = {}
+    
+    for filename in os.listdir(data_folder_path):
+        if filename.startswith(f"{system_type}_block_data"):
+            parts = filename.split("_")
+            
+            # Extract validator/builder count and user count
+            if "validators" in parts[3]:
+                entity_attack_count = int(parts[3].replace("validators", ""))
+            elif "builders" in parts[3]:
+                entity_attack_count = int(parts[3].replace("builders", ""))
+            else:
+                continue
+                
+            user_attack_count = int(parts[4].replace("users", "").split(".")[0])
+            
+            file_path = os.path.join(data_folder_path, filename)
+            attacking_pct, non_attacking_pct = get_final_percentages(file_path, entity_attack_count)
+            
+            if user_attack_count not in results:
+                results[user_attack_count] = {}
+            results[user_attack_count][entity_attack_count] = attacking_pct
+    
+    return results
+
+def plot_heatmap(results, title, output_folder_path, x_label, y_label, system_type):
+    """
+    Plot a heatmap of attacking percentages for each user and builder/validator configuration.
+    """
+    df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
+    
+    # Create the heatmap - exactly like tx_order.py
+    plt.figure(figsize=(12, 11))
+    sns.heatmap(df, annot=False, fmt=".1f", cmap="YlGnBu", cbar_kws={'label': "Percentage of blocks built by attacking participants"}, vmin=0, vmax=100)
+    plt.xlabel(x_label, fontsize=26)
+    plt.ylabel(y_label, fontsize=26)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=20)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=20)
+    
+    plt.gca().invert_yaxis()
+    
+    # Force y-axis labels to be horizontal like x-axis
+    plt.gca().tick_params(axis='y', labelrotation=0)
+    
+    # Access the color bar and customize its label and tick size - exactly like tx_order.py
+    cbar = plt.gca().collections[0].colorbar
+    cbar.set_label("Percentage of blocks built by attacking participants", size=20)
+    cbar.ax.tick_params(labelsize=20)
+    
+    plt.tight_layout()
+    
+    # Save the heatmap
+    output_path = os.path.join(output_folder_path, f"{title.replace(' ', '_').lower()}.png")
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Heatmap saved to {output_path}")
+
+def create_heatmap_visualization():
+    """Create heatmap visualizations for POS and PBS showing attacking percentages across all configurations."""
+    # Set seaborn style to match tx_order.py
     sns.set_style("whitegrid")
-    sns.set_palette("husl")
+    plt.rcParams['xtick.labelsize'] = 20
+    plt.rcParams['ytick.labelsize'] = 20
+    plt.rcParams['xtick.direction'] = 'inout'
+    plt.rcParams['ytick.direction'] = 'inout'
     
     output_dir = 'figures/ss'
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Configuration for the 3x3 grid - reordered to group by builder percentage first
-    configs = [
-        (5, 0), (5, 25), (5, 50),    # 25% builders with 0%, 50%, 100% users
-        (10, 0), (10, 25), (10, 50), # 50% builders with 0%, 50%, 100% users  
-        (15, 0), (15, 25), (15, 50)  # 75% builders with 0%, 50%, 100% users
-    ]
     
     # Data paths
     pos_data_folder = 'data/same_seed/pos_visible80'
     pbs_data_folder = 'data/same_seed/pbs_visible80'
     
-    # Collect data
-    pos_data = []
-    pbs_data = []
+    print("Processing POS data...")
+    pos_results = process_all_files(pos_data_folder, "pos")
     
-    for validator_count, user_count in configs:
-        # POS data
-        pos_filename = f"pos_block_data_validators{validator_count}_users{user_count}.csv"
-        pos_filepath = os.path.join(pos_data_folder, pos_filename)
-        
-        if os.path.exists(pos_filepath):
-            pos_att, pos_nonatt = get_final_percentages(pos_filepath, validator_count)
-            pos_data.append((pos_att, pos_nonatt))
-        else:
-            print(f"POS file not found: {pos_filepath}")
-            pos_data.append((0, 0))
-        
-        # PBS data
-        pbs_filename = f"pbs_block_data_builders{validator_count}_users{user_count}.csv"
-        pbs_filepath = os.path.join(pbs_data_folder, pbs_filename)
-        
-        if os.path.exists(pbs_filepath):
-            pbs_att, pbs_nonatt = get_final_percentages(pbs_filepath, validator_count)
-            pbs_data.append((pbs_att, pbs_nonatt))
-        else:
-            print(f"PBS file not found: {pbs_filepath}")
-            pbs_data.append((0, 0))
+    print("Processing PBS data...")
+    pbs_results = process_all_files(pbs_data_folder, "pbs")
     
-    # Configuration labels for POS
-    pos_config_labels = [
-        f"[{validator_count/TOTAL_VALIDATORS*100:.0f}, {user_count/TOTAL_USERS*100:.0f}]"
-        for validator_count, user_count in configs
-    ]
+    # Plot POS heatmap
+    plot_heatmap(
+        pos_results, 
+        "PoS Block Build Proportions - Attacking Validators", 
+        output_dir,
+        r"Percentage of Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
+        r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        "pos"
+    )
     
-    # Configuration labels for PBS
-    pbs_config_labels = [
-        f"[{validator_count/TOTAL_BUILDERS*100:.0f}, {user_count/TOTAL_USERS*100:.0f}]"
-        for validator_count, user_count in configs
-    ]
-    
-    y = np.arange(len(configs))
-    height = 0.35
-    
-    # Font sizes
-    label_font_size = 24
-    tick_label_font_size = 20
-    legend_font_size = 20
-    
-    # Create POS plot
-    fig1, ax1 = plt.subplots(figsize=(10, 10))
-    
-    # POS stacked bars
-    pos_attacking = [data[0] for data in pos_data]
-    pos_nonattacking = [data[1] for data in pos_data]
-    
-    # Use seaborn color codes like the example
-    sns.set_color_codes("pastel")
-    ax1.barh(y, pos_attacking, height, label=r'$\tau_{V_i} = \mathtt{attack}$', 
-             color="b")
-    
-    sns.set_color_codes("muted")
-    ax1.barh(y, pos_nonattacking, height, left=pos_attacking, 
-             label=r'$\tau_{V_i} = \mathtt{benign}$', color="b")
-    
-    ax1.set_xlabel('Percentage of Selections at Block 1000 (%)', fontsize=label_font_size)
-    ax1.set_ylabel('Attacking class percentage [validator, user]', fontsize=label_font_size)
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(pos_config_labels, fontsize=tick_label_font_size)
-    ax1.legend(fontsize=legend_font_size)
-    ax1.set_xlim(0, 100)
-    ax1.set_xticks([0, 25, 50, 75, 100])
-    ax1.tick_params(axis='both', labelsize=tick_label_font_size)
-    
-    plt.tight_layout()
-    
-    # Save POS plot
-    pos_out_path = os.path.join(output_dir, 'pos_block_build_proportions.png')
-    plt.savefig(pos_out_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"POS block build proportions saved to {pos_out_path}")
-    
-    # Create PBS plot
-    fig2, ax2 = plt.subplots(figsize=(10, 10))
-    
-    # PBS stacked bars
-    pbs_attacking = [data[0] for data in pbs_data]
-    pbs_nonattacking = [data[1] for data in pbs_data]
-    
-    # Use seaborn color codes like the example
-    sns.set_color_codes("pastel")
-    ax2.barh(y, pbs_attacking, height, label=r'$\tau_{B_i} = \mathtt{attack}$', 
-             color="b")
-    
-    sns.set_color_codes("muted")
-    ax2.barh(y, pbs_nonattacking, height, left=pbs_attacking, 
-             label=r'$\tau_{B_i} = \mathtt{benign}$', color="b")
-    
-    ax2.set_xlabel('Percentage of Selections at Block 1000 (%)', fontsize=label_font_size)
-    ax2.set_ylabel('Attacking class percentage [builder, user]', fontsize=label_font_size)
-    ax2.set_yticks(y)
-    ax2.set_yticklabels(pbs_config_labels, fontsize=tick_label_font_size)
-    ax2.legend(fontsize=legend_font_size)
-    ax2.set_xlim(0, 100)
-    ax2.set_xticks([0, 25, 50, 75, 100])
-    ax2.tick_params(axis='both', labelsize=tick_label_font_size)
-    
-    plt.tight_layout()
-    
-    # Save PBS plot
-    pbs_out_path = os.path.join(output_dir, 'pbs_block_build_proportions.png')
-    plt.savefig(pbs_out_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"PBS block build proportions saved to {pbs_out_path}")
+    # Plot PBS heatmap
+    plot_heatmap(
+        pbs_results, 
+        "PBS Block Build Proportions - Attacking Builders", 
+        output_dir,
+        r"Percentage of Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
+        r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        "pbs"
+    )
     
     # Print summary statistics
-    print("\nSummary Statistics:")
-    print("=" * 50)
-    for i, (validator_count, user_count) in enumerate(configs):
-        print(f"Config {i+1} (V{validator_count/TOTAL_VALIDATORS*100:.0f}% U{user_count/TOTAL_USERS*100:.0f}%):")
-        print(f"  POS:  {pos_attacking[i]:.1f}% attacking, {pos_nonattacking[i]:.1f}% benign")
-        print(f"  PBS:  {pbs_attacking[i]:.1f}% attacking, {pbs_nonattacking[i]:.1f}% benign")
-        print()
+    print(f"\nProcessed {len(pos_results)} user configurations for POS")
+    print(f"Processed {len(pbs_results)} user configurations for PBS")
+    print(f"Each configuration has {len(list(pos_results.values())[0])} entity configurations")
+    print("Heatmaps saved successfully!")
 
 if __name__ == "__main__":
-    create_comparison_bar_chart() 
+    create_heatmap_visualization() 
     
