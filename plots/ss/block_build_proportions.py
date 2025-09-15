@@ -81,11 +81,11 @@ def plot_heatmap(results, title, output_folder_path, x_label, y_label, system_ty
     
     # Create the heatmap - exactly like tx_order.py
     plt.figure(figsize=(12, 11))
-    sns.heatmap(df, annot=False, fmt=".1f", cmap="YlGnBu", cbar_kws={'label': "Percentage of blocks built by attacking participants"}, vmin=0, vmax=100)
-    plt.xlabel(x_label, fontsize=26)
-    plt.ylabel(y_label, fontsize=26)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=20)
-    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=20)
+    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Blocks built by attacking participants (%)"}, vmin=0, vmax=100)
+    plt.xlabel(x_label, fontsize=32)
+    plt.ylabel(y_label, fontsize=32)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=26)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=26)
     
     plt.gca().invert_yaxis()
     
@@ -94,8 +94,8 @@ def plot_heatmap(results, title, output_folder_path, x_label, y_label, system_ty
     
     # Access the color bar and customize its label and tick size - exactly like tx_order.py
     cbar = plt.gca().collections[0].colorbar
-    cbar.set_label("Percentage of blocks built by attacking participants", size=20)
-    cbar.ax.tick_params(labelsize=20)
+    cbar.set_label("Blocks built by attacking participants (%)", size=28)
+    cbar.ax.tick_params(labelsize=28)
     
     plt.tight_layout()
     
@@ -109,8 +109,8 @@ def create_heatmap_visualization():
     """Create heatmap visualizations for POS and PBS showing attacking percentages across all configurations."""
     # Set seaborn style to match tx_order.py
     sns.set_style("whitegrid")
-    plt.rcParams['xtick.labelsize'] = 20
-    plt.rcParams['ytick.labelsize'] = 20
+    plt.rcParams['xtick.labelsize'] = 28
+    plt.rcParams['ytick.labelsize'] = 28
     plt.rcParams['xtick.direction'] = 'inout'
     plt.rcParams['ytick.direction'] = 'inout'
     
@@ -132,8 +132,8 @@ def create_heatmap_visualization():
         pos_results, 
         "pos_block_build_proportions", 
         output_dir,
-        r"Percentage of Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
-        r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
+        r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         "pos"
     )
     
@@ -142,8 +142,8 @@ def create_heatmap_visualization():
         pbs_results, 
         "pbs_block_build_proportions", 
         output_dir,
-        r"Percentage of Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
-        r"Percentage of Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
+        r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         "pbs"
     )
     
