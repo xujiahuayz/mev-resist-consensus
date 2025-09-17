@@ -43,7 +43,7 @@ def plot_mev_distribution_subplot(ax, aggregated_data, user_attack_count, plot_t
     palette = sns.color_palette("ch:rot=-.25,hue=1,light=.75", 3)
     colors = [palette[2], palette[1], palette[0]]  # Darkest to lightest
 
-    ax.stackplot(validator_percentages, *stack_data, colors=colors, alpha=0.9)
+    ax.stackplot(validator_percentages, *stack_data, colors=colors, alpha=0.8)
 
     # User attack percentage mapping
     user_attack_percentage_map = {'0': '0', '12': '33', '24': '67', '50': '100'}
