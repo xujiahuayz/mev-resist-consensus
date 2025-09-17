@@ -8,11 +8,11 @@ sns.set_style("whitegrid")
 palette = sns.color_palette("mako_r", 6)
 rcParams.update({
     'font.family': 'serif',
-    'font.size': 22,
-    'axes.labelsize': 24,
-    'xtick.labelsize': 22,
-    'ytick.labelsize': 22,
-    'legend.fontsize': 22
+    'font.size': 28,
+    'axes.labelsize': 30,
+    'xtick.labelsize': 28,
+    'ytick.labelsize': 28,
+    'legend.fontsize': 28
 })
 
 def builder_growth_rate(f_pi, s_Bi, total_stake, gamma_Bi, v_i_T):
@@ -44,7 +44,7 @@ def create_builder_growth_theory_plot():
     f_pi_values = [0.1, 0.3, 0.5, 0.7, 0.9]
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     # Plot each f·π value
     for i, f_pi in enumerate(f_pi_values):
@@ -55,21 +55,18 @@ def create_builder_growth_theory_plot():
             growth_rates.append(growth_rate)
         
         ax.plot(stake_percentages * 100, growth_rates, 
-                linewidth=3, color=palette[i], label=f'$f \cdot \pi = {f_pi}$')
+                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
     
     # Add horizontal line at growth rate = 1
-    ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=1.5, 
-               label='No Growth')
+    ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=3)
     
     # Customize the plot
-    ax.set_xlabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=24)
-    ax.set_ylabel(r'Builder Growth Rate $\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)}$', fontsize=24)
+    ax.set_xlabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=30)
+    ax.set_ylabel(r'Growth Rate $\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)}$', fontsize=30)
     ax.set_xlim(1, 50)
     ax.set_ylim(1.0, 1.8)
     
-    # Legend
-    ax.legend(title=r'Builder Ability $f \cdot \pi$', title_fontsize=20, fontsize=22, 
-             loc='upper right', frameon=True, fancybox=False, shadow=False)
+    # Remove legend from plot - will be created separately
     
     plt.tight_layout()
     return fig
@@ -94,7 +91,7 @@ def create_stake_evolution_plot():
     time_slots = np.arange(0, 201)  # 0 to 200 slots
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     # Plot for each fπ value
     for i, f_pi in enumerate(f_pi_values):
@@ -110,24 +107,20 @@ def create_stake_evolution_plot():
         
         # Plot the line
         ax.plot(time_slots, stakes, 
-                linewidth=3, color=palette[i], label=f'$f \cdot \pi = {f_pi}$')
+                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
     
-    # Add horizontal line for total stake
-    ax.axhline(y=total_stake, color='red', linestyle='--', alpha=0.7, linewidth=2, 
-               label='Total Stake')
+    # Remove total stake line - will be handled in separate legend
     
     # Customize the plot
-    ax.set_xlabel(r'Time Slot $\ell$', fontsize=24)
-    ax.set_ylabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=24)
+    ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
+    ax.set_ylabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=30)
     ax.set_xlim(0, 200)
     ax.set_ylim(0, total_stake)  # Stop at 100%
     
     # Convert y-axis to percentage
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0f}'.format(y/total_stake*100)))
     
-    # Legend
-    ax.legend(title=r'Builder Ability $f \cdot \pi$', title_fontsize=20, fontsize=22, 
-             loc='upper left', frameon=True, fancybox=False, shadow=False)
+    # Remove legend from plot - will be created separately
     
     plt.tight_layout()
     return fig
@@ -151,7 +144,7 @@ def create_proposer_stake_evolution_plot():
     time_slots = np.arange(0, 201)  # 0 to 200 slots
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     # Plot for each f·π value
     for i, f_pi in enumerate(f_pi_values):
@@ -167,24 +160,44 @@ def create_proposer_stake_evolution_plot():
         
         # Plot the line
         ax.plot(time_slots, stakes, 
-                linewidth=3, color=palette[i], label=f'$f \cdot \pi = {f_pi}$')
+                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
     
-    # Add horizontal line for total stake
-    ax.axhline(y=total_stake, color='red', linestyle='--', alpha=0.7, linewidth=2, 
-               label='Total Stake')
+    # Remove total stake line - will be handled in separate legend
     
     # Customize the plot
-    ax.set_xlabel(r'Time Slot $\ell$', fontsize=24)
-    ax.set_ylabel(r'Proposer Stake $s_{{P_i}}$ (%)', fontsize=24)
+    ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
+    ax.set_ylabel(r'Proposer Stake $s_{{P_i}}$ (%)', fontsize=30)
     ax.set_xlim(0, 200)
     ax.set_ylim(0, total_stake)  # Stop at 100%
     
     # Convert y-axis to percentage
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0f}'.format(y/total_stake*100)))
     
-    # Legend
-    ax.legend(title=r'Proposer Ability $f \cdot \pi$', title_fontsize=20, fontsize=22, 
-             loc='upper left', frameon=True, fancybox=False, shadow=False)
+    # Remove legend from plot - will be created separately
+    
+    plt.tight_layout()
+    return fig
+
+def create_shared_legend():
+    """Create a separate figure with just the legend that can be shared between plots."""
+    fig, ax = plt.subplots(figsize=(3, 4))
+    
+    # Create dummy lines for the legend
+    f_pi_values = [0.1, 0.3, 0.5, 0.7, 0.9]
+    for i, f_pi in enumerate(f_pi_values):
+        ax.plot([], [], linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
+    
+    # Hide the axes
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    
+    # Create legend
+    ax.legend(title=r'Ability $f \cdot \pi$', title_fontsize=24, fontsize=28, 
+             loc='center', frameon=True, fancybox=False, shadow=False)
     
     plt.tight_layout()
     return fig
@@ -209,6 +222,12 @@ if __name__ == "__main__":
     fig3.savefig('figures/theory/proposer_stake_evolution.png', bbox_inches='tight', dpi=300)
     print("Proposer stake evolution plot generated successfully!")
     print("File saved: figures/theory/proposer_stake_evolution.png")
+    
+    print("\nGenerating builder stake legend...")
+    fig4 = create_shared_legend()
+    fig4.savefig('figures/theory/builder_stake_legend.png', bbox_inches='tight', dpi=300)
+    print("Builder stake legend generated successfully!")
+    print("File saved: figures/theory/builder_stake_legend.png")
     
     print("\nAll selected plots generated successfully!")
     
