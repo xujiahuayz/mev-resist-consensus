@@ -157,6 +157,9 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Set seaborn theme for modern styling
+sns.set_theme(style="whitegrid")
+
 def load_data(file_path):
     """Load JSON data from a file."""
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -175,7 +178,8 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
     uncaptured_mev_percent = [100 - b - u for b, u in zip(builder_mev_percent, user_mev_percent)]
 
     plt.figure(figsize=(10, 9))
-    palette = sns.color_palette("Blues", 3)
+    # Use a more sophisticated color palette
+    palette = sns.color_palette("ch:rot=-.25,hue=1,light=.75", 3)
     colors = [palette[2], palette[1], palette[0]]
 
     plt.stackplot(builder_percentages, builder_mev_percent, user_mev_percent, uncaptured_mev_percent,
@@ -197,7 +201,8 @@ def plot_mev_distribution(aggregated_data, user_attack_count, save_path, total_b
 def create_legend_figure(save_path):
     """Generate and save a separate figure containing only the legend."""
     plt.figure(figsize=(10, 2))
-    palette = sns.color_palette("Blues", 3)
+    # Use the same sophisticated color palette
+    palette = sns.color_palette("ch:rot=-.25,hue=1,light=.75", 3)
     colors = [palette[0], palette[1], palette[2]]
 
     labels = ["Uncaptured", "Users'", "Builders'"]
