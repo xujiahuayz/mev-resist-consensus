@@ -81,21 +81,28 @@ def plot_heatmap(results, title, output_folder_path, x_label, y_label, system_ty
     
     # Create the heatmap - exactly like tx_order.py
     plt.figure(figsize=(12, 11))
-    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Blocks built by attacking participants (%)"}, vmin=0, vmax=100)
-    plt.xlabel(x_label, fontsize=32)
-    plt.ylabel(y_label, fontsize=32)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=26)
-    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=26)
+    
+    # Only show color bar for PBS plot
+    if "pbs" in system_type.lower():
+        sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Blocks built by attacking participants (%)"}, vmin=0, vmax=100)
+    else:
+        sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar=False, vmin=0, vmax=100)
+    
+    plt.xlabel(x_label, fontsize=36)
+    plt.ylabel(y_label, fontsize=36)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=36)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=36)
     
     plt.gca().invert_yaxis()
     
     # Force y-axis labels to be horizontal like x-axis
     plt.gca().tick_params(axis='y', labelrotation=0)
     
-    # Access the color bar and customize its label and tick size - exactly like tx_order.py
-    cbar = plt.gca().collections[0].colorbar
-    cbar.set_label("Blocks built by attacking participants (%)", size=28)
-    cbar.ax.tick_params(labelsize=28)
+    # Access the color bar and customize its label and tick size (only for PBS plot)
+    if "pbs" in system_type.lower():
+        cbar = plt.gca().collections[0].colorbar
+        cbar.set_label("Blocks built by attacking participants (%)", size=36)
+        cbar.ax.tick_params(labelsize=36)
     
     plt.tight_layout()
     

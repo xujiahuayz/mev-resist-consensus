@@ -119,22 +119,29 @@ def plot_heatmap(results, title, vmin_val, vmax_val, output_folder_path, x_label
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
 
     plt.figure(figsize=(12, 11))
-    sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin_val, vmax=vmax_val)
-    plt.xlabel(x_label, fontsize=28)
-    plt.ylabel(r"MEV-Seeking Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=28)
-    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=28)
-    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=28)
+    
+    # Only show color bar for PBS plot
+    if "PBS" in title:
+        sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar_kws={'label': "Inversion Count"}, vmin=vmin_val, vmax=vmax_val)
+    else:
+        sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar=False, vmin=vmin_val, vmax=vmax_val)
+    
+    plt.xlabel(x_label, fontsize=36)
+    plt.ylabel(r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=36)
+    plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=36)
+    plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=36)
 
     plt.gca().invert_yaxis()
 
-    # Access the color bar and customize its label and tick size
-    cbar = plt.gca().collections[0].colorbar
-    cbar.set_label("Inversion Count", size=28)
-    cbar.ax.tick_params(labelsize=28)
+    # Access the color bar and customize its label and tick size (only for PBS plot)
+    if "PBS" in title:
+        cbar = plt.gca().collections[0].colorbar
+        cbar.set_label("Inversion Count", size=36)
+        cbar.ax.tick_params(labelsize=36)
 
-    # Format the color bar tick labels to make them more readable, e.g., from 1e8 to 100M
-    cbar.formatter = ticker.FuncFormatter(lambda x, _: f'{int(x / 1e6):,}M')
-    cbar.update_ticks()
+        # Format the color bar tick labels to make them more readable, e.g., from 1e8 to 100M
+        cbar.formatter = ticker.FuncFormatter(lambda x, _: f'{int(x / 1e6):,}M')
+        cbar.update_ticks()
 
     plt.tight_layout()
 
@@ -159,7 +166,7 @@ if __name__ == "__main__":
     vmin_val, vmax_val = min(all_inversion_counts), max(all_inversion_counts)
 
     # Plot heatmap of results for PoS with "Validators" as x-axis label
-    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin_val, vmax_val, OUTPUT_FOLDER, r"MEV-Seeking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
 
     # Plot heatmap of results for PBS with "Builders" as x-axis label
-    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin_val, vmax_val, OUTPUT_FOLDER, r"MEV-Seeking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
