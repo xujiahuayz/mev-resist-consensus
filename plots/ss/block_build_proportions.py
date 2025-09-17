@@ -143,8 +143,8 @@ def create_heatmap_visualization():
         pos_results, 
         "pos_block_build_proportions", 
         output_dir,
-        r"Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
-        r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Validators $\tau_{V_i} = \mathtt{attack}$ (%)",
+        r"Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         "pos"
     )
     
@@ -153,8 +153,8 @@ def create_heatmap_visualization():
         pbs_results, 
         "pbs_block_build_proportions", 
         output_dir,
-        r"Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
-        r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)",
+        r"Builders $\tau_{B_i} = \mathtt{attack}$ (%)",
+        r"Users $\tau_{U_i} = \mathtt{attack}$ (%)",
         "pbs"
     )
     

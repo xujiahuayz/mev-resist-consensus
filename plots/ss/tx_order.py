@@ -131,7 +131,7 @@ def plot_heatmap(results, title, vmin_val, vmax_val, output_folder_path, x_label
         sns.heatmap(df, annot=False, fmt=".0f", cmap="YlGnBu", cbar=False, vmin=vmin_val, vmax=vmax_val)
     
     plt.xlabel(x_label, fontsize=36)
-    plt.ylabel(r"Attacking Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=36)
+    plt.ylabel(r"Users $\tau_{U_i} = \mathtt{attack}$ (%)", fontsize=36)
     plt.xticks(ticks=[0, 5, 10, 15, 20], labels=[0, 25, 50, 75, 100], fontsize=36)
     plt.yticks(ticks=[0, 10, 20, 30, 40, 50], labels=[0, 20, 40, 60, 80, 100], fontsize=36)
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     vmin_val, vmax_val = min(all_inversion_counts), max(all_inversion_counts)
 
     # Plot heatmap of results for PoS with "Validators" as x-axis label
-    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Attacking Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pos_results, "Inversion Counts for PoS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Validators $\tau_{V_i} = \mathtt{attack}$ (%)")
 
     # Plot heatmap of results for PBS with "Builders" as x-axis label
-    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Attacking Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
+    plot_heatmap(pbs_results, "Inversion Counts for PBS", vmin_val, vmax_val, OUTPUT_FOLDER, r"Builders $\tau_{B_i} = \mathtt{attack}$ (%)")
