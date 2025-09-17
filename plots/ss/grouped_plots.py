@@ -110,8 +110,8 @@ def create_pos_grouped_plot():
     axes[1, 1].set_yticks([])
     
     # Add centered axis labels for the entire figure with proper spacing
-    fig.text(0.5, -0.01, r'Percentage of $\mathtt{attack}$ Validators (%)', ha='center', fontsize=36)
-    fig.text(0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
+    fig.text(0.5, -0.025, r'Percentage of $\mathtt{attack}$ Validators (%)', ha='center', fontsize=36)
+    fig.text(-0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
     
     # Adjust layout
     plt.tight_layout()
@@ -168,8 +168,8 @@ def create_pbs_grouped_plot():
     axes[1, 1].set_yticks([])
     
     # Add centered axis labels for the entire figure with proper spacing
-    fig.text(0.5, -0.01, r'Percentage of $\mathtt{attack}$ Builders (%)', ha='center', fontsize=36)
-    fig.text(0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
+    fig.text(0.5, -0.025, r'Percentage of $\mathtt{attack}$ Builders (%)', ha='center', fontsize=36)
+    fig.text(-0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
     
     # Adjust layout
     plt.tight_layout()
