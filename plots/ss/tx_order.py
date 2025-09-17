@@ -118,7 +118,11 @@ def plot_heatmap(results, title, vmin_val, vmax_val, output_folder_path, x_label
     """
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
 
-    plt.figure(figsize=(12, 11))
+    # Adjust figure size based on whether color bar is present
+    if "PBS" in title:
+        plt.figure(figsize=(12, 10))  # Wider to accommodate color bar
+    else:
+        plt.figure(figsize=(10, 10))  # Square when no color bar
     
     # Only show color bar for PBS plot
     if "PBS" in title:

@@ -80,7 +80,11 @@ def plot_heatmap(results, title, output_folder_path, x_label, y_label, system_ty
     df = pd.DataFrame(results).T.sort_index(ascending=False).sort_index(axis=1)
     
     # Create the heatmap - exactly like tx_order.py
-    plt.figure(figsize=(12, 11))
+    # Adjust figure size based on whether color bar is present
+    if "pbs" in system_type.lower():
+        plt.figure(figsize=(12, 10))  # Wider to accommodate color bar
+    else:
+        plt.figure(figsize=(10, 10))  # Square when no color bar
     
     # Only show color bar for PBS plot
     if "pbs" in system_type.lower():
