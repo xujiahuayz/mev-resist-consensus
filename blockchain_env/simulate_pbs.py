@@ -1,6 +1,7 @@
 """PBS simulation module for blockchain environment."""
 
 import gc
+import math
 import os
 import random
 import csv
@@ -116,36 +117,29 @@ def _process_builder_bids(builder_nodes: List[Builder], block_num: int) -> List[
     return builder_results
 
 def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]], block_num: int) -> Tuple[Tuple[str, List[Transaction], float], Optional[Builder], Optional[Proposer]]:
-    """Process proposer bids and return winning bid, builder, and proposer."""
-    winning_bid: Tuple[str, List[Transaction], float] = ("", [], 0.0)
-    winning_builder: Optional[Builder] = None
-    winning_proposer: Optional[Proposer] = None
+    """Select a proposer at random and choose the highest bid for the block."""
+    if not builder_results:
+        return ("", [], 0.0), None, None
 
-    for proposer in proposer_nodes:
-        # Reset proposer state for new block
-        proposer.reset_for_new_block()
+    winning_proposer: Optional[Proposer] = random.choice(proposer_nodes) if proposer_nodes else None
+    if winning_proposer:
+        winning_proposer.reset_for_new_block()
 
-        # Process each builder's bid
-        for builder_id, _transactions, bid_amount in builder_results:
-            # Send bid to proposer through network
-            builder: Builder = next(b for b in builder_nodes if b.id == builder_id)
-            builder.send_message(proposer.id, bid_amount, block_num)
+    max_bid_value: float = max(result[2] for result in builder_results)
+    tolerance: float = max(1e-9, max_bid_value * 1e-9)
+    top_bidders: List[Tuple[str, List[Transaction], float]] = [
+        result for result in builder_results if abs(result[2] - max_bid_value) <= tolerance
+    ]
 
-        # Process received bids
-        messages: List[Any] = proposer.receive_messages()
-        for msg in messages:
-            proposer.receive_bid(msg.sender_id, msg.content)
+    winning_entry: Tuple[str, List[Transaction], float] = random.choice(top_bidders)
+    winning_builder_id: str = winning_entry[0]
+    winning_builder: Optional[Builder] = next((b for b in builder_nodes if b.id == winning_builder_id), None)
 
-        # Select winning bid
-        winner: Tuple[str, float] = proposer.select_winner()
-        if winner:
-            winning_builder_id, _ = winner
-            winning_bid = next(result for result in builder_results if result[0] == winning_builder_id)
-            winning_builder = next(b for b in builder_nodes if b.id == winning_builder_id)
-            winning_proposer = proposer
-            break  # First proposer to select a winner wins
+    if winning_proposer:
+        winning_proposer.receive_bid(winning_builder_id, winning_entry[2])
+        winning_proposer.end_round()
 
-    return winning_bid, winning_builder, winning_proposer
+    return winning_entry, winning_builder, winning_proposer
 
 def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction], float], winning_builder: Optional[Builder], winning_proposer: Optional[Proposer]) -> Tuple[Dict[str, Any], List[Transaction]]:
     """Create block data and transactions from winning bid."""
