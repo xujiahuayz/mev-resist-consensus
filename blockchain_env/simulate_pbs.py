@@ -7,7 +7,7 @@ import csv
 import time
 import tracemalloc
 import multiprocessing as mp
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 
 import networkx as nx
 
@@ -115,10 +115,11 @@ def _process_builder_bids(builder_nodes: List[Builder], block_num: int) -> List[
         builder_results.append((builder.id, selected_transactions, bid_value))
     return builder_results
 
-def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]], block_num: int) -> Tuple[Tuple[str, List[Transaction], float], Builder]:
-    """Process proposer bids and return winning bid and builder."""
+def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]], block_num: int) -> Tuple[Tuple[str, List[Transaction], float], Optional[Builder], Optional[Proposer]]:
+    """Process proposer bids and return winning bid, builder, and proposer."""
     winning_bid: Tuple[str, List[Transaction], float] = ("", [], 0.0)
-    winning_builder: Builder = builder_nodes[0]  # Default to first builder
+    winning_builder: Optional[Builder] = None
+    winning_proposer: Optional[Proposer] = None
 
     for proposer in proposer_nodes:
         # Reset proposer state for new block
@@ -141,11 +142,12 @@ def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[B
             winning_builder_id, _ = winner
             winning_bid = next(result for result in builder_results if result[0] == winning_builder_id)
             winning_builder = next(b for b in builder_nodes if b.id == winning_builder_id)
+            winning_proposer = proposer
             break  # First proposer to select a winner wins
 
-    return winning_bid, winning_builder
+    return winning_bid, winning_builder, winning_proposer
 
-def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction], float], winning_builder: Builder) -> Tuple[Dict[str, Any], List[Transaction]]:
+def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction], float], winning_builder: Optional[Builder], winning_proposer: Optional[Proposer]) -> Tuple[Dict[str, Any], List[Transaction]]:
     """Create block data and transactions from winning bid."""
     all_block_transactions: List[Transaction] = []
     
@@ -160,7 +162,9 @@ def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction]
 
         block_data: Dict[str, Any] = {
             "block_num": block_num,
-            "builder_id": winning_builder.id,
+            "builder_id": winning_builder.id if winning_builder else "",
+            "proposer_id": winning_proposer.id if winning_proposer else "",
+            "winning_bid": winning_bid[2],
             "total_gas_fee": total_gas_fee,
             "total_mev": total_mev
         }
@@ -168,6 +172,8 @@ def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction]
         block_data: Dict[str, Any] = {
             "block_num": block_num,
             "builder_id": "",
+            "proposer_id": "",
+            "winning_bid": 0.0,
             "total_gas_fee": 0,
             "total_mev": 0
         }
@@ -186,10 +192,10 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
     builder_results = _process_builder_bids(builder_nodes, block_num)
     
     # Process proposer bids
-    winning_bid, winning_builder = _process_proposer_bids(proposer_nodes, builder_nodes, builder_results, block_num)
+    winning_bid, winning_builder, winning_proposer = _process_proposer_bids(proposer_nodes, builder_nodes, builder_results, block_num)
     
     # Create block data
-    block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder)
+    block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder, winning_proposer)
     
     # Clear mempools for all builders
     for builder in builder_nodes:
@@ -233,6 +239,8 @@ def _save_block_data(block_data_list: List[Dict[str, Any]], attacker_builder_cou
         block_fieldnames: List[str] = [
             'block_num',
             'builder_id',
+            'proposer_id',
+            'winning_bid',
             'total_gas_fee',
             'total_mev'
         ]
