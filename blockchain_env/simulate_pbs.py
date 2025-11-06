@@ -90,8 +90,10 @@ def _extract_network_nodes(network_graph: Any) -> Tuple[List[User], List[Builder
 
 def _process_user_transactions(user_nodes: List[User], block_num: int) -> None:
     """Process user transactions for the block."""
+    tx_count_by_user = {}
     for user in user_nodes:
         num_transactions: int = transaction_number()
+        tx_count_by_user[user.id] = num_transactions
         for _ in range(num_transactions):
             if not user.is_attacker:
                 tx: Transaction = user.create_transactions(block_num)
@@ -105,8 +107,8 @@ def _process_builder_bids(builder_nodes: List[Builder], block_num: int) -> List[
     """Process builder bids and return results."""
     builder_results: List[Tuple[str, List[Transaction], float]] = []
     for builder in builder_nodes:
-        # Process any received messages (transactions)
-        messages: List[Any] = builder.receive_messages()
+        # Process any received messages (transactions) that should be delivered at this block
+        messages: List[Any] = builder.receive_messages(current_round=block_num)
         for msg in messages:
             if hasattr(builder, 'receive_transaction'):
                 builder.receive_transaction(msg.content)
@@ -182,7 +184,7 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
     # Process user transactions
     _process_user_transactions(user_nodes, block_num)
     
-    # Process builder bids
+    # Process builder bids (this will also process messages)
     builder_results = _process_builder_bids(builder_nodes, block_num)
     
     # Process proposer bids
@@ -191,9 +193,25 @@ def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], L
     # Create block data
     block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder, winning_proposer)
     
-    # Clear mempools for all builders
+    # Clear mempools for ALL participants (users, builders, proposers) instantaneously
+    # This removes transactions that have been included on-chain, regardless of propagation delay
+    # Note: Since builders use deepcopy, we must remove by transaction ID, not object reference
+    included_tx_ids = {tx.id for tx in all_block_transactions} if all_block_transactions else set()
+    
+    # Remove included transactions from all users' mempools (instantaneous, no propagation delay)
+    for user in user_nodes:
+        user.mempool = [tx for tx in user.mempool if tx.id not in included_tx_ids]
+        user.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
+    
+    # Remove included transactions from all builders' mempools (instantaneous, no propagation delay)
     for builder in builder_nodes:
-        builder.clear_mempool(block_num)
+        builder.mempool = [tx for tx in builder.mempool if tx.id not in included_tx_ids]
+        builder.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
+    
+    # Remove included transactions from all proposers' mempools (instantaneous, no propagation delay)
+    for proposer in proposer_nodes:
+        proposer.mempool = [tx for tx in proposer.mempool if tx.id not in included_tx_ids]
+        proposer.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
 
     return block_data, all_block_transactions
 
@@ -271,7 +289,7 @@ def run_simulation_in_process(attacker_builder_count: int, attacker_user_count: 
 if __name__ == "__main__":
     tracemalloc.start()  # Start tracking memory usage, for diagnostic purposes
 
-    for builder_count in range(1, BUILDERNUM + 1):
+    for builder_count in range(BUILDERNUM + 1):
         for user_count in range(USERNUM + 1):
             start_time: float = time.time()
             run_simulation_in_process(builder_count, user_count)

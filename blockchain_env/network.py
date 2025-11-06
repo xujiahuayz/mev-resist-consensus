@@ -1,6 +1,7 @@
 """Network module for blockchain environment."""
 
 import random
+import math
 from typing import List, Any
 from dataclasses import dataclass
 import networkx as nx
@@ -58,14 +59,29 @@ class Node:
             receiver = self.network.nodes[receiver_id]['node']
             if receiver:
                 latency = self.network[self.id][receiver_id]['weight']
-                delivery_round = current_round + latency
+                # For direct neighbors, transactions arrive in the same block (round 0 delay)
+                # For multi-hop propagation, add latency
+                # This ensures transactions are available to builders quickly
+                if latency <= 1.0:
+                    # Fast connection: available in same block
+                    delivery_round = current_round
+                else:
+                    # Slower connection: available in next block
+                    delivery_round = current_round + 1
                 message.round = delivery_round
                 receiver.message_queue.append(message)
 
-    def receive_messages(self) -> List[Message]:
-        """Get and process all messages from the queue."""
-        messages = self.message_queue.copy()
-        self.message_queue.clear()
+    def receive_messages(self, current_round: int = None) -> List[Message]:
+        """Get and process all messages from the queue that should be delivered at current_round."""
+        if current_round is None:
+            # If no current_round specified, process all messages (backward compatibility)
+            messages = self.message_queue.copy()
+            self.message_queue.clear()
+        else:
+            # Only process messages that should be delivered at or before current_round
+            messages = [msg for msg in self.message_queue if msg.round <= current_round]
+            self.message_queue = [msg for msg in self.message_queue if msg.round > current_round]
+        
         for message in messages:
             if hasattr(message.content, 'creator_id'):
                 if message.content not in self.mempool:
@@ -84,8 +100,12 @@ class Node:
         seen.add(transaction)
         for neighbor_id in self.visible_nodes:
             if neighbor_id != sender_id:
+                # Use send_message which handles latency calculation
                 latency = self.network[self.id][neighbor_id]['weight']
-                delivery_round = current_round + latency
+                if latency <= 1.0:
+                    delivery_round = current_round
+                else:
+                    delivery_round = current_round + 1
                 self.send_message(neighbor_id, transaction, delivery_round)
 
     def get_mempool(self) -> List[Any]:
