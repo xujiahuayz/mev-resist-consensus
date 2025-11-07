@@ -20,14 +20,30 @@ class Message:
     round: int
 
 class Node:
-    """Node class representing a participant in the network."""
-    def __init__(self, node_id: int, restaking_factor: float = None) -> None:
-        """Initialize a Node."""
+    """Node class representing a participant in the network.
+    
+    Simplified version: No network graph needed. Transactions are distributed
+    directly to receivers based on probability.
+    """
+    def __init__(self, node_id: int, restaking_factor: float = None, transaction_inclusion_probability: float = None) -> None:
+        """Initialize a Node.
+        
+        Args:
+            node_id: Unique identifier for the node
+            restaking_factor: Factor for restaking behavior
+            transaction_inclusion_probability: Probability (0-1) of including a transaction in mempool when received.
+                                              If None, defaults to a random value between 0.5 and 1.0.
+        """
         self.id: int = node_id
-        self.visible_nodes: List[int] = []
-        self.message_queue: List[Message] = []
-        self.network: nx.Graph = None
         self.mempool: List[Any] = []
+        self.pending_mempool: List[Any] = []  # Transactions waiting to be included
+        
+        # Transaction inclusion probability (0-1)
+        if transaction_inclusion_probability is None:
+            # Default: random probability between 0.5 and 1.0
+            self.transaction_inclusion_probability: float = random.uniform(0.5, 1.0)
+        else:
+            self.transaction_inclusion_probability: float = max(0.0, min(1.0, transaction_inclusion_probability))
         
         # Restaking functionality
         if restaking_factor is None:
@@ -42,71 +58,51 @@ class Node:
         self.profit_history: List[int] = []  # Track profits over time
         self.stake_history: List[int] = []  # Track stake evolution
 
-    def set_network(self, network: nx.Graph) -> None:
-        """Set the network graph and update visible nodes."""
-        self.network = network
-        self.visible_nodes = list(network.neighbors(self.id))
-
-    def send_message(self, receiver_id: int, content: Any, current_round: int) -> None:
-        """Send a message to another node through the network."""
-        if receiver_id in self.visible_nodes:
-            message = Message(
-                sender_id=self.id,
-                receiver_id=receiver_id,
-                content=content,
-                round=current_round
-            )
-            receiver = self.network.nodes[receiver_id]['node']
-            if receiver:
-                latency = self.network[self.id][receiver_id]['weight']
-                # For direct neighbors, transactions arrive in the same block (round 0 delay)
-                # For multi-hop propagation, add latency
-                # This ensures transactions are available to builders quickly
-                if latency <= 1.0:
-                    # Fast connection: available in same block
-                    delivery_round = current_round
-                else:
-                    # Slower connection: available in next block
-                    delivery_round = current_round + 1
-                message.round = delivery_round
-                receiver.message_queue.append(message)
-
-    def receive_messages(self, current_round: int = None) -> List[Message]:
-        """Get and process all messages from the queue that should be delivered at current_round."""
-        if current_round is None:
-            # If no current_round specified, process all messages (backward compatibility)
-            messages = self.message_queue.copy()
-            self.message_queue.clear()
-        else:
-            # Only process messages that should be delivered at or before current_round
-            messages = [msg for msg in self.message_queue if msg.round <= current_round]
-            self.message_queue = [msg for msg in self.message_queue if msg.round > current_round]
+    def receive_transaction_direct(self, transaction: Any) -> None:
+        """Directly receive a transaction with probability-based inclusion.
         
-        for message in messages:
-            if hasattr(message.content, 'creator_id'):
-                if message.content not in self.mempool:
-                    self.mempool.append(message.content)
-                    self.propagate_transaction(message.content, message.round, message.sender_id)
-            elif isinstance(message.content, (int, float)):
-                pass
-        return messages
-
-    def propagate_transaction(self, transaction: Any, current_round: int, sender_id: int, seen: set = None) -> None:
-        """Propagate a transaction to all neighbors except the sender."""
-        if seen is None:
-            seen = set()
-        if transaction in seen:
-            return
-        seen.add(transaction)
-        for neighbor_id in self.visible_nodes:
-            if neighbor_id != sender_id:
-                # Use send_message which handles latency calculation
-                latency = self.network[self.id][neighbor_id]['weight']
-                if latency <= 1.0:
-                    delivery_round = current_round
-                else:
-                    delivery_round = current_round + 1
-                self.send_message(neighbor_id, transaction, delivery_round)
+        This replaces the network graph propagation. When a transaction is broadcast,
+        it's sent directly to all potential receivers, and each receiver uses their
+        probability to decide if it should be in mempool or pending_mempool.
+        """
+        # Check if transaction is already in mempool or pending_mempool
+        if transaction not in self.mempool and transaction not in self.pending_mempool:
+            # Use probability to decide if transaction should be included
+            if random.random() < self.transaction_inclusion_probability:
+                # Include in mempool immediately
+                self.mempool.append(transaction)
+            else:
+                # Add to pending mempool to try again next round
+                self.pending_mempool.append(transaction)
+    
+    def process_pending_mempool(self, current_round: int) -> None:
+        """Process pending mempool transactions, trying to include them based on probability.
+        
+        Transactions in pending_mempool are retried each round until they are:
+        - Successfully received (added to mempool), OR
+        - Already confirmed on-chain (have included_at set)
+        """
+        transactions_to_remove = []
+        for transaction in self.pending_mempool:
+            # Skip if already in mempool (shouldn't happen, but safety check)
+            if transaction in self.mempool:
+                transactions_to_remove.append(transaction)
+                continue
+            
+            # Skip if transaction is already confirmed on-chain
+            if hasattr(transaction, 'included_at') and transaction.included_at is not None:
+                transactions_to_remove.append(transaction)
+                continue
+            
+            # Try again with probability
+            if random.random() < self.transaction_inclusion_probability:
+                # Include in mempool
+                self.mempool.append(transaction)
+                transactions_to_remove.append(transaction)
+        
+        # Remove transactions that were successfully included or already confirmed
+        for transaction in transactions_to_remove:
+            self.pending_mempool.remove(transaction)
 
     def get_mempool(self) -> List[Any]:
         """Get all transactions in the node's mempool."""
@@ -115,15 +111,12 @@ class Node:
     def clear_mempool(self, block_num: int) -> None:
         """Clear transactions that have been included in blocks or are too old."""
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at >= block_num - 5]
+        # Also clear old transactions from pending mempool
+        self.pending_mempool = [tx for tx in self.pending_mempool if tx.included_at is None and tx.created_at >= block_num - 5]
 
     def get_visible_transactions(self) -> List[Any]:
-        """Get all transactions that have propagated to this node."""
-        transactions = []
-        messages = self.receive_messages()
-        for msg in messages:
-            if hasattr(msg.content, 'creator_id'):
-                transactions.append(msg.content)
-        return transactions
+        """Get all transactions in mempool (for backward compatibility)."""
+        return self.mempool.copy()
     
     def update_stake(self, profit: int, validator_threshold: int = 32 * 10**9) -> None:
         """Update capital and active stake based on profit and reinvestment."""
@@ -216,7 +209,7 @@ if __name__ == "__main__":
         test_graph = build_network(test_users, test_builders, test_proposers, p=0.05)
         
         # Print basic stats
-        print(f"Network built successfully:")
+        print("Network built successfully:")
         print(f"  Nodes: {test_graph.number_of_nodes()}")
         print(f"  Edges: {test_graph.number_of_edges()}")
         print(f"  Connected: {nx.is_connected(test_graph)}")

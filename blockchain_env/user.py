@@ -1,7 +1,7 @@
 import random
-from typing import List, Optional
+from typing import List, Optional, Any
 from transaction import Transaction
-from network import Node, build_network
+from network import Node
 from builder import Builder
 
 # Random seed for reproducibility
@@ -25,7 +25,8 @@ class User(Node):
         return Transaction(gas_fee, mev_potential, creator_id, created_at, target_tx)
 
     def launch_attack(self, block_num: int) -> Transaction:
-        self.receive_messages()
+        # Process pending mempool to get latest transactions
+        self.process_pending_mempool(block_num)
         profitable_txs: List[Transaction] = [tx for tx in self.mempool if tx.mev_potential > 0]
         if profitable_txs:
             profitable_txs.sort(key=lambda x: x.mev_potential, reverse=True)
@@ -44,8 +45,23 @@ class User(Node):
                 return Transaction(gas_fee, 0, self.id, block_num, target_tx)
         return self.create_transactions(block_num)
 
-    def broadcast_transactions(self, transaction: Transaction) -> None:
-        self.propagate_transaction(transaction, transaction.created_at, self.id)
+    def broadcast_transactions(self, transaction: Transaction, receivers: List[Any] = None) -> None:
+        """Broadcast transaction directly to all receivers using probability-based distribution.
+        
+        Args:
+            transaction: The transaction to broadcast
+            receivers: List of nodes (builders/proposers) that should receive this transaction.
+                      If None, broadcasting is skipped (receivers should be provided by simulation).
+        """
+        if receivers is None:
+            # Backward compatibility: if no receivers provided, do nothing
+            # The simulation should provide the receiver list
+            return
+        
+        # Send transaction directly to all receivers
+        # Each receiver will use their own probability to decide inclusion
+        for receiver in receivers:
+            receiver.receive_transaction_direct(transaction)
 
     @classmethod
     def test_create_transactions(cls) -> None:

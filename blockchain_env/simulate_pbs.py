@@ -10,12 +10,9 @@ import tracemalloc
 import multiprocessing as mp
 from typing import List, Tuple, Dict, Any, Optional
 
-import networkx as nx
-
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
-from blockchain_env.network import build_network
 from blockchain_env.transaction import Transaction
 
 # Constants
@@ -31,45 +28,17 @@ random.seed(16)
 num_cores: int = os.cpu_count()
 num_processes: int = max(num_cores - 1, 1)  # Use all cores except one, but at least one
 
-# Create network participants and build network once
+# Create network participants (no network graph needed - using direct probability distribution)
+# Set uniform transaction inclusion probability for all builders (between 0.4 and 0.8)
+# This ensures fair distribution - no builder receives everything
+uniform_builder_probability: float = random.uniform(0.4, 0.8)
+
 proposer_list: List[Proposer] = [Proposer(f"proposer_{i}") for i in range(PROPOSERNUM)]
-builder_list: List[Builder] = [Builder(f"builder_{i}", False) for i in range(BUILDERNUM)]  # is_attacker will be set in simulation
+builder_list: List[Builder] = [Builder(f"builder_{i}", False, transaction_inclusion_probability=uniform_builder_probability) for i in range(BUILDERNUM)]  # is_attacker will be set in simulation
 user_list: List[User] = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
-network: Any = build_network(user_list, builder_list, proposer_list)
 
-# Calculate and save network metrics once
-network_metrics = {}
-for node_id in network.nodes():
-    node = network.nodes[node_id]['node']
-    # Calculate average latency to all other nodes
-    latencies = []
-    for other_id in network.nodes():
-        if other_id != node_id:
-            try:
-                # Get shortest path latency
-                path = nx.shortest_path(network, node_id, other_id, weight='weight')
-                path_latency = sum(network[path[i]][path[i+1]]['weight'] for i in range(len(path)-1))
-                latencies.append(path_latency)
-            except nx.NetworkXNoPath:
-                continue
-    network_metrics[node_id] = {
-        'avg_latency': sum(latencies) / len(latencies) if latencies else float('inf'),
-        'degree': network.degree(node_id)
-    }
-
-# Save network metrics to CSV
-metrics_filename: str = "data/same_seed/pbs_network_p0.05/network_metrics.csv"
-os.makedirs(os.path.dirname(metrics_filename), exist_ok=True)
-with open(metrics_filename, 'w', newline='', encoding='utf-8') as file:
-    fieldnames: List[str] = ['node_id', 'avg_latency', 'degree']
-    writer: csv.DictWriter = csv.DictWriter(file, fieldnames=fieldnames)
-    writer.writeheader()
-    for node_id, metrics in network_metrics.items():
-        writer.writerow({
-            'node_id': node_id,
-            'avg_latency': metrics['avg_latency'],
-            'degree': metrics['degree']
-        })
+# All receivers (builders and proposers) that should receive transactions
+all_receivers: List[Any] = builder_list + proposer_list
 
 def transaction_number() -> int:
     random_number: int = random.randint(0, 100)
@@ -81,17 +50,17 @@ def transaction_number() -> int:
         return 2
     return random.randint(3, 5)
 
-def _extract_network_nodes(network_graph: Any) -> Tuple[List[User], List[Builder], List[Proposer]]:
-    """Extract users, builders, and proposers from the network graph."""
-    user_nodes: List[User] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], User)]
-    builder_nodes: List[Builder] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Builder)]
-    proposer_nodes: List[Proposer] = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Proposer)]
-    return user_nodes, builder_nodes, proposer_nodes
+def _get_all_nodes() -> Tuple[List[User], List[Builder], List[Proposer]]:
+    """Get all users, builders, and proposers (no network graph needed)."""
+    return user_list, builder_list, proposer_list
 
-def _process_user_transactions(user_nodes: List[User], block_num: int) -> None:
+def _process_user_transactions(user_nodes: List[User], block_num: int, receivers: List[Any]) -> None:
     """Process user transactions for the block."""
     tx_count_by_user = {}
     for user in user_nodes:
+        # Process pending mempool transactions (probability-based retry)
+        user.process_pending_mempool(block_num)
+        
         num_transactions: int = transaction_number()
         tx_count_by_user[user.id] = num_transactions
         for _ in range(num_transactions):
@@ -101,22 +70,23 @@ def _process_user_transactions(user_nodes: List[User], block_num: int) -> None:
                 tx: Transaction = user.launch_attack(block_num)
 
             if tx:
-                user.broadcast_transactions(tx)
+                # Broadcast directly to all receivers (builders and proposers)
+                user.broadcast_transactions(tx, receivers)
 
-def _process_builder_bids(builder_nodes: List[Builder], block_num: int) -> List[Tuple[str, List[Transaction], float]]:
-    """Process builder bids and return results."""
+def _process_builder_bids_round(builder_nodes: List[Builder], block_num: int, round_num: int, last_round_bids: List[float]) -> List[Tuple[str, List[Transaction], float]]:
+    """Process builder bids for a single round and return results."""
     builder_results: List[Tuple[str, List[Transaction], float]] = []
+    round_bids: List[float] = []
+    
     for builder in builder_nodes:
-        # Process any received messages (transactions) that should be delivered at this block
-        messages: List[Any] = builder.receive_messages(current_round=block_num)
-        for msg in messages:
-            if hasattr(builder, 'receive_transaction'):
-                builder.receive_transaction(msg.content)
-
+        # Select transactions from current mempool
         selected_transactions: List[Transaction] = builder.select_transactions(block_num)
-        bid_value: float = builder.bid(selected_transactions)
+        # Place bid based on round and last round's bids
+        bid_value: float = builder.bid(selected_transactions, round_num, last_round_bids)
+        round_bids.append(bid_value)
         builder_results.append((builder.id, selected_transactions, bid_value))
-    return builder_results
+    
+    return builder_results, round_bids
 
 def _process_proposer_bids(proposer_nodes: List[Proposer], builder_nodes: List[Builder], builder_results: List[Tuple[str, List[Transaction], float]], block_num: int) -> Tuple[Tuple[str, List[Transaction], float], Optional[Builder], Optional[Proposer]]:
     """Select a proposer at random and choose the highest bid for the block."""
@@ -176,19 +146,53 @@ def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction]
 
     return block_data, all_block_transactions
 
-def process_block(block_num: int, network_graph: Any) -> Tuple[Dict[str, Any], List[Transaction]]:
-    """Process a single block in the simulation."""
-    # Extract network nodes
-    user_nodes, builder_nodes, proposer_nodes = _extract_network_nodes(network_graph)
+def process_block(block_num: int, network_graph: Any = None) -> Tuple[Dict[str, Any], List[Transaction]]:
+    """Process a single block in the simulation.
     
-    # Process user transactions
-    _process_user_transactions(user_nodes, block_num)
+    Each block has 5 rounds. In each round:
+    - Builders retry receiving pending transactions (with probability)
+    - New user transactions are created and broadcast (only in round 0)
+    - Builders select transactions and place bids (reacting to other builders' bids)
     
-    # Process builder bids (this will also process messages)
-    builder_results = _process_builder_bids(builder_nodes, block_num)
+    Args:
+        block_num: Current block number
+        network_graph: Deprecated - kept for backward compatibility, not used
+    """
+    # Get all nodes (no network graph needed)
+    user_nodes, builder_nodes, proposer_nodes = _get_all_nodes()
     
-    # Process proposer bids
-    winning_bid, winning_builder, winning_proposer = _process_proposer_bids(proposer_nodes, builder_nodes, builder_results, block_num)
+    # All receivers that should get transactions
+    receivers = builder_nodes + proposer_nodes
+    
+    # Each block has 5 rounds
+    NUM_ROUNDS_PER_BLOCK = 5
+    
+    # Track bids across rounds for reactive bidding
+    last_round_bids: List[float] = []
+    final_builder_results: List[Tuple[str, List[Transaction], float]] = []
+    
+    # Process rounds: in each round, retry pending transactions, then bid
+    for round_num in range(NUM_ROUNDS_PER_BLOCK):
+        # First, process pending mempool for all receivers (retry with probability)
+        for receiver in receivers:
+            receiver.process_pending_mempool(round_num)
+        
+        # Process user transactions (new transactions created this round)
+        # Only create transactions in the first round to avoid duplicates
+        if round_num == 0:
+            _process_user_transactions(user_nodes, block_num, receivers)
+        
+        # Process builder bids for this round (builders react to last round's bids)
+        builder_results, round_bids = _process_builder_bids_round(builder_nodes, block_num, round_num, last_round_bids)
+        
+        # Update last_round_bids for next round
+        last_round_bids = round_bids
+        
+        # Store final results (will be overwritten each round, keeping the last)
+        final_builder_results = builder_results
+    
+    # After all rounds, process proposer bids (select winner from final round)
+    winning_bid, winning_builder, winning_proposer = _process_proposer_bids(proposer_nodes, builder_nodes, final_builder_results, block_num)
     
     # Create block data
     block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder, winning_proposer)
@@ -226,7 +230,7 @@ def _set_attacker_status(attacker_builder_count: int, attacker_user_count: int) 
 def _run_simulation_blocks() -> Tuple[List[Dict[str, Any]], List[Transaction]]:
     """Run simulation blocks and return results."""
     with mp.Pool(processes=num_processes) as pool:
-        results: List[Tuple[Dict[str, Any], List[Transaction]]] = pool.starmap(process_block, [(block_num, network) for block_num in range(BLOCKNUM)])
+        results: List[Tuple[Dict[str, Any], List[Transaction]]] = pool.starmap(process_block, [(block_num, None) for block_num in range(BLOCKNUM)])
 
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]

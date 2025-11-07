@@ -5,7 +5,7 @@ import time
 import multiprocessing as mp
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
-from blockchain_env.network import build_network
+# Network graph no longer needed - using direct probability distribution
 
 # Constants
 BLOCKNUM = 1000
@@ -20,11 +20,13 @@ random.seed(16)
 num_cores = os.cpu_count()
 num_processes = max(num_cores - 1, 1)  # Use all cores except one, but at least one
 
-# Create network participants and build network once (same as PBS)
-validator_list = [Builder(f"validator_{i}", False) for i in range(PROPNUM)]  # is_attacker will be set in simulation
+# Create network participants (no network graph needed - using direct probability distribution)
+# Set uniform transaction inclusion probability for all validators (between 0.4 and 0.8)
+# This ensures fair distribution - no validator receives everything
+uniform_validator_probability = random.uniform(0.4, 0.8)
+
+validator_list = [Builder(f"validator_{i}", False, transaction_inclusion_probability=uniform_validator_probability) for i in range(PROPNUM)]  # is_attacker will be set in simulation
 user_list = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
-# For POS, we use validators instead of builders/proposers, but we need empty list for build_network
-network = build_network(user_list, validator_list, [])
 
 def transaction_number():
     random_number = random.randint(0, 100)
@@ -36,30 +38,49 @@ def transaction_number():
         return 2
     return random.randint(3, 5)
 
-def process_block(block_num, network_graph):
-    """Process a single block in the POS simulation."""
-    # Extract network nodes
-    from blockchain_env.network import Node
-    user_nodes = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], User)]
-    validator_nodes = [data['node'] for node_id, data in network_graph.nodes(data=True) if isinstance(data['node'], Builder)]
+def process_block(block_num, network_graph=None):
+    """Process a single block in the POS simulation.
     
-    # Process user transactions
-    for user in user_nodes:
-        num_transactions = transaction_number()
-        for _ in range(num_transactions):
-            if not user.is_attacker:
-                tx = user.create_transactions(block_num)
-            else:
-                tx = user.launch_attack(block_num)
-            if tx:
-                user.broadcast_transactions(tx)
+    Each block has 5 rounds. In each round:
+    - Validators retry receiving pending transactions (with probability)
+    - New user transactions are created and broadcast
     
-    # Process messages for validators (transaction propagation)
-    for validator in validator_nodes:
-        messages = validator.receive_messages(current_round=block_num)
-        for msg in messages:
-            if hasattr(validator, 'receive_transaction'):
-                validator.receive_transaction(msg.content)
+    Args:
+        block_num: Current block number
+        network_graph: Deprecated - kept for backward compatibility, not used
+    """
+    # Get all nodes (no network graph needed)
+    user_nodes = user_list
+    validator_nodes = validator_list
+    
+    # All receivers (validators) that should receive transactions
+    receivers = validator_nodes
+    
+    # Each block has 5 rounds
+    NUM_ROUNDS_PER_BLOCK = 5
+    
+    # Process rounds: in each round, retry pending transactions and process new ones
+    for round_num in range(NUM_ROUNDS_PER_BLOCK):
+        # First, process pending mempool for all receivers (retry with probability)
+        for receiver in receivers:
+            receiver.process_pending_mempool(round_num)
+        
+        # Process user transactions (new transactions created this round)
+        # Only create transactions in the first round to avoid duplicates
+        if round_num == 0:
+            for user in user_nodes:
+                # Process pending mempool transactions (probability-based retry)
+                user.process_pending_mempool(block_num)
+                
+                num_transactions = transaction_number()
+                for _ in range(num_transactions):
+                    if not user.is_attacker:
+                        tx = user.create_transactions(block_num)
+                    else:
+                        tx = user.launch_attack(block_num)
+                    if tx:
+                        # Broadcast directly to all receivers (validators)
+                        user.broadcast_transactions(tx, receivers)
     
     # Randomly select a validator for this block
     selected_validator = random.choice(validator_nodes)
@@ -114,7 +135,7 @@ def simulate_pos(attacker_validators, attacker_users):
     _set_attacker_status(attacker_validators, attacker_users)
 
     with mp.Pool(processes=num_processes) as pool:
-        results = pool.starmap(process_block, [(block_num, network) for block_num in range(BLOCKNUM)])
+        results = pool.starmap(process_block, [(block_num, None) for block_num in range(BLOCKNUM)])
 
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]

@@ -11,9 +11,9 @@ BLOCK_CAP: int = 100
 
 class Builder(Node):
     """Builder class with attack and bidding logic."""
-    def __init__(self, builder_id: int, is_attacker: bool, initial_stake: int = 0, restaking_factor: float = None) -> None:
+    def __init__(self, builder_id: int, is_attacker: bool, initial_stake: int = 0, restaking_factor: float = None, transaction_inclusion_probability: float = None) -> None:
         """Initialize a Builder."""
-        super().__init__(builder_id, restaking_factor)
+        super().__init__(builder_id, restaking_factor, transaction_inclusion_probability)
         self.is_attacker: bool = is_attacker
         self.balance: int = 0
         self.selected_transactions: List[Transaction] = []
@@ -75,27 +75,51 @@ class Builder(Node):
         self.selected_transactions = selected_transactions[:BLOCK_CAP]
         return self.selected_transactions
 
-    def bid(self, selected_transactions: List[Transaction]) -> float:
-        """Calculate the builder's bid for the block using reactive strategy."""
+    def bid(self, selected_transactions: List[Transaction], round_num: int = 0, last_round_bids: List[float] = None) -> float:
+        """Calculate the builder's bid for the block using reactive strategy.
+        
+        Args:
+            selected_transactions: Transactions selected for the block
+            round_num: Current round number (0-based)
+            last_round_bids: List of all builders' bids from last round (for reactive bidding)
+        """
+        if last_round_bids is None:
+            last_round_bids = []
+        
         total_gas_fee: float = sum(tx.gas_fee for tx in selected_transactions)
         block_value: float = total_gas_fee
         if self.is_attacker:
             mev_gain: float = sum(tx.target_tx.mev_potential for tx in selected_transactions if hasattr(tx, 'target_tx') and tx.target_tx)
             block_value += mev_gain
         
-        # Reactive bidding strategy
-        if not self.bid_history:
+        # Reactive bidding strategy (similar to bidding.py)
+        if round_num == 0 or not last_round_bids:
             # First bid: start with 50% of block value
             bid: float = block_value * 0.5
         else:
-            my_last_bid: float = self.bid_history[-1]
-            # Reactive adjustment based on previous bid
-            if my_last_bid < block_value * 0.8:
-                # Increase bid if too low
-                bid = min(block_value * 0.9, my_last_bid * 1.1)
+            highest_last_bid: float = max(last_round_bids) if last_round_bids else 0.0
+            my_last_bid: float = self.bid_history[-1] if self.bid_history else 0.0
+            
+            # Get second highest bid if available
+            if len(last_round_bids) > 1:
+                sorted_bids = sorted(last_round_bids, reverse=True)
+                second_highest_last_bid: float = sorted_bids[1]
             else:
-                # Maintain competitive bid
-                bid = max(block_value * 0.7, my_last_bid * 0.95)
+                second_highest_last_bid: float = 0.0
+            
+            # Reactive adjustment based on other builders' bids
+            if my_last_bid < highest_last_bid:
+                # Increase bid if below highest
+                bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value * 0.9)
+            elif my_last_bid == highest_last_bid:
+                # If tied for highest, increase slightly
+                bid = my_last_bid + random.random() * (block_value * 0.9 - my_last_bid)
+            else:
+                # If above highest, decrease slightly
+                bid = my_last_bid - 0.7 * (my_last_bid - second_highest_last_bid) if second_highest_last_bid > 0 else my_last_bid * 0.95
+            
+            # Ensure bid is within reasonable bounds
+            bid = max(0.0, min(bid, block_value * 0.9))
         
         # Add small random variation
         bid = bid * random.uniform(0.98, 1.02)
@@ -110,6 +134,8 @@ class Builder(Node):
         """Clear transactions included onchain or too old from the mempool."""
         timer: int = block_num - 5
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
+        # Also clear old transactions from pending mempool
+        self.pending_mempool = [tx for tx in self.pending_mempool if tx.included_at is None and tx.created_at < timer]
     
     def receive_block_reward(self, block_reward: int) -> None:
         """Receive block reward and update stake."""

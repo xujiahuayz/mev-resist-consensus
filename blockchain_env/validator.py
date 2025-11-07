@@ -105,6 +105,8 @@ class Validator(Node):
         """Clear transactions included onchain or too old from the mempool."""
         timer: int = block_num - 5
         self.mempool = [tx for tx in self.mempool if tx.included_at is None and tx.created_at < timer]
+        # Also clear old transactions from pending mempool
+        self.pending_mempool = [tx for tx in self.pending_mempool if tx.included_at is None and tx.created_at < timer]
     
     def receive_block_reward(self, block_reward: int) -> None:
         """Receive block reward and update stake."""
