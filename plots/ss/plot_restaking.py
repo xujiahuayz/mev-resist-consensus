@@ -4,10 +4,13 @@ Seaborn-based Restaking Plots: Three separate plots for PoS, PBS Builders, and P
 Shows stake evolution over time with flare/crest color schemes for attack vs non-attack.
 """
 
+from pathlib import Path
+
+import random
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pathlib import Path
 
 # Set Seaborn style
 sns.set_style("whitegrid")
@@ -20,7 +23,6 @@ def plot_pos_validators():
     print("Creating PoS validator stake plot...")
     
     # Set random seed for reproducible sampling
-    import random
     random.seed(16)
     
     # Load PoS data
@@ -36,7 +38,7 @@ def plot_pos_validators():
     
     for stake_level in stake_levels:
         # Sample attack validators at this stake level
-        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == True) & (stake_evolution['initial_stake'] == stake_level)]
+        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is True) & (stake_evolution['initial_stake'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -44,7 +46,7 @@ def plot_pos_validators():
             print(f"Warning: No attack validators at {stake_level/1e9} ETH stake level")
         
         # Sample non-attack validators at this stake level
-        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == False) & (stake_evolution['initial_stake'] == stake_level)]
+        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is False) & (stake_evolution['initial_stake'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -52,7 +54,7 @@ def plot_pos_validators():
             print(f"Warning: No non-attack validators at {stake_level/1e9} ETH stake level")
     
     print(f"Total validators sampled: {len(all_sampled)}")
-    print(f"Expected: 10 (5 levels × 1 attack × 1 non-attack)")
+    print("Expected: 10 (5 levels × 1 attack × 1 non-attack)")
     print(f"Missing: {10 - len(all_sampled)} validators due to insufficient data at some stake levels")
     
     # Create the plot
@@ -208,7 +210,7 @@ def plot_pos_validators():
     # Remove any automatic legend that might appear
     try:
         plt.gca().legend().remove()
-    except:
+    except Exception:
         pass
     
     plt.tight_layout()
@@ -222,7 +224,6 @@ def plot_pbs_builders():
     print("Creating PBS builder stake plot...")
     
     # Set random seed for reproducible sampling
-    import random
     random.seed(16)
     
     # Load PBS data - USE CONTINUOUS STAKE DATA instead of block data
@@ -240,7 +241,7 @@ def plot_pbs_builders():
     
     for stake_level in stake_levels:
         # Sample 1 attack builder at this stake level
-        attack_at_stake = builders[(builders['is_attacker'] == True) & (builders['initial_stake_eth'] == stake_level)]
+        attack_at_stake = builders[(builders['is_attacker'] is True) & (builders['initial_stake_eth'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -250,7 +251,7 @@ def plot_pbs_builders():
             print(f"Warning: No attack builders at {stake_level} ETH stake level")
         
         # Sample 1 non-attack builder at this stake level
-        nonattack_at_stake = builders[(builders['is_attacker'] == False) & (builders['initial_stake_eth'] == stake_level)]
+        nonattack_at_stake = builders[(builders['is_attacker'] is False) & (builders['initial_stake_eth'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -260,17 +261,17 @@ def plot_pbs_builders():
             print(f"Warning: No non-attack builders at {stake_level} ETH stake level")
     
     print(f"Total builders sampled: {len(all_sampled)}")
-    print(f"Expected: 10 (5 levels × 1 attack × 1 non-attack)")
+    print("Expected: 10 (5 levels × 1 attack × 1 non-attack)")
     print(f"Missing: {10 - len(all_sampled)} builders due to insufficient data at some stake levels")
     
     # Debug: Check what was sampled
     print("\nSampled builders by stake level:")
     for stake_level in stake_levels:
         attack_count = len([b for b in all_sampled if 
-                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == True and
+                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is True and
                            participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         nonattack_count = len([b for b in all_sampled if 
-                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == False and
+                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is False and
                               participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         print(f"{stake_level} ETH: {attack_count} attack, {nonattack_count} non-attack")
     
@@ -424,7 +425,7 @@ def plot_pbs_builders():
     # Remove any automatic legend that might appear
     try:
         plt.gca().legend().remove()
-    except:
+    except Exception:
         pass
     
     plt.tight_layout()
@@ -438,7 +439,6 @@ def plot_pbs_proposers():
     print("Creating PBS proposer stake plot...")
     
     # Set random seed for reproducible sampling
-    import random
     random.seed(16)
     
     # Load PBS data - USE CONTINUOUS STAKE DATA instead of block data
@@ -463,7 +463,7 @@ def plot_pbs_proposers():
             print(f"Warning: No proposers at {stake_level} ETH stake level")
     
     print(f"Total proposers sampled: {len(all_sampled)}")
-    print(f"Expected: 5 (5 levels × 1 proposer)")
+    print("Expected: 5 (5 levels × 1 proposer)")
     print(f"Missing: {5 - len(all_sampled)} proposers due to insufficient data at some stake levels")
     
     # Sort proposers by stake level (high to low)
@@ -557,7 +557,7 @@ def plot_pbs_proposers():
     # Remove any automatic legend that might appear
     try:
         plt.gca().legend().remove()
-    except:
+    except Exception:
         pass
     
     plt.tight_layout()
@@ -582,4 +582,4 @@ def main():
     print("All three plots completed!")
 
 if __name__ == "__main__":
-    main() 
+    main()

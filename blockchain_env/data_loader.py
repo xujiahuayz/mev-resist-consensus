@@ -37,7 +37,7 @@ class EthereumDataLoader:
         # Load all block files in the period
         for block_file in period_path.glob("block_*.json"):
             try:
-                with open(block_file, 'r') as f:
+                with open(block_file, 'r', encoding='utf-8') as f:
                     block_data = json.load(f)
                 
                 # Extract gas fees and transaction data
@@ -80,11 +80,11 @@ class EthereumDataLoader:
     
     def get_periods_by_type(self, period_type: str) -> List[str]:
         """Get period names by type (high_volatility, stable)."""
-        return [name for name in self.periods_data.keys() if period_type.upper() in name]
+        return [name for name in self.periods_data if period_type.upper() in name]
     
     def get_periods_by_era(self, era: str) -> List[str]:
         """Get period names by era (pre_merge, post_merge)."""
-        return [name for name in self.periods_data.keys() if era.upper() in name]
+        return [name for name in self.periods_data if era.upper() in name]
     
     def sample_gas_fees(self, 
                        period_name: Optional[str] = None, 
@@ -252,7 +252,7 @@ class EthereumDataLoader:
         """
         if period_type and era:
             # Get specific combination
-            periods = [p for p in self.periods_data.keys() 
+            periods = [p for p in self.periods_data 
                       if period_type.upper() in p and era.upper() in p]
         elif period_type:
             periods = self.get_periods_by_type(period_type)
@@ -310,4 +310,6 @@ def get_real_transactions(period_name: Optional[str] = None, n_samples: int = 10
 def get_simulation_data(period_type: str = None, era: str = None, n_samples: int = 100) -> Dict:
     """Get simulation-ready data for specific period types or eras."""
     loader = EthereumDataLoader()
-    return loader.get_simulation_data(period_type, era, n_samples) 
+    return loader.get_simulation_data(period_type, era, n_samples)
+
+

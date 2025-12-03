@@ -118,7 +118,7 @@ def create_stake_evolution_plot():
     ax.set_ylim(0, total_stake)  # Stop at 100%
     
     # Convert y-axis to percentage
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0f}'.format(y/total_stake*100)))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y/total_stake*100:.0f}'))
     
     # Remove legend from plot - will be created separately
     
@@ -171,7 +171,7 @@ def create_proposer_stake_evolution_plot():
     ax.set_ylim(0, total_stake)  # Stop at 100%
     
     # Convert y-axis to percentage
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0f}'.format(y/total_stake*100)))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y/total_stake*100:.0f}'))
     
     # Remove legend from plot - will be created separately
     

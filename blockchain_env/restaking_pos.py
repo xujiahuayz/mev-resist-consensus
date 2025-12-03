@@ -170,12 +170,12 @@ def process_block_batch(args):
     return block_data_list
 
 def simulate_restaking_pos():
-    print(f"Starting Corrected Restaking PoS Simulation")
+    print("Starting Corrected Restaking PoS Simulation")
     print(f"Blocks: {BLOCKNUM}")
     print(f"Validator threshold: {VALIDATOR_THRESHOLD / 10**9:.1f} ETH")
     print(f"Reinvestment probability: {REINVESTMENT_PROBABILITY:.1%}")
     print(f"Attackers: {PROPNUM // 2} validators, {USERNUM // 2} users")
-    print(f"Running sequentially to avoid multiprocessing race conditions")
+    print("Running sequentially to avoid multiprocessing race conditions")
     
     validators = initialize_validators_with_stakes()
     users = [User(f"user_{i}", i < USERNUM // 2) for i in range(USERNUM)]
@@ -246,13 +246,13 @@ def save_results(block_data, validators):
     os.makedirs(output_dir, exist_ok=True)
     
     if block_data:
-        with open(f"{output_dir}restaking_pos_blocks.csv", 'w', newline='') as f:
+        with open(f"{output_dir}restaking_pos_blocks.csv", 'w', newline='', encoding='utf-8') as f:
             fieldnames = block_data[0].keys()
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(block_data)
     
-    with open(f"{output_dir}stake_evolution.csv", 'w', newline='') as f:
+    with open(f"{output_dir}stake_evolution.csv", 'w', newline='', encoding='utf-8') as f:
         fieldnames = ['participant_id', 'participant_type', 'is_attacker', 'reinvestment_factor',
                      'initial_stake', 'final_stake', 'total_profit', 'num_validator_nodes']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -276,7 +276,7 @@ def _save_block_data(block_data_list):
     if not block_data_list:
         return
     
-    filename = f"data/same_seed/restaking_pos/restaking_pos_blocks.csv"
+    filename = "data/same_seed/restaking_pos/restaking_pos_blocks.csv"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     
     with open(filename, 'w', newline='', encoding='utf-8') as f:
@@ -290,4 +290,4 @@ if __name__ == "__main__":
     print("Corrected Restaking PoS Simulation for Long-term Centralization Analysis")
     print("=" * 70)
     
-    simulate_restaking_pos() 
+    simulate_restaking_pos()

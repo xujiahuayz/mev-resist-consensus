@@ -33,6 +33,9 @@ class Validator(Node):
         self.reinvestment_factor = restaking_factor if restaking_factor is not None else random.random()
         self.profit_history = []
         self.stake_history = [self.capital]
+        # Initialize mempool attributes (inherited from Node but explicitly set for pylint)
+        self.mempool: List[Transaction] = self.mempool
+        self.pending_mempool: List[Transaction] = self.pending_mempool
 
     def launch_attack(self, block_num: int, target_transaction: Transaction, attack_type: str) -> Transaction:
         """Launch an attack transaction targeting a specific transaction."""

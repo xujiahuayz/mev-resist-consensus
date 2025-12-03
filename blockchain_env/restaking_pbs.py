@@ -494,7 +494,7 @@ def save_continuous_stake_data(continuous_stake_data, attacker_builders, attacke
             writer.writerow(stake_data)
 
 def run_pbs_restaking_simulation(attacker_builders, attacker_users):
-    print(f"Starting PBS Restaking Simulation")
+    print("Starting PBS Restaking Simulation")
     print(f"Blocks: {BLOCKNUM}")
     print(f"Attackers: {attacker_builders}/{BUILDERNUM} builders, {attacker_users}/{USERNUM} users")
     print(f"Validator threshold: {VALIDATOR_THRESHOLD / 1e9:.1f} ETH")
@@ -538,7 +538,7 @@ def run_pbs_restaking_simulation(attacker_builders, attacker_users):
     print(f"\nSimulation completed in {end_time - start_time:.2f} seconds")
     
     final_metrics = calculate_centralization_metrics(builders, proposers)
-    print(f"\nFinal Centralization Metrics:")
+    print("\nFinal Centralization Metrics:")
     print(f"Gini Coefficient: {final_metrics['gini']:.4f}")
     print(f"HHI: {final_metrics['hhi']:.0f}")
     print(f"Top 5 Concentration: {final_metrics['top_5_share']:.2f}%")
@@ -551,7 +551,7 @@ def run_pbs_restaking_simulation(attacker_builders, attacker_users):
         avg_attack_growth = sum((b.capital - b.initial_stake) / b.initial_stake for b in attack_builders) / len(attack_builders)
         avg_non_attack_growth = sum((b.capital - b.initial_stake) / b.initial_stake for b in non_attack_builders) / len(non_attack_builders)
         
-        print(f"\nBuilder Growth Analysis:")
+        print("\nBuilder Growth Analysis:")
         print(f"Attack builders average growth: {avg_attack_growth * 100:.2f}%")
         print(f"Non-attack builders average growth: {avg_non_attack_growth * 100:.2f}%")
         print(f"Attack advantage: {(avg_attack_growth - avg_non_attack_growth) * 100:.2f} percentage points")
@@ -569,8 +569,8 @@ if __name__ == "__main__":
         
         run_pbs_restaking_simulation(attacker_builders, attacker_users)
         
-        print(f"\nConfiguration completed. Files saved in data/restaking_pbs/")
-        print(f"Waiting 5 seconds before next configuration...")
+        print("\nConfiguration completed. Files saved in data/restaking_pbs/")
+        print("Waiting 5 seconds before next configuration...")
         time.sleep(5)
     
     print(f"\n{'='*80}")

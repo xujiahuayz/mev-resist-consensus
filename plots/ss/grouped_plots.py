@@ -93,7 +93,7 @@ def create_pos_grouped_plot():
         else:
             ax.text(0.5, 0.5, f"Data not found:\n{file_name}", 
                    ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            ax.set_title(f"Missing Data: POS", fontsize=20)
+            ax.set_title("Missing Data: POS", fontsize=20)
     
     # Set axis tickers as requested:
     # Top-left plot (0% MEV users) - Y-axis tickers only (remove x-axis)
@@ -151,7 +151,7 @@ def create_pbs_grouped_plot():
         else:
             ax.text(0.5, 0.5, f"Data not found:\n{file_name}", 
                    ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            ax.set_title(f"Missing Data: PBS", fontsize=20)
+            ax.set_title("Missing Data: PBS", fontsize=20)
     
     # Set axis tickers as requested:
     # Top-left plot (0% MEV users) - Y-axis tickers only (remove x-axis)

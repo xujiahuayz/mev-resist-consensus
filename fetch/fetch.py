@@ -261,7 +261,7 @@ def main():
         json.dump(simulation_guide, f, indent=4, default=str)
     
     print(f"\nSimulation testing guide created: {guide_file}")
-    print(f"\nReady for simulation testing! Each period is clearly identified and organized.")
+    print("\nReady for simulation testing! Each period is clearly identified and organized.")
 
 if __name__ == "__main__":
     main()

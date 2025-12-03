@@ -12,5 +12,5 @@ from .bidding import ModifiedBuilder
 
 __all__ = [
     'User', 'Builder', 'Validator', 'Proposer', 'Node', 'build_network',
-    'Transaction', 'ModifiedBuilder', 'simulate_restaking_pbs', 'simulate_restaking_pos'
+    'Transaction', 'ModifiedBuilder'
 ]

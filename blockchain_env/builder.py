@@ -19,6 +19,9 @@ class Builder(Node):
         self.selected_transactions: List[Transaction] = []
         self.strategy: str = "reactive"  # Default to reactive strategy
         self.bid_history: List[float] = []
+        # Initialize mempool attributes (inherited from Node but explicitly set for pylint)
+        self.mempool: List[Transaction] = self.mempool
+        self.pending_mempool: List[Transaction] = self.pending_mempool
         
         # Initialize stake for restaking
         if initial_stake > 0:
