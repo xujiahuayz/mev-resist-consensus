@@ -3,27 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# cpp extensions
-*.d
-*.slo
-*.lo
-*.o
-*.obj
-*.gch
-*.pch
-*.so
-*.dylib
-*.dll
-*.mod
-*.smod
-*.lai
-*.la
-*.a
-*.lib
-*.exe
-*.out
-*.app
-
 # Distribution / packaging
 .Python
 build/
