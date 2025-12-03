@@ -74,28 +74,45 @@ pre-commit install
 
 Below are the commands to generate each figure in the paper. Copy and paste each command into your terminal as needed.
 
-### Figure 4: Cumulative Block Production Grids
-Generates cumulative block production plots for PoS and PBS.
+### Figure 4 & 5: Theoretical Restaking Plots
+Generates theoretical plots showing builder and proposer growth rates and stake evolution over time.
 ```bash
-python plots/ss/pos_selection_3x3.py
-python plots/ss/pbs_selection_3x3.py
+python plots/theory/restaking.py
 ```
 
-### Figure 5: MEV Profit Distribution
-Generates MEV profit distribution plots for PoS and PBS.
+### Figure 6: Comparison of Block Production by Attack and Benign Participants
+Generates heatmaps showing the proportion of blocks built by attacking participants for PoS and PBS.
+```bash
+python plots/ss/block_build_proportions.py
+```
+
+### Figure 7: Side-by-Side Comparison of the Percentage of MEV Profit
+Generates stacked area plots showing MEV profit distribution among validators/builders, users, and uncaptured MEV for PoS and PBS.
 ```bash
 python plots/ss/pos_profit.py
 python plots/ss/pbs_profit.py
 ```
 
-### Figure 6 & 7: Auction Bid and Block Value Dynamics
-Generates auction bid and block value dynamics plots.
+### Figure 8: Auction Bids Over Time
+Generates a plot showing bid dynamics across auction rounds for a selected block.
 ```bash
 python plots/ss/bidding_dynamic.py
 ```
 
-### Figure 8: Inversion Count Heatmaps
-Generates inversion count heatmaps for PoS and PBS.
+### Figure 9: Block Valuations vi,t Over Rounds
+Generates a plot showing block value dynamics across auction rounds for a selected block.
+```bash
+python plots/ss/bidding_dynamic.py
+```
+
+### Figure 10: Stake Evolution Over 10,000 Blocks for Participants with Different Initial Stakes
+Generates three separate plots showing stake evolution for PoS validators, PBS builders, and PBS proposers with different initial stake levels.
+```bash
+python plots/ss/plot_restaking.py
+```
+
+### Figure 11: Inversion Count Heatmaps Under Varying Numbers of MEV-Seeking Participants
+Generates heatmaps showing transaction ordering inversion counts for PoS and PBS under different configurations of MEV-seeking participants.
 ```bash
 python plots/ss/tx_order.py
 ```
