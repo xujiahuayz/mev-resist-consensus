@@ -1,8 +1,0 @@
-transaction_id,fee,mev_potential,mev_captured,creator_id,target_tx_id,type_of_user,block_number,block_created,validator_type,transaction_type
-2200022,6300000,0,0,441,,unknown,1,1,attack,normal
-2200025,630000,0,0,443,,unknown,1,1,attack,normal
-2200021,340000,0,0,441,,unknown,1,1,attack,normal
-2300022,0,0,0,1124,2200026.0,unknown,1,1,attack,b_attack
-2200026,160000,164000,0,443,,unknown,1,1,attack,normal
-2200023,310000,0,0,442,,unknown,1,1,attack,normal
-2200024,120000,0,0,442,,unknown,1,1,attack,normal

@@ -1,6 +1,0 @@
-id,fee,mev_potential,creator_id,included_pbs,included_pos,pbs_inclusion_time,pos_inclusion_time,successful_pbs,successful_pos,targeting,target_tx_id,block_created,transaction_type,inclusion_log
-1900028,43000000,0,381,True,True,1,1.0,True,True,False,,1,normal,"[{'system': 'pbs', 'block_number': 1, 'success': True}, {'system': 'pos', 'block_number': 1, 'success': True}]"
-2000028,0,0,951,True,False,1,,True,False,True,1900029.0,1,b_attack,"[{'system': 'pbs', 'block_number': 1, 'success': True}]"
-1900029,150000,510000,381,True,True,1,1.0,True,True,False,,1,normal,"[{'system': 'pbs', 'block_number': 1, 'success': True}, {'system': 'pos', 'block_number': 1, 'success': True}]"
-1900028,43000000,0,381,True,True,1,1.0,True,True,False,,1,normal,"[{'system': 'pbs', 'block_number': 1, 'success': True}, {'system': 'pos', 'block_number': 1, 'success': True}]"
-1900029,150000,510000,381,True,True,1,1.0,True,True,False,,1,normal,"[{'system': 'pbs', 'block_number': 1, 'success': True}, {'system': 'pos', 'block_number': 1, 'success': True}]"
