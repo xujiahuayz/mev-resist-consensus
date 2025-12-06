@@ -5,8 +5,8 @@ import time
 import multiprocessing as mp
 import numpy as np
 
-from user import User
-from validator import Validator
+from blockchain_env.user import User
+from blockchain_env.validator import Validator
 
 BLOCKNUM = 10000
 BLOCK_CAP = 100

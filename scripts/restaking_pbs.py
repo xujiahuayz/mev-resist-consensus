@@ -5,10 +5,10 @@ import time
 import gc
 from typing import List, Dict, Any, Tuple, Set
 
-from user import User
-from builder import Builder
-from proposer import Proposer
-from transaction import Transaction
+from blockchain_env.user import User
+from blockchain_env.builder import Builder
+from blockchain_env.proposer import Proposer
+from blockchain_env.transaction import Transaction
 
 BLOCKNUM = 10000
 BLOCK_CAP = 100
