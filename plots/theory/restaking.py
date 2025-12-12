@@ -73,107 +73,189 @@ def create_builder_growth_theory_plot():
 
 
 def create_stake_evolution_plot():
-    """Create the plot showing builder stake evolution over time slots."""
+    """Create a stacked 100% area chart showing builder stake proportions over time.
+    Shows how richer entities become increasingly dominant."""
     
     # Parameters
     total_stake = 1000
     gamma_Bi = 0.8
     v_i_T = 10
     
-    # Different fπ values
-    f_pi_values = [0.1, 0.3, 0.5, 0.7, 0.9]
+    # Create multiple entities with different initial stakes (same ability)
+    # All entities have the same ability (f_pi), only initial stake differs
+    f_pi = 0.5  # Same ability for all
+    entities = [
+        {'initial_stake': 400, 'f_pi': f_pi, 'label': 'Initial Stake: 40%', 'color': palette[0]},
+        {'initial_stake': 200, 'f_pi': f_pi, 'label': 'Initial Stake: 20%', 'color': palette[2]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[3]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[4]},
+    ]
     
-    # Single initial stake (small starting point)
-    initial_stake = 10  # Start with 1% of total stake
-    s_initial = initial_stake
+    # Remaining stake goes to "others" (passive, no growth)
+    initial_others = total_stake - sum(e['initial_stake'] for e in entities)
     
-    # Time slots - more blocks
+    # Time slots
     time_slots = np.arange(0, 201)  # 0 to 200 slots
     
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Track stake evolution for each entity
+    all_stakes = {i: [] for i in range(len(entities))}
+    others_stakes = []
     
-    # Plot for each fπ value
-    for i, f_pi in enumerate(f_pi_values):
-        # Calculate stake evolution
-        stakes = [s_initial]
-        
-        for slot in range(1, len(time_slots)):
-            # Calculate growth rate
-            growth_rate = builder_growth_rate(f_pi, stakes[-1], total_stake, gamma_Bi, v_i_T)
-            # Update stake
-            new_stake = stakes[-1] * growth_rate
-            stakes.append(new_stake)
-        
-        # Plot the line
-        ax.plot(time_slots, stakes, 
-                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
+    # Initialize
+    for entity in entities:
+        all_stakes[entities.index(entity)].append(entity['initial_stake'])
+    others_stakes.append(initial_others)
     
-    # Remove total stake line - will be handled in separate legend
+    # Evolve over time
+    for slot in range(1, len(time_slots)):
+        current_total = sum(all_stakes[i][-1] for i in range(len(entities))) + others_stakes[-1]
+        
+        # Update each entity's stake
+        for i, entity in enumerate(entities):
+            current_stake = all_stakes[i][-1]
+            growth_rate = builder_growth_rate(entity['f_pi'], current_stake, current_total, gamma_Bi, v_i_T)
+            new_stake = current_stake * growth_rate
+            all_stakes[i].append(new_stake)
+        
+        # Others remain constant (no growth)
+        others_stakes.append(others_stakes[-1])
+    
+    # Calculate proportions (percentages) relative to actual total at each time step
+    proportions = {}
+    for i in range(len(entities)):
+        proportions[i] = []
+    others_proportions = []
+    
+    for t in range(len(time_slots)):
+        current_total = sum(all_stakes[i][t] for i in range(len(entities))) + others_stakes[t]
+        for i in range(len(entities)):
+            proportions[i].append(all_stakes[i][t] / current_total * 100)
+        others_proportions.append(others_stakes[t] / current_total * 100)
+    
+    # Create stacked area chart
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Stack the areas from bottom to top
+    bottom = np.zeros(len(time_slots))
+    
+    # Plot each entity (from richest to poorest for visual clarity)
+    for i in range(len(entities)):
+        ax.fill_between(time_slots, bottom, bottom + proportions[i], 
+                       color=entities[i]['color'], alpha=0.7, 
+                       label=entities[i]['label'], linewidth=0)
+        bottom += proportions[i]
+    
+    # Plot "others" on top
+    ax.fill_between(time_slots, bottom, bottom + others_proportions,
+                   color='lightgray', alpha=0.5, label='Others (No Growth)', linewidth=0)
+    
+    # Add grid for better readability
+    ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
     
     # Customize the plot
     ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
-    ax.set_ylabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=30)
+    ax.set_ylabel(r'Stake Proportion (%)', fontsize=30)
     ax.set_xlim(0, 200)
-    ax.set_ylim(0, total_stake)  # Stop at 100%
+    ax.set_ylim(0, 100)
+    ax.set_yticks([0, 25, 50, 75, 100])
+    ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
     
-    # Convert y-axis to percentage
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y/total_stake*100:.0f}'))
-    
-    # Remove legend from plot - will be created separately
+    # Add legend (smaller size)
+    ax.legend(loc='lower right', fontsize=14, frameon=True, fancybox=False, shadow=False)
     
     plt.tight_layout()
     return fig
 
 def create_proposer_stake_evolution_plot():
-    """Create the plot showing proposer stake evolution over time slots."""
+    """Create a stacked 100% area chart showing proposer stake proportions over time.
+    Shows how richer entities become increasingly dominant."""
     
     # Parameters
     total_stake = 1000
     gamma_Pi = 0.8
     b_i_T = 10  # Fixed proposer reward
     
-    # Different f·π values (same as builder)
-    f_pi_values = [0.1, 0.3, 0.5, 0.7, 0.9]
+    # Create multiple entities with different initial stakes (same ability)
+    # All entities have the same ability (f_pi), only initial stake differs
+    f_pi = 0.5  # Same ability for all
+    entities = [
+        {'initial_stake': 400, 'f_pi': f_pi, 'label': 'Initial Stake: 40%', 'color': palette[0]},
+        {'initial_stake': 200, 'f_pi': f_pi, 'label': 'Initial Stake: 20%', 'color': palette[2]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[3]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[4]},
+    ]
     
-    # Single initial stake (small starting point)
-    initial_stake = 10  # Start with 1% of total stake
-    s_initial = initial_stake
+    # Remaining stake goes to "others" (passive, no growth)
+    initial_others = total_stake - sum(e['initial_stake'] for e in entities)
     
-    # Time slots - more blocks
+    # Time slots
     time_slots = np.arange(0, 201)  # 0 to 200 slots
     
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Track stake evolution for each entity
+    all_stakes = {i: [] for i in range(len(entities))}
+    others_stakes = []
     
-    # Plot for each f·π value
-    for i, f_pi in enumerate(f_pi_values):
-        # Calculate stake evolution
-        stakes = [s_initial]
-        
-        for slot in range(1, len(time_slots)):
-            # Calculate growth rate
-            growth_rate = proposer_growth_rate(f_pi, stakes[-1], total_stake, gamma_Pi, b_i_T)
-            # Update stake
-            new_stake = stakes[-1] * growth_rate
-            stakes.append(new_stake)
-        
-        # Plot the line
-        ax.plot(time_slots, stakes, 
-                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
+    # Initialize
+    for entity in entities:
+        all_stakes[entities.index(entity)].append(entity['initial_stake'])
+    others_stakes.append(initial_others)
     
-    # Remove total stake line - will be handled in separate legend
+    # Evolve over time
+    for slot in range(1, len(time_slots)):
+        current_total = sum(all_stakes[i][-1] for i in range(len(entities))) + others_stakes[-1]
+        
+        # Update each entity's stake
+        for i, entity in enumerate(entities):
+            current_stake = all_stakes[i][-1]
+            growth_rate = proposer_growth_rate(entity['f_pi'], current_stake, current_total, gamma_Pi, b_i_T)
+            new_stake = current_stake * growth_rate
+            all_stakes[i].append(new_stake)
+        
+        # Others remain constant (no growth)
+        others_stakes.append(others_stakes[-1])
+    
+    # Calculate proportions (percentages) relative to actual total at each time step
+    proportions = {}
+    for i in range(len(entities)):
+        proportions[i] = []
+    others_proportions = []
+    
+    for t in range(len(time_slots)):
+        current_total = sum(all_stakes[i][t] for i in range(len(entities))) + others_stakes[t]
+        for i in range(len(entities)):
+            proportions[i].append(all_stakes[i][t] / current_total * 100)
+        others_proportions.append(others_stakes[t] / current_total * 100)
+    
+    # Create stacked area chart
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Stack the areas from bottom to top
+    bottom = np.zeros(len(time_slots))
+    
+    # Plot each entity (from richest to poorest for visual clarity)
+    for i in range(len(entities)):
+        ax.fill_between(time_slots, bottom, bottom + proportions[i], 
+                       color=entities[i]['color'], alpha=0.7, 
+                       label=entities[i]['label'], linewidth=0)
+        bottom += proportions[i]
+    
+    # Plot "others" on top
+    ax.fill_between(time_slots, bottom, bottom + others_proportions,
+                   color='lightgray', alpha=0.5, label='Others (No Growth)', linewidth=0)
+    
+    # Add grid for better readability
+    ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
     
     # Customize the plot
     ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
-    ax.set_ylabel(r'Proposer Stake $s_{{P_i}}$ (%)', fontsize=30)
+    ax.set_ylabel(r'Stake Proportion (%)', fontsize=30)
     ax.set_xlim(0, 200)
-    ax.set_ylim(0, total_stake)  # Stop at 100%
+    ax.set_ylim(0, 100)
+    ax.set_yticks([0, 25, 50, 75, 100])
+    ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
     
-    # Convert y-axis to percentage
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y/total_stake*100:.0f}'))
-    
-    # Remove legend from plot - will be created separately
+    # Add legend (smaller size)
+    ax.legend(loc='lower right', fontsize=14, frameon=True, fancybox=False, shadow=False)
     
     plt.tight_layout()
     return fig
