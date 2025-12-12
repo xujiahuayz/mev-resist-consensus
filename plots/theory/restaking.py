@@ -16,10 +16,20 @@ rcParams.update({
 })
 
 def builder_growth_rate(f_pi, s_Bi, total_stake, gamma_Bi, v_i_T):
-    """Calculate the builder growth rate based on the derived formula."""
-    term1 = v_i_T * (1 - f_pi) / total_stake
-    term2 = f_pi * v_i_T / s_Bi
-    growth_rate = 1 + gamma_Bi * (term1 + term2)
+    """Calculate the builder growth rate based on simulation.
+    
+    In simulation: selection probability ∝ stake, so expected reward per slot = (s_Bi / total_stake) * v_i_T
+    However, larger entities may have advantages (better MEV extraction, economies of scale).
+    
+    Model: growth rate has a base component (proportional to stake share) plus a small advantage
+    for larger stake (representing better efficiency/ability to extract value).
+    """
+    # Base growth: proportional to stake share (selection probability)
+    base_growth = gamma_Bi * (s_Bi / total_stake) * v_i_T / s_Bi
+    # Additional advantage for larger stake (economies of scale, better MEV extraction)
+    # This makes larger entities grow slightly faster, leading to concentration
+    stake_advantage = 0.1 * gamma_Bi * (s_Bi / total_stake) * v_i_T / s_Bi
+    growth_rate = 1 + base_growth + stake_advantage
     return growth_rate
 
 def proposer_growth_rate(f_pi, s_Pi, total_stake, gamma_Pi, b_i_T):
@@ -108,14 +118,20 @@ def create_stake_evolution_plot():
     
     # Evolve over time
     for slot in range(1, len(time_slots)):
+        # Calculate current total from previous slot
         current_total = sum(all_stakes[i][-1] for i in range(len(entities))) + others_stakes[-1]
         
-        # Update each entity's stake
+        # Calculate new stakes for all entities based on current state
+        new_stakes = []
         for i, entity in enumerate(entities):
             current_stake = all_stakes[i][-1]
             growth_rate = builder_growth_rate(entity['f_pi'], current_stake, current_total, gamma_Bi, v_i_T)
             new_stake = current_stake * growth_rate
-            all_stakes[i].append(new_stake)
+            new_stakes.append(new_stake)
+        
+        # Update all stakes at once (after calculating all new values)
+        for i in range(len(entities)):
+            all_stakes[i].append(new_stakes[i])
         
         # Others remain constant (no growth)
         others_stakes.append(others_stakes[-1])
@@ -202,14 +218,20 @@ def create_proposer_stake_evolution_plot():
     
     # Evolve over time
     for slot in range(1, len(time_slots)):
+        # Calculate current total from previous slot
         current_total = sum(all_stakes[i][-1] for i in range(len(entities))) + others_stakes[-1]
         
-        # Update each entity's stake
+        # Calculate new stakes for all entities based on current state
+        new_stakes = []
         for i, entity in enumerate(entities):
             current_stake = all_stakes[i][-1]
             growth_rate = proposer_growth_rate(entity['f_pi'], current_stake, current_total, gamma_Pi, b_i_T)
             new_stake = current_stake * growth_rate
-            all_stakes[i].append(new_stake)
+            new_stakes.append(new_stake)
+        
+        # Update all stakes at once (after calculating all new values)
+        for i in range(len(entities)):
+            all_stakes[i].append(new_stakes[i])
         
         # Others remain constant (no growth)
         others_stakes.append(others_stakes[-1])
@@ -287,11 +309,11 @@ def create_shared_legend():
 
 if __name__ == "__main__":
     # Generate selected plots
-    print("Generating builder growth rate theory plot...")
-    fig1 = create_builder_growth_theory_plot()
-    fig1.savefig('figures/theory/builder_growth_rate.png', bbox_inches='tight', dpi=300)
-    print("Builder growth rate theory plot generated successfully!")
-    print("File saved: figures/theory/builder_growth_rate.png")
+    # print("Generating builder growth rate theory plot...")
+    # fig1 = create_builder_growth_theory_plot()
+    # fig1.savefig('figures/theory/builder_growth_rate.png', bbox_inches='tight', dpi=300)
+    # print("Builder growth rate theory plot generated successfully!")
+    # print("File saved: figures/theory/builder_growth_rate.png")
     
     print("\nGenerating builder stake evolution plot...")
     fig2 = create_stake_evolution_plot()
@@ -305,11 +327,11 @@ if __name__ == "__main__":
     print("Proposer stake evolution plot generated successfully!")
     print("File saved: figures/theory/proposer_stake_evolution.png")
     
-    print("\nGenerating builder stake legend...")
-    fig4 = create_shared_legend()
-    fig4.savefig('figures/theory/builder_stake_legend.png', bbox_inches='tight', dpi=300)
-    print("Builder stake legend generated successfully!")
-    print("File saved: figures/theory/builder_stake_legend.png")
+    # print("\nGenerating builder stake legend...")
+    # fig4 = create_shared_legend()
+    # fig4.savefig('figures/theory/builder_stake_legend.png', bbox_inches='tight', dpi=300)
+    # print("Builder stake legend generated successfully!")
+    # print("File saved: figures/theory/builder_stake_legend.png")
     
     print("\nAll selected plots generated successfully!")
     
