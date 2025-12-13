@@ -42,41 +42,62 @@ def proposer_growth_rate(f_pi, s_Pi, total_stake, gamma_Pi, b_i_T):
     return growth_rate
 
 def create_builder_growth_theory_plot():
-    """Create the theoretical plot showing builder growth rate vs stake percentage for different f·π values."""
+    """Create a plot showing builder growth rate over time for different initial stake values."""
     
     # Parameters
-    stake_percentages = np.linspace(0.01, 0.5, 200)  # 1% to 50% of total stake
     total_stake = 1000
     gamma_Bi = 0.8
     v_i_T = 10
+    f_pi = 0.5  # Same ability for all
     
-    # Different f·π values
-    f_pi_values = [0.1, 0.3, 0.5, 0.7, 0.9]
+    # Different initial stake values (as percentages of total)
+    initial_stake_pcts = [0.05, 0.10, 0.20, 0.40]  # 5%, 10%, 20%, 40%
+    initial_stakes = [total_stake * pct for pct in initial_stake_pcts]
+    
+    # Time slots
+    time_slots = np.arange(0, 1001)  # 0 to 1000 slots
     
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Plot each f·π value
-    for i, f_pi in enumerate(f_pi_values):
+    # For each initial stake, simulate evolution and track growth rate
+    for i, initial_stake in enumerate(initial_stakes):
+        current_stake = initial_stake
         growth_rates = []
-        for stake_pct in stake_percentages:
-            s_Bi = total_stake * stake_pct
-            growth_rate = builder_growth_rate(f_pi, s_Bi, total_stake, gamma_Bi, v_i_T)
-            growth_rates.append(growth_rate)
         
-        ax.plot(stake_percentages * 100, growth_rates, 
-                linewidth=5, color=palette[i], label=rf'$f \cdot \pi = {f_pi}$')
+        # Simulate a system with this entity and others
+        # Assume others have the remaining stake and don't grow
+        others_stake = total_stake - initial_stake
+        
+        for slot in range(len(time_slots) - 1):
+            current_total = current_stake + others_stake
+            growth_rate = builder_growth_rate(f_pi, current_stake, current_total, gamma_Bi, v_i_T)
+            growth_rates.append(growth_rate)
+            
+            # Update stake for next iteration
+            current_stake = current_stake * growth_rate
+            # Others don't grow, so total increases
+            current_total = current_stake + others_stake
+        
+        # Plot growth rate over time
+        ax.plot(time_slots[:-1], growth_rates, 
+                linewidth=3, color=palette[i], 
+                label=f'Initial Stake: {initial_stake_pcts[i]*100:.0f}%')
     
     # Add horizontal line at growth rate = 1
-    ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=3)
+    ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=2)
     
     # Customize the plot
-    ax.set_xlabel(r'Builder Stake $s_{B_i}$ (%)', fontsize=30)
+    ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
     ax.set_ylabel(r'Growth Rate $\frac{s_{B_i}(\ell+1)}{s_{B_i}(\ell)}$', fontsize=30)
-    ax.set_xlim(1, 50)
-    ax.set_ylim(1.0, 1.8)
+    ax.set_xlim(0, 1000)
+    ax.set_ylim(1.0, None)  # Start from 1
     
-    # Remove legend from plot - will be created separately
+    # Add legend
+    ax.legend(loc='lower left', fontsize=16, frameon=True, fancybox=False, shadow=False)
+    
+    # Add grid
+    ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
     
     plt.tight_layout()
     return fig
@@ -105,7 +126,7 @@ def create_stake_evolution_plot():
     initial_others = total_stake - sum(e['initial_stake'] for e in entities)
     
     # Time slots
-    time_slots = np.arange(0, 201)  # 0 to 200 slots
+    time_slots = np.arange(0, 1001)  # 0 to 1000 slots
     
     # Track stake evolution for each entity
     all_stakes = {i: [] for i in range(len(entities))}
@@ -171,7 +192,7 @@ def create_stake_evolution_plot():
     # Customize the plot
     ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
     ax.set_ylabel(r'Stake Proportion (%)', fontsize=30)
-    ax.set_xlim(0, 200)
+    ax.set_xlim(0, 1000)
     ax.set_ylim(0, 100)
     ax.set_yticks([0, 25, 50, 75, 100])
     ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
@@ -205,7 +226,7 @@ def create_proposer_stake_evolution_plot():
     initial_others = total_stake - sum(e['initial_stake'] for e in entities)
     
     # Time slots
-    time_slots = np.arange(0, 201)  # 0 to 200 slots
+    time_slots = np.arange(0, 1001)  # 0 to 1000 slots
     
     # Track stake evolution for each entity
     all_stakes = {i: [] for i in range(len(entities))}
@@ -271,7 +292,7 @@ def create_proposer_stake_evolution_plot():
     # Customize the plot
     ax.set_xlabel(r'Time Slot $\ell$', fontsize=30)
     ax.set_ylabel(r'Stake Proportion (%)', fontsize=30)
-    ax.set_xlim(0, 200)
+    ax.set_xlim(0, 1000)
     ax.set_ylim(0, 100)
     ax.set_yticks([0, 25, 50, 75, 100])
     ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
@@ -309,11 +330,11 @@ def create_shared_legend():
 
 if __name__ == "__main__":
     # Generate selected plots
-    # print("Generating builder growth rate theory plot...")
-    # fig1 = create_builder_growth_theory_plot()
-    # fig1.savefig('figures/theory/builder_growth_rate.png', bbox_inches='tight', dpi=300)
-    # print("Builder growth rate theory plot generated successfully!")
-    # print("File saved: figures/theory/builder_growth_rate.png")
+    print("Generating builder growth rate theory plot...")
+    fig1 = create_builder_growth_theory_plot()
+    fig1.savefig('figures/theory/builder_growth_rate.png', bbox_inches='tight', dpi=300)
+    print("Builder growth rate theory plot generated successfully!")
+    print("File saved: figures/theory/builder_growth_rate.png")
     
     print("\nGenerating builder stake evolution plot...")
     fig2 = create_stake_evolution_plot()
