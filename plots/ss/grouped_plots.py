@@ -2,9 +2,13 @@ import json
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pathlib import Path
 
 # Set seaborn theme for modern styling
 sns.set_theme(style="whitegrid")
+
+# Get project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 def load_data(file_path):
     """Load JSON data from a file."""
@@ -66,120 +70,98 @@ def plot_mev_distribution_subplot(ax, aggregated_data, user_attack_count, plot_t
     ax.set_ylim(0, 100)
 
 def create_pos_grouped_plot():
-    """Create a 2x2 subplot grid for POS plots."""
-    data_folder = '/Users/tammy/pbs/figures/ss'
-    output_folder = '/Users/tammy/pbs/figures/ss'
+    """Create a 1x4 subplot grid for PoS plots."""
+    data_folder = PROJECT_ROOT / 'figures' / 'ss'
+    output_folder = PROJECT_ROOT / 'figures' / 'ss'
     os.makedirs(output_folder, exist_ok=True)
     
-    # Create figure with 2x2 subplots - make them square
-    fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+    # Create figure with 1 row and 4 columns
+    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
     
     # User attack counts to plot
     user_attack_counts = [0, 12, 24, 50]
     
-    # Plot data
-    for i, user_count in enumerate(user_attack_counts):
-        row = i // 2
-        col = i % 2
-        ax = axes[row, col]
+    # Plot PoS data
+    for col, user_count in enumerate(user_attack_counts):
+        ax = axes[col]
         
-        # Load POS data
+        # Load PoS data
         file_name = f"pos_data_user_attack_{user_count}.json"
-        file_path = os.path.join(data_folder, file_name)
+        file_path = data_folder / file_name
         
-        if os.path.exists(file_path):
+        if file_path.exists():
             data = load_data(file_path)
             plot_mev_distribution_subplot(ax, data, user_count, "pos")
         else:
             ax.text(0.5, 0.5, f"Data not found:\n{file_name}", 
                    ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            ax.set_title("Missing Data: POS", fontsize=20)
+            ax.set_title("Missing Data: PoS", fontsize=20)
     
-    # Set axis tickers as requested:
-    # Top-left plot (0% MEV users) - Y-axis tickers only (remove x-axis)
-    axes[0, 0].set_xticks([])
+    # Set axis tickers: Only leftmost plot has y-axis, all have x-axis (same row)
+    axes[1].set_yticks([])  # 2nd: no y-axis
+    axes[2].set_yticks([])  # 3rd: no y-axis
+    axes[3].set_yticks([])  # Rightmost: no y-axis
     
-    # Top-right plot (33% MEV users) - No tickers at all
-    axes[0, 1].set_xticks([])
-    axes[0, 1].set_yticks([])
-    
-    # Bottom-left plot (67% MEV users) - Both X and Y-axis tickers (keep all)
-    # (already set in subplot function)
-    
-    # Bottom-right plot (100% MEV users) - X-axis tickers only (remove y-axis)
-    axes[1, 1].set_yticks([])
-    
-    # Add centered axis labels for the entire figure with proper spacing
-    fig.text(0.5, -0.025, r'Percentage of $\mathtt{attack}$ Validators (%)', ha='center', fontsize=36)
-    fig.text(-0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
+    # Add centered axis labels for the entire figure
+    fig.text(0.5, -0.05, r'Percentage of $\mathtt{attack}$ Validators (%)', ha='center', fontsize=36)
+    fig.text(-0.015, 0, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
     
     # Adjust layout
     plt.tight_layout()
     
     # Save the plot
-    save_path = os.path.join(output_folder, "pos_grouped_mev_distribution.png")
+    save_path = output_folder / "pos_grouped_mev_distribution.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0.2)
     plt.close()
     
-    print(f"POS grouped plot saved to {save_path}")
+    print(f"PoS grouped plot saved to {save_path}")
 
 def create_pbs_grouped_plot():
-    """Create a 2x2 subplot grid for PBS plots."""
-    data_folder = '/Users/tammy/pbs/figures/ss'
-    output_folder = '/Users/tammy/pbs/figures/ss'
+    """Create a 1x4 subplot grid for ePBS plots."""
+    data_folder = PROJECT_ROOT / 'figures' / 'ss'
+    output_folder = PROJECT_ROOT / 'figures' / 'ss'
     os.makedirs(output_folder, exist_ok=True)
     
-    # Create figure with 2x2 subplots - make them square
-    fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+    # Create figure with 1 row and 4 columns
+    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
     
     # User attack counts to plot
     user_attack_counts = [0, 12, 24, 50]
     
-    # Plot data
-    for i, user_count in enumerate(user_attack_counts):
-        row = i // 2
-        col = i % 2
-        ax = axes[row, col]
+    # Plot ePBS data
+    for col, user_count in enumerate(user_attack_counts):
+        ax = axes[col]
         
-        # Load PBS data
+        # Load ePBS data
         file_name = f"pbs_data_user_attack_{user_count}.json"
-        file_path = os.path.join(data_folder, file_name)
+        file_path = data_folder / file_name
         
-        if os.path.exists(file_path):
+        if file_path.exists():
             data = load_data(file_path)
             plot_mev_distribution_subplot(ax, data, user_count, "pbs")
         else:
             ax.text(0.5, 0.5, f"Data not found:\n{file_name}", 
                    ha='center', va='center', transform=ax.transAxes, fontsize=16)
-            ax.set_title("Missing Data: PBS", fontsize=20)
+            ax.set_title("Missing Data: ePBS", fontsize=20)
     
-    # Set axis tickers as requested:
-    # Top-left plot (0% MEV users) - Y-axis tickers only (remove x-axis)
-    axes[0, 0].set_xticks([])
+    # Set axis tickers: Only leftmost plot has y-axis, all have x-axis
+    axes[1].set_yticks([])  # 2nd: no y-axis
+    axes[2].set_yticks([])  # 3rd: no y-axis
+    axes[3].set_yticks([])  # Rightmost: no y-axis
     
-    # Top-right plot (33% MEV users) - No tickers at all
-    axes[0, 1].set_xticks([])
-    axes[0, 1].set_yticks([])
-    
-    # Bottom-left plot (67% MEV users) - Both X and Y-axis tickers (keep all)
-    # (already set in subplot function)
-    
-    # Bottom-right plot (100% MEV users) - X-axis tickers only (remove y-axis)
-    axes[1, 1].set_yticks([])
-    
-    # Add centered axis labels for the entire figure with proper spacing
-    fig.text(0.5, -0.025, r'Percentage of $\mathtt{attack}$ Builders (%)', ha='center', fontsize=36)
-    fig.text(-0.01, 0.35, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
+    # Add centered axis labels for the entire figure
+    fig.text(0.5, -0.05, r'Percentage of $\mathtt{attack}$ Builders (%)', ha='center', fontsize=36)
+    fig.text(-0.015, 0, 'MEV Profit Captured (%)', ha='center', rotation=90, fontsize=36)
     
     # Adjust layout
     plt.tight_layout()
     
     # Save the plot
-    save_path = os.path.join(output_folder, "pbs_grouped_mev_distribution.png")
+    save_path = output_folder / "pbs_grouped_mev_distribution.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight', pad_inches=0.2)
     plt.close()
     
-    print(f"PBS grouped plot saved to {save_path}")
+    print(f"ePBS grouped plot saved to {save_path}")
 
 def create_pos_legend_figure(save_path):
     """Generate and save a separate figure containing only the POS legend."""
