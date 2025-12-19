@@ -51,7 +51,7 @@ def create_builder_growth_theory_plot():
     f_pi = 0.5  # Same ability for all
     
     # Different initial stake values (as percentages of total)
-    initial_stake_pcts = [0.05, 0.10, 0.20, 0.40]  # 5%, 10%, 20%, 40%
+    initial_stake_pcts = [0.01, 0.025, 0.05, 0.075, 0.10]  # 1%, 2.5%, 5%, 7.5%, 10%
     initial_stakes = [total_stake * pct for pct in initial_stake_pcts]
     
     # Time slots
@@ -82,7 +82,7 @@ def create_builder_growth_theory_plot():
         # Plot growth rate over time
         ax.plot(time_slots[:-1], growth_rates, 
                 linewidth=3, color=palette[i], 
-                label=f'Initial Stake: {initial_stake_pcts[i]*100:.0f}%')
+                label=f'Initial Stake: {initial_stake_pcts[i]*100:.1f}%')
     
     # Add horizontal line at growth rate = 1
     ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=2)
@@ -114,12 +114,14 @@ def create_stake_evolution_plot():
     
     # Create multiple entities with different initial stakes (same ability)
     # All entities have the same ability (f_pi), only initial stake differs
+    # Order: 1%, 2.5%, 5%, 7.5%, 10% to match create_builder_growth_theory_plot()
     f_pi = 0.5  # Same ability for all
     entities = [
-        {'initial_stake': 400, 'f_pi': f_pi, 'label': 'Initial Stake: 40%', 'color': palette[0]},
-        {'initial_stake': 200, 'f_pi': f_pi, 'label': 'Initial Stake: 20%', 'color': palette[2]},
-        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[3]},
-        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[4]},
+        {'initial_stake': 10, 'f_pi': f_pi, 'label': 'Initial Stake: 1%', 'color': palette[0]},
+        {'initial_stake': 25, 'f_pi': f_pi, 'label': 'Initial Stake: 2.5%', 'color': palette[1]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[2]},
+        {'initial_stake': 75, 'f_pi': f_pi, 'label': 'Initial Stake: 7.5%', 'color': palette[3]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[4]},
     ]
     
     # Remaining stake goes to "others" (passive, no growth)
@@ -214,12 +216,14 @@ def create_proposer_stake_evolution_plot():
     
     # Create multiple entities with different initial stakes (same ability)
     # All entities have the same ability (f_pi), only initial stake differs
+    # Order: 1%, 2.5%, 5%, 7.5%, 10% to match create_builder_growth_theory_plot()
     f_pi = 0.5  # Same ability for all
     entities = [
-        {'initial_stake': 400, 'f_pi': f_pi, 'label': 'Initial Stake: 40%', 'color': palette[0]},
-        {'initial_stake': 200, 'f_pi': f_pi, 'label': 'Initial Stake: 20%', 'color': palette[2]},
-        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[3]},
-        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[4]},
+        {'initial_stake': 10, 'f_pi': f_pi, 'label': 'Initial Stake: 1%', 'color': palette[0]},
+        {'initial_stake': 25, 'f_pi': f_pi, 'label': 'Initial Stake: 2.5%', 'color': palette[1]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[2]},
+        {'initial_stake': 75, 'f_pi': f_pi, 'label': 'Initial Stake: 7.5%', 'color': palette[3]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[4]},
     ]
     
     # Remaining stake goes to "others" (passive, no growth)
