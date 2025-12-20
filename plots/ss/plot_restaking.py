@@ -178,30 +178,33 @@ def plot_pos_validators():
     plt.text(legend_x + 2*col_width, legend_y, r'$s_i(0)$ (ETH)', 
              transform=plt.gca().transAxes, fontsize=40, va='top')
     
-    # Create gradient squares for each stake level (256, 160, 96, 64, 32 ETH)
+    # Create gradient lines for each stake level (256, 160, 96, 64, 32 ETH)
     stake_levels_eth = [256, 160, 96, 64, 32]
+    line_length = 0.08
     for i, stake in enumerate(stake_levels_eth):
         row_y = legend_y - row_height * (i + 1.8)
         
-        # Attack column square (centered)
+        # Attack column line (dotted)
         if stake in attack_labels_added:
             stake_idx = stake_levels.index(int(stake * 1e9))
             color = attack_colors[stake_idx]
-            # Draw colored square centered in column
-            square_x = legend_x + col_width/2 - square_size/2
-            square = plt.Rectangle((square_x, row_y - square_size/2), square_size, square_size,
-                                 transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
-            plt.gca().add_patch(square)
+            # Draw colored dotted line centered in column
+            line_x_start = legend_x + col_width/2 - line_length/2
+            line_x_end = legend_x + col_width/2 + line_length/2
+            line = plt.Line2D([line_x_start, line_x_end], [row_y, row_y],
+                            transform=plt.gca().transAxes, color=color, linestyle=':', linewidth=4)
+            plt.gca().add_line(line)
         
-        # Benign column square (centered)
+        # Benign column line (solid)
         if stake in nonattack_labels_added:
             stake_idx = stake_levels.index(int(stake * 1e9))
             color = nonattack_colors[stake_idx]
-            # Draw colored square centered in column
-            square_x = legend_x + col_width + col_width/2 - square_size/2
-            square = plt.Rectangle((square_x, row_y - square_size/2), square_size, square_size,
-                                 transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
-            plt.gca().add_patch(square)
+            # Draw colored solid line centered in column
+            line_x_start = legend_x + col_width + col_width/2 - line_length/2
+            line_x_end = legend_x + col_width + col_width/2 + line_length/2
+            line = plt.Line2D([line_x_start, line_x_end], [row_y, row_y],
+                            transform=plt.gca().transAxes, color=color, linestyle='-', linewidth=4)
+            plt.gca().add_line(line)
         
         # Stake amount column (only show once per row)
         if stake in attack_labels_added or stake in nonattack_labels_added:
@@ -394,30 +397,33 @@ def plot_pbs_builders():
     plt.text(legend_x + 2*col_width, legend_y, r'$s_i(0)$ (ETH)', 
              transform=plt.gca().transAxes, fontsize=40, va='top')
     
-    # Create gradient squares for each stake level (256, 160, 96, 64, 32 ETH)
+    # Create gradient lines for each stake level (256, 160, 96, 64, 32 ETH)
     stake_levels_eth = [256.0, 160.0, 96.0, 64.0, 32.0]
+    line_length = 0.08
     for i, stake in enumerate(stake_levels_eth):
         row_y = legend_y - row_height * (i + 1.8)
         
-        # Attack column square (centered)
+        # Attack column line (dotted)
         if stake in attack_labels_added:
             stake_idx = stake_levels.index(stake)
             color = attack_colors[stake_idx]
-            # Draw colored square centered in column
-            square_x = legend_x + col_width/2 - square_size/2
-            square = plt.Rectangle((square_x, row_y - square_size/2), square_size, square_size,
-                                 transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
-            plt.gca().add_patch(square)
+            # Draw colored dotted line centered in column
+            line_x_start = legend_x + col_width/2 - line_length/2
+            line_x_end = legend_x + col_width/2 + line_length/2
+            line = plt.Line2D([line_x_start, line_x_end], [row_y, row_y],
+                            transform=plt.gca().transAxes, color=color, linestyle=':', linewidth=4)
+            plt.gca().add_line(line)
         
-        # Benign column square (centered)
+        # Benign column line (solid)
         if stake in nonattack_labels_added:
             stake_idx = stake_levels.index(stake)
             color = nonattack_colors[stake_idx]
-            # Draw colored square centered in column
-            square_x = legend_x + col_width + col_width/2 - square_size/2
-            square = plt.Rectangle((square_x, row_y - square_size/2), square_size, square_size,
-                                 transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
-            plt.gca().add_patch(square)
+            # Draw colored solid line centered in column
+            line_x_start = legend_x + col_width + col_width/2 - line_length/2
+            line_x_end = legend_x + col_width + col_width/2 + line_length/2
+            line = plt.Line2D([line_x_start, line_x_end], [row_y, row_y],
+                            transform=plt.gca().transAxes, color=color, linestyle='-', linewidth=4)
+            plt.gca().add_line(line)
         
         # Stake amount column (only show once per row)
         if stake in attack_labels_added or stake in nonattack_labels_added:
@@ -531,30 +537,34 @@ def plot_pbs_proposers():
     
     plt.grid(True, alpha=0.3)
     
-    # Create custom legend with colored squares in gradient pattern (proposers only have benign)
+    # Create custom legend with colored lines (proposers only have benign, all solid lines)
     legend_x = 0.02
     legend_y = 0.98
-    square_size = 0.03
+    line_length = 0.08
     row_height = 0.06
     
     # Add header
     plt.text(legend_x, legend_y, r'$s_i(0)$ (ETH)', 
              transform=plt.gca().transAxes, fontsize=40, va='top')
     
-    # Create gradient squares for each stake level (256, 160, 96, 64, 32 ETH)
+    # Create gradient lines for each stake level (256, 160, 96, 64, 32 ETH)
     stake_levels_eth = [256.0, 160.0, 96.0, 64.0, 32.0]
+    all_proposer_stakes = [stake for _, stake in proposers_ordered]
     for i, stake in enumerate(stake_levels_eth):
-        row_y = legend_y - row_height * (i + 1.8)
-        
-        # Draw colored square
-        stake_idx = stake_levels.index(stake)
-        color = nonattack_colors[stake_idx]
-        square = plt.Rectangle((legend_x, row_y - square_size/2), square_size, square_size,
-                             transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
-        plt.gca().add_patch(square)
-        # Text
-        plt.text(legend_x + square_size + 0.02, row_y, f'{stake:.0f}', 
-                transform=plt.gca().transAxes, fontsize=48, va='center', ha='left')
+        if stake in all_proposer_stakes:
+            row_y = legend_y - row_height * (i + 1.8)
+            
+            # Draw colored solid line
+            stake_idx = stake_levels.index(stake)
+            color = nonattack_colors[stake_idx]
+            line_x_start = legend_x
+            line_x_end = legend_x + line_length
+            line = plt.Line2D([line_x_start, line_x_end], [row_y, row_y],
+                            transform=plt.gca().transAxes, color=color, linestyle='-', linewidth=4)
+            plt.gca().add_line(line)
+            # Text
+            plt.text(legend_x + line_length + 0.02, row_y, f'{stake:.0f}', 
+                    transform=plt.gca().transAxes, fontsize=48, va='center', ha='left')
     
     # Remove any automatic legend that might appear
     try:
