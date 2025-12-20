@@ -82,7 +82,7 @@ def create_builder_growth_theory_plot():
         # Plot growth rate over time
         ax.plot(time_slots[:-1], growth_rates, 
                 linewidth=3, color=palette[i], 
-                label=f'Initial Stake: {initial_stake_pcts[i]*100:.1f}%')
+                label=f'{initial_stake_pcts[i]*100:.1f}%')
     
     # Add horizontal line at growth rate = 1
     ax.axhline(y=1, color='black', linestyle='--', alpha=0.7, linewidth=2)
@@ -93,8 +93,9 @@ def create_builder_growth_theory_plot():
     ax.set_xlim(0, 1000)
     ax.set_ylim(1.0, None)  # Start from 1
     
-    # Add legend
-    ax.legend(loc='lower left', fontsize=16, frameon=True, fancybox=False, shadow=False)
+    # Add legend with title
+    ax.legend(title='Initial Stake', loc='lower left', fontsize=16, title_fontsize=16, 
+              frameon=True, fancybox=False, shadow=False)
     
     # Add grid
     ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
@@ -117,11 +118,11 @@ def create_stake_evolution_plot():
     # Order: 1%, 2.5%, 5%, 7.5%, 10% to match create_builder_growth_theory_plot()
     f_pi = 0.5  # Same ability for all
     entities = [
-        {'initial_stake': 10, 'f_pi': f_pi, 'label': 'Initial Stake: 1%', 'color': palette[0]},
-        {'initial_stake': 25, 'f_pi': f_pi, 'label': 'Initial Stake: 2.5%', 'color': palette[1]},
-        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[2]},
-        {'initial_stake': 75, 'f_pi': f_pi, 'label': 'Initial Stake: 7.5%', 'color': palette[3]},
-        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[4]},
+        {'initial_stake': 10, 'f_pi': f_pi, 'label': '1%', 'color': palette[0]},
+        {'initial_stake': 25, 'f_pi': f_pi, 'label': '2.5%', 'color': palette[1]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': '5%', 'color': palette[2]},
+        {'initial_stake': 75, 'f_pi': f_pi, 'label': '7.5%', 'color': palette[3]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': '10%', 'color': palette[4]},
     ]
     
     # Remaining stake goes to "others" (passive, no growth)
@@ -181,12 +182,12 @@ def create_stake_evolution_plot():
     for i in range(len(entities)):
         ax.fill_between(time_slots, bottom, bottom + proportions[i], 
                        color=entities[i]['color'], alpha=0.7, 
-                       label=entities[i]['label'], linewidth=0)
+                       linewidth=0)
         bottom += proportions[i]
     
-    # Plot "others" on top
+    # Plot "others" on top (no label)
     ax.fill_between(time_slots, bottom, bottom + others_proportions,
-                   color='lightgray', alpha=0.5, label='Others (No Growth)', linewidth=0)
+                   color='lightgray', alpha=0.5, linewidth=0)
     
     # Add grid for better readability
     ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
@@ -198,9 +199,6 @@ def create_stake_evolution_plot():
     ax.set_ylim(0, 100)
     ax.set_yticks([0, 25, 50, 75, 100])
     ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
-    
-    # Add legend (smaller size)
-    ax.legend(loc='lower right', fontsize=14, frameon=True, fancybox=False, shadow=False)
     
     plt.tight_layout()
     return fig
@@ -219,11 +217,11 @@ def create_proposer_stake_evolution_plot():
     # Order: 1%, 2.5%, 5%, 7.5%, 10% to match create_builder_growth_theory_plot()
     f_pi = 0.5  # Same ability for all
     entities = [
-        {'initial_stake': 10, 'f_pi': f_pi, 'label': 'Initial Stake: 1%', 'color': palette[0]},
-        {'initial_stake': 25, 'f_pi': f_pi, 'label': 'Initial Stake: 2.5%', 'color': palette[1]},
-        {'initial_stake': 50, 'f_pi': f_pi, 'label': 'Initial Stake: 5%', 'color': palette[2]},
-        {'initial_stake': 75, 'f_pi': f_pi, 'label': 'Initial Stake: 7.5%', 'color': palette[3]},
-        {'initial_stake': 100, 'f_pi': f_pi, 'label': 'Initial Stake: 10%', 'color': palette[4]},
+        {'initial_stake': 10, 'f_pi': f_pi, 'label': '1%', 'color': palette[0]},
+        {'initial_stake': 25, 'f_pi': f_pi, 'label': '2.5%', 'color': palette[1]},
+        {'initial_stake': 50, 'f_pi': f_pi, 'label': '5%', 'color': palette[2]},
+        {'initial_stake': 75, 'f_pi': f_pi, 'label': '7.5%', 'color': palette[3]},
+        {'initial_stake': 100, 'f_pi': f_pi, 'label': '10%', 'color': palette[4]},
     ]
     
     # Remaining stake goes to "others" (passive, no growth)
@@ -283,12 +281,12 @@ def create_proposer_stake_evolution_plot():
     for i in range(len(entities)):
         ax.fill_between(time_slots, bottom, bottom + proportions[i], 
                        color=entities[i]['color'], alpha=0.7, 
-                       label=entities[i]['label'], linewidth=0)
+                       linewidth=0)
         bottom += proportions[i]
     
-    # Plot "others" on top
+    # Plot "others" on top (no label)
     ax.fill_between(time_slots, bottom, bottom + others_proportions,
-                   color='lightgray', alpha=0.5, label='Others (No Growth)', linewidth=0)
+                   color='lightgray', alpha=0.5, linewidth=0)
     
     # Add grid for better readability
     ax.grid(True, alpha=0.2, linestyle='-', linewidth=0.5)
@@ -300,9 +298,6 @@ def create_proposer_stake_evolution_plot():
     ax.set_ylim(0, 100)
     ax.set_yticks([0, 25, 50, 75, 100])
     ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'])
-    
-    # Add legend (smaller size)
-    ax.legend(loc='lower right', fontsize=14, frameon=True, fancybox=False, shadow=False)
     
     plt.tight_layout()
     return fig
