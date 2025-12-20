@@ -38,7 +38,7 @@ def plot_pos_validators():
     
     for stake_level in stake_levels:
         # Sample attack validators at this stake level
-        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is True) & (stake_evolution['initial_stake'] == stake_level)]
+        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == True) & (stake_evolution['initial_stake'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -46,7 +46,7 @@ def plot_pos_validators():
             print(f"Warning: No attack validators at {stake_level/1e9} ETH stake level")
         
         # Sample non-attack validators at this stake level
-        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is False) & (stake_evolution['initial_stake'] == stake_level)]
+        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == False) & (stake_evolution['initial_stake'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -103,6 +103,7 @@ def plot_pos_validators():
                     x='block_num', 
                     y=validator_data['validator_capital'] / 1e9,
                     color=color,
+                    linestyle=':',  # Dotted line for attack
                     linewidth=4.0,
                     alpha=0.8,
                     label=label)
@@ -234,14 +235,14 @@ def plot_pbs_builders():
     builders = participants_df[participants_df['participant_type'] == 'builder']
     
     # Define the 5 initial stake levels (in ETH) - same as PoS
-    stake_levels = [32, 64, 96, 160, 256]  # 1, 2, 3, 5, 8 nodes respectively
+    stake_levels = [32.0, 64.0, 96.0, 160.0, 256.0]  # 1, 2, 3, 5, 8 nodes respectively
     
     # Sample 1 builder from each stake level for both attack and non-attack
     all_sampled = []
     
     for stake_level in stake_levels:
         # Sample 1 attack builder at this stake level
-        attack_at_stake = builders[(builders['is_attacker'] is True) & (builders['initial_stake_eth'] == stake_level)]
+        attack_at_stake = builders[(builders['is_attacker'] == True) & (builders['initial_stake_eth'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -251,7 +252,7 @@ def plot_pbs_builders():
             print(f"Warning: No attack builders at {stake_level} ETH stake level")
         
         # Sample 1 non-attack builder at this stake level
-        nonattack_at_stake = builders[(builders['is_attacker'] is False) & (builders['initial_stake_eth'] == stake_level)]
+        nonattack_at_stake = builders[(builders['is_attacker'] == False) & (builders['initial_stake_eth'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -268,10 +269,10 @@ def plot_pbs_builders():
     print("\nSampled builders by stake level:")
     for stake_level in stake_levels:
         attack_count = len([b for b in all_sampled if 
-                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is True and
+                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == True and
                            participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         nonattack_count = len([b for b in all_sampled if 
-                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is False and
+                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == False and
                               participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         print(f"{stake_level} ETH: {attack_count} attack, {nonattack_count} non-attack")
     
@@ -309,7 +310,7 @@ def plot_pbs_builders():
         
         if len(continuous_data) > 0:
             # Determine color based on stake level
-            stake_idx = stake_levels.index(int(initial_stake))
+            stake_idx = stake_levels.index(initial_stake)
             color = attack_colors[stake_idx]
             
             # Only add label for first occurrence of each stake level
@@ -324,6 +325,7 @@ def plot_pbs_builders():
                         x='block_num', 
                         y=continuous_data['current_capital'] / 1e9,  # Use current_capital for total value
                         color=color,
+                        linestyle=':',  # Dotted line for attack
                         linewidth=4.0,
                         alpha=0.8,
                         label=label)
@@ -336,7 +338,7 @@ def plot_pbs_builders():
         
         if len(continuous_data) > 0:
             # Determine color based on stake level
-            stake_idx = stake_levels.index(int(initial_stake))
+            stake_idx = stake_levels.index(initial_stake)
             color = nonattack_colors[stake_idx]
             
             # Only add label for first occurrence of each stake level
@@ -393,13 +395,13 @@ def plot_pbs_builders():
              transform=plt.gca().transAxes, fontsize=40, va='top')
     
     # Create gradient squares for each stake level (256, 160, 96, 64, 32 ETH)
-    stake_levels_eth = [256, 160, 96, 64, 32]
+    stake_levels_eth = [256.0, 160.0, 96.0, 64.0, 32.0]
     for i, stake in enumerate(stake_levels_eth):
         row_y = legend_y - row_height * (i + 1.8)
         
         # Attack column square (centered)
         if stake in attack_labels_added:
-            stake_idx = stake_levels.index(int(stake))
+            stake_idx = stake_levels.index(stake)
             color = attack_colors[stake_idx]
             # Draw colored square centered in column
             square_x = legend_x + col_width/2 - square_size/2
@@ -409,7 +411,7 @@ def plot_pbs_builders():
         
         # Benign column square (centered)
         if stake in nonattack_labels_added:
-            stake_idx = stake_levels.index(int(stake))
+            stake_idx = stake_levels.index(stake)
             color = nonattack_colors[stake_idx]
             # Draw colored square centered in column
             square_x = legend_x + col_width + col_width/2 - square_size/2
@@ -449,7 +451,7 @@ def plot_pbs_proposers():
     proposers = participants_df[participants_df['participant_type'] == 'proposer']
     
     # Define the 5 initial stake levels (in ETH) - same as PoS
-    stake_levels = [32, 64, 96, 160, 256]  # 1, 2, 3, 5, 8 nodes respectively
+    stake_levels = [32.0, 64.0, 96.0, 160.0, 256.0]  # 1, 2, 3, 5, 8 nodes respectively
     
     # Sample 2 proposers from each stake level
     all_sampled = []
@@ -489,7 +491,7 @@ def plot_pbs_proposers():
         
         if len(continuous_data) > 0:
             # Determine color based on stake level
-            stake_idx = stake_levels.index(int(initial_stake))
+            stake_idx = stake_levels.index(initial_stake)
             color = nonattack_colors[stake_idx]
             
             # Only add label for first occurrence of each stake level
@@ -540,12 +542,12 @@ def plot_pbs_proposers():
              transform=plt.gca().transAxes, fontsize=40, va='top')
     
     # Create gradient squares for each stake level (256, 160, 96, 64, 32 ETH)
-    stake_levels_eth = [256, 160, 96, 64, 32]
+    stake_levels_eth = [256.0, 160.0, 96.0, 64.0, 32.0]
     for i, stake in enumerate(stake_levels_eth):
         row_y = legend_y - row_height * (i + 1.8)
         
         # Draw colored square
-        stake_idx = stake_levels.index(int(stake))
+        stake_idx = stake_levels.index(stake)
         color = nonattack_colors[stake_idx]
         square = plt.Rectangle((legend_x, row_y - square_size/2), square_size, square_size,
                              transform=plt.gca().transAxes, facecolor=color, edgecolor='black', linewidth=1)
