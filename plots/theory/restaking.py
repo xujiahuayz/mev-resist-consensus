@@ -179,9 +179,9 @@ def create_stake_evolution_plot():
     bottom = np.zeros(len(time_slots))
     
     # Plot each entity (from richest to poorest for visual clarity)
-    for i in range(len(entities)):
+    for i, entity in enumerate(entities):
         ax.fill_between(time_slots, bottom, bottom + proportions[i], 
-                       color=entities[i]['color'], alpha=0.7, 
+                       color=entity['color'], alpha=0.7, 
                        linewidth=0)
         bottom += proportions[i]
     
@@ -278,9 +278,9 @@ def create_proposer_stake_evolution_plot():
     bottom = np.zeros(len(time_slots))
     
     # Plot each entity (from richest to poorest for visual clarity)
-    for i in range(len(entities)):
+    for i, entity in enumerate(entities):
         ax.fill_between(time_slots, bottom, bottom + proportions[i], 
-                       color=entities[i]['color'], alpha=0.7, 
+                       color=entity['color'], alpha=0.7, 
                        linewidth=0)
         bottom += proportions[i]
     

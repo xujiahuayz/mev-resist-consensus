@@ -38,7 +38,7 @@ def plot_pos_validators():
     
     for stake_level in stake_levels:
         # Sample attack validators at this stake level
-        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == True) & (stake_evolution['initial_stake'] == stake_level)]
+        attack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is True) & (stake_evolution['initial_stake'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -46,7 +46,7 @@ def plot_pos_validators():
             print(f"Warning: No attack validators at {stake_level/1e9} ETH stake level")
         
         # Sample non-attack validators at this stake level
-        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] == False) & (stake_evolution['initial_stake'] == stake_level)]
+        nonattack_at_stake = stake_evolution[(stake_evolution['is_attacker'] is False) & (stake_evolution['initial_stake'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -245,7 +245,7 @@ def plot_pbs_builders():
     
     for stake_level in stake_levels:
         # Sample 1 attack builder at this stake level
-        attack_at_stake = builders[(builders['is_attacker'] == True) & (builders['initial_stake_eth'] == stake_level)]
+        attack_at_stake = builders[(builders['is_attacker'] is True) & (builders['initial_stake_eth'] == stake_level)]
         if len(attack_at_stake) >= 1:
             sampled_attack = attack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_attack)
@@ -255,7 +255,7 @@ def plot_pbs_builders():
             print(f"Warning: No attack builders at {stake_level} ETH stake level")
         
         # Sample 1 non-attack builder at this stake level
-        nonattack_at_stake = builders[(builders['is_attacker'] == False) & (builders['initial_stake_eth'] == stake_level)]
+        nonattack_at_stake = builders[(builders['is_attacker'] is False) & (builders['initial_stake_eth'] == stake_level)]
         if len(nonattack_at_stake) >= 1:
             sampled_nonattack = nonattack_at_stake.sample(1, random_state=16)['participant_id'].tolist()
             all_sampled.extend(sampled_nonattack)
@@ -272,10 +272,10 @@ def plot_pbs_builders():
     print("\nSampled builders by stake level:")
     for stake_level in stake_levels:
         attack_count = len([b for b in all_sampled if 
-                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == True and
+                           participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is True and
                            participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         nonattack_count = len([b for b in all_sampled if 
-                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] == False and
+                              participants_df[participants_df['participant_id'] == b].iloc[0]['is_attacker'] is False and
                               participants_df[participants_df['participant_id'] == b].iloc[0]['initial_stake_eth'] == stake_level])
         print(f"{stake_level} ETH: {attack_count} attack, {nonattack_count} non-attack")
     
