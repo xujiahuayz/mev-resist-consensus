@@ -1,8 +1,9 @@
 import random
 from typing import List, Optional, Any
-from transaction import Transaction
-from network import Node
-from builder import Builder
+
+from blockchain_env.transaction import Transaction
+from blockchain_env.network import Node
+from blockchain_env.builder import Builder
 
 # Random seed for reproducibility
 random.seed(16)
@@ -14,11 +15,16 @@ class User(Node):
         self.balance: int = 0
 
     def create_transactions(self, block_num: int) -> Transaction:
-        # Use fallback hardcoded values to avoid data loading warnings
-        from constants import get_fallback_gas_fees, get_fallback_mev_potentials
-        gas_fee: int = random.choice(get_fallback_gas_fees(100))
-        mev_potential: int = random.choice(get_fallback_mev_potentials(100))
-        
+        gas_fee: int
+        mev_potential: int
+        from blockchain_env import simulation_config
+        if simulation_config.gas_fee_pool and simulation_config.mev_pool:
+            gas_fee = int(random.choice(simulation_config.gas_fee_pool))
+            mev_potential = int(random.choice(simulation_config.mev_pool))
+        else:
+            from blockchain_env.constants import get_fallback_gas_fees, get_fallback_mev_potentials
+            gas_fee = random.choice(get_fallback_gas_fees(100))
+            mev_potential = random.choice(get_fallback_mev_potentials(100))
         creator_id: int = self.id
         created_at: int = block_num
         target_tx: Optional[Transaction] = None

@@ -16,14 +16,22 @@ class EthereumDataLoader:
         self.load_all_periods()
     
     def load_all_periods(self):
-        """Load data from all available periods."""
+        """Load data from all available periods (subdirs or flat block_*.json partitioned by block number)."""
         if not self.data_path.exists():
             print(f"Warning: Data path {self.data_path} does not exist. Run fetch scripts first.")
             return
-        
-        for period_dir in self.data_path.iterdir():
-            if period_dir.is_dir() and not period_dir.name.startswith('.'):
+
+        period_dirs = [
+            d for d in self.data_path.iterdir()
+            if d.is_dir() and not d.name.startswith(".")
+        ]
+        if period_dirs:
+            for period_dir in period_dirs:
                 self.load_period_data(period_dir.name)
+            return
+
+        # No period subdirs: load flat block_*.json and partition by block number
+        self._load_flat_and_partition_by_period()
     
     def load_period_data(self, period_name: str):
         """Load data from a specific period."""
@@ -57,7 +65,51 @@ class EthereumDataLoader:
         }
         
         print(f"Loaded {period_name}: {len(gas_fees)} gas fees, {len(transaction_data)} transactions")
-    
+
+    def _load_flat_and_partition_by_period(self):
+        """Load block_*.json from data_path (no subdirs) and partition into periods by block number."""
+        try:
+            from .period_definitions import BLOCK_RANGES_BY_PERIOD, period_for_block
+        except ImportError:
+            from period_definitions import BLOCK_RANGES_BY_PERIOD, period_for_block
+
+        by_period = {name: {"gas_fees": [], "transactions": []} for name in BLOCK_RANGES_BY_PERIOD}
+        block_files = list(self.data_path.glob("block_*.json"))
+        if not block_files:
+            print("Warning: No block_*.json found in data path. No period data loaded.")
+            return
+
+        for block_file in block_files:
+            try:
+                with open(block_file, "r", encoding="utf-8") as f:
+                    block_data = json.load(f)
+            except Exception as e:
+                print(f"Error loading {block_file}: {e}")
+                continue
+            block_number = block_data.get("block_number")
+            if block_number is None:
+                try:
+                    block_number = int(block_file.stem.replace("block_", ""))
+                except (ValueError, AttributeError):
+                    continue
+            period_name = period_for_block(int(block_number))
+            if period_name is None:
+                continue
+            if "gas_fees_gwei" in block_data:
+                by_period[period_name]["gas_fees"].extend(block_data["gas_fees_gwei"])
+            if "transactions" in block_data:
+                by_period[period_name]["transactions"].extend(block_data["transactions"])
+
+        for period_name, data in by_period.items():
+            if data["gas_fees"] or data["transactions"]:
+                self.periods_data[period_name] = {
+                    "gas_fees": data["gas_fees"],
+                    "transactions": data["transactions"],
+                    "total_transactions": len(data["transactions"]),
+                }
+                print(f"Loaded {period_name} (from flat): {len(data['gas_fees'])} gas fees, "
+                      f"{len(data['transactions'])} transactions")
+
     def get_period_names(self) -> List[str]:
         """Get list of available period names."""
         return list(self.periods_data.keys())
@@ -176,12 +228,14 @@ class EthereumDataLoader:
         
         for tx in transactions:
             # Simple MEV potential calculation based on transaction value and gas
-            value_eth = tx.get('value_eth', 0)
-            gas_fee_gwei = tx.get('gas_fee_gwei', 0)
-            
+            # Coerce to float (JSON may give str/Decimal from web3)
+            try:
+                value_eth = float(tx.get('value_eth', 0) or 0)
+                gas_fee_gwei = float(tx.get('gas_fee_gwei', 0) or 0)
+            except (TypeError, ValueError):
+                value_eth = gas_fee_gwei = 0.0
             # MEV potential = transaction value * some factor - gas costs
-            # This is a simplified model
-            mev_potential = max(0, value_eth * 1000 - gas_fee_gwei * 0.000001)
+            mev_potential = max(0.0, value_eth * 1000 - gas_fee_gwei * 0.000001)
             mev_potentials.append(mev_potential)
         
         return mev_potentials

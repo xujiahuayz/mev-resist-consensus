@@ -1,0 +1,15 @@
+{
+    "period_name": "USDC_DEPEG_MARCH_2023",
+    "description": "USDC depeg period (March 2023) - High volatility, Post-merge",
+    "era": "post_merge",
+    "volatility_type": "high_volatility",
+    "start_block": 16900000,
+    "end_block": 16901000,
+    "total_blocks": 1001,
+    "fetch_timestamp": "2026-03-13 17:51:03",
+    "usage_notes": {
+        "simulation_testing": "Use this period for high_volatility market condition testing",
+        "data_identifier": "Period: USDC_DEPEG_MARCH_2023, Era: post_merge",
+        "recommended_use": "Compare with other periods to test high_volatility vs stable conditions"
+    }
+}

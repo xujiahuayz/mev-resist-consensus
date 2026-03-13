@@ -124,25 +124,40 @@ def _set_attacker_status(attacker_validator_count, attacker_user_count):
     for i, user in enumerate(user_list):
         user.is_attacker = i < attacker_user_count
 
-def run_simulation_in_process(attacker_validator_count, attacker_user_count):
+def run_simulation_in_process(attacker_validator_count, attacker_user_count, output_dir=None,
+                              pool_initializer=None, pool_initargs=None):
     """Run each simulation in a separate process to avoid state leakage."""
-    process = mp.Process(target=simulate_pos, args=(attacker_validator_count, attacker_user_count))
+    kwargs = {}
+    if output_dir is not None:
+        kwargs["output_dir"] = output_dir
+    if pool_initializer is not None:
+        kwargs["pool_initializer"] = pool_initializer
+        kwargs["pool_initargs"] = pool_initargs or ()
+    process = mp.Process(
+        target=simulate_pos,
+        args=(attacker_validator_count, attacker_user_count),
+        kwargs=kwargs,
+    )
     process.start()
     process.join()  # Wait for the process to complete
 
-def simulate_pos(attacker_validators, attacker_users):
+def simulate_pos(attacker_validators, attacker_users, output_dir=None, pool_initializer=None, pool_initargs=None):
     # Set attacker status for validators and users
     _set_attacker_status(attacker_validators, attacker_users)
 
-    with mp.Pool(processes=num_processes) as pool:
+    pool_kw = {"processes": num_processes}
+    if pool_initializer is not None:
+        pool_kw["initializer"] = pool_initializer
+        pool_kw["initargs"] = pool_initargs or ()
+    with mp.Pool(**pool_kw) as pool:
         results = pool.starmap(process_block, [(block_num, None) for block_num in range(BLOCKNUM)])
 
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
 
-    # Define dynamic filenames (using same network configuration as PBS)
-    transaction_filename = f"data/same_seed/pos_network_p0.05/pos_transactions_validators{attacker_validators}_users{attacker_users}.csv"
-    block_filename = f"data/same_seed/pos_network_p0.05/pos_block_data_validators{attacker_validators}_users{attacker_users}.csv"
+    base = output_dir if output_dir else "data/same_seed/pos_network_p0.05"
+    transaction_filename = os.path.join(base, f"pos_transactions_validators{attacker_validators}_users{attacker_users}.csv")
+    block_filename = os.path.join(base, f"pos_block_data_validators{attacker_validators}_users{attacker_users}.csv")
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
 
     # Save transaction data to CSV

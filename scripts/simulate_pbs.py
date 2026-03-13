@@ -227,18 +227,31 @@ def _set_attacker_status(attacker_builder_count: int, attacker_user_count: int) 
     for i, user in enumerate(user_list):
         user.is_attacker = i < attacker_user_count
 
-def _run_simulation_blocks() -> Tuple[List[Dict[str, Any]], List[Transaction]]:
-    """Run simulation blocks and return results."""
-    with mp.Pool(processes=num_processes) as pool:
+def _run_simulation_blocks(
+    pool_initializer: Optional[Any] = None,
+    pool_initargs: Optional[tuple] = None,
+) -> Tuple[List[Dict[str, Any]], List[Transaction]]:
+    """Run simulation blocks. Optional initializer sets period-specific gas/MEV pools in workers."""
+    pool_kw: Dict[str, Any] = {"processes": num_processes}
+    if pool_initializer is not None:
+        pool_kw["initializer"] = pool_initializer
+        pool_kw["initargs"] = pool_initargs or ()
+    with mp.Pool(**pool_kw) as pool:
         results: List[Tuple[Dict[str, Any], List[Transaction]]] = pool.starmap(process_block, [(block_num, None) for block_num in range(BLOCKNUM)])
 
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
     return list(block_data_list), all_transactions
 
-def _save_transaction_data(all_transactions: List[Transaction], attacker_builder_count: int, attacker_user_count: int) -> None:
+def _save_transaction_data(
+    all_transactions: List[Transaction],
+    attacker_builder_count: int,
+    attacker_user_count: int,
+    output_dir: Optional[str] = None,
+) -> None:
     """Save transaction data to CSV."""
-    transaction_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_transactions_builders{attacker_builder_count}_users{attacker_user_count}.csv"
+    base: str = output_dir if output_dir else "data/same_seed/pbs_network_p0.05"
+    transaction_filename: str = os.path.join(base, f"pbs_transactions_builders{attacker_builder_count}_users{attacker_user_count}.csv")
     os.makedirs(os.path.dirname(transaction_filename), exist_ok=True)
     with open(transaction_filename, 'w', newline='', encoding='utf-8') as csv_file:
         if all_transactions:
@@ -248,9 +261,15 @@ def _save_transaction_data(all_transactions: List[Transaction], attacker_builder
             for tx in all_transactions:
                 tx_writer.writerow(tx.to_dict())
 
-def _save_block_data(block_data_list: List[Dict[str, Any]], attacker_builder_count: int, attacker_user_count: int) -> None:
+def _save_block_data(
+    block_data_list: List[Dict[str, Any]],
+    attacker_builder_count: int,
+    attacker_user_count: int,
+    output_dir: Optional[str] = None,
+) -> None:
     """Save block data to CSV."""
-    block_filename: str = f"data/same_seed/pbs_network_p0.05/pbs_block_data_builders{attacker_builder_count}_users{attacker_user_count}.csv"
+    base: str = output_dir if output_dir else "data/same_seed/pbs_network_p0.05"
+    block_filename: str = os.path.join(base, f"pbs_block_data_builders{attacker_builder_count}_users{attacker_user_count}.csv")
     with open(block_filename, 'w', newline='', encoding='utf-8') as csv_file:
         block_fieldnames: List[str] = [
             'block_num',
@@ -265,28 +284,53 @@ def _save_block_data(block_data_list: List[Dict[str, Any]], attacker_builder_cou
         for block_data in block_data_list:
             block_writer.writerow(block_data)
 
-def simulate_pbs(attacker_builder_count: int, attacker_user_count: int) -> List[Dict[str, Any]]:
-    """Simulate PBS with given attacker counts."""
+def simulate_pbs(
+    attacker_builder_count: int,
+    attacker_user_count: int,
+    output_dir: Optional[str] = None,
+    pool_initializer: Optional[Any] = None,
+    pool_initargs: Optional[tuple] = None,
+) -> List[Dict[str, Any]]:
+    """Simulate PBS with given attacker counts. Optional output_dir and pool_initializer for by-period runs."""
     # Set attacker status for builders and users
     _set_attacker_status(attacker_builder_count, attacker_user_count)
 
-    # Run simulation blocks
-    block_data_list, all_transactions = _run_simulation_blocks()
+    # Run simulation blocks (workers use period pools when pool_initializer is set)
+    block_data_list, all_transactions = _run_simulation_blocks(
+        pool_initializer=pool_initializer,
+        pool_initargs=pool_initargs,
+    )
 
     # Save transaction data to CSV
-    _save_transaction_data(all_transactions, attacker_builder_count, attacker_user_count)
+    _save_transaction_data(all_transactions, attacker_builder_count, attacker_user_count, output_dir)
 
     # Save block data to a separate CSV
-    _save_block_data(block_data_list, attacker_builder_count, attacker_user_count)
+    _save_block_data(block_data_list, attacker_builder_count, attacker_user_count, output_dir)
 
     # Run garbage collection to clear memory
     gc.collect()
 
     return block_data_list
 
-def run_simulation_in_process(attacker_builder_count: int, attacker_user_count: int) -> None:
+def run_simulation_in_process(
+    attacker_builder_count: int,
+    attacker_user_count: int,
+    output_dir: Optional[str] = None,
+    pool_initializer: Optional[Any] = None,
+    pool_initargs: Optional[tuple] = None,
+) -> None:
     """Run each simulation in a separate process to avoid state leakage."""
-    process: mp.Process = mp.Process(target=simulate_pbs, args=(attacker_builder_count, attacker_user_count))
+    kwargs = {}
+    if output_dir is not None:
+        kwargs["output_dir"] = output_dir
+    if pool_initializer is not None:
+        kwargs["pool_initializer"] = pool_initializer
+        kwargs["pool_initargs"] = pool_initargs or ()
+    process: mp.Process = mp.Process(
+        target=simulate_pbs,
+        args=(attacker_builder_count, attacker_user_count),
+        kwargs=kwargs,
+    )
     process.start()
     process.join()  # Wait for the process to complete
 
