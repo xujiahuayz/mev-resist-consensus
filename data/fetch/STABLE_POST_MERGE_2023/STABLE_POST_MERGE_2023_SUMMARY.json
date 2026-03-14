@@ -1,0 +1,15 @@
+{
+    "period_name": "STABLE_POST_MERGE_2023",
+    "description": "Stable period 2023 (post-merge, no major events)",
+    "era": "post_merge",
+    "volatility_type": "stable",
+    "start_block": 17500000,
+    "end_block": 17501000,
+    "total_blocks": 1001,
+    "fetch_timestamp": "2026-03-13 23:00:17",
+    "usage_notes": {
+        "simulation_testing": "Use this period for stable market condition testing",
+        "data_identifier": "Period: STABLE_POST_MERGE_2023, Era: post_merge",
+        "recommended_use": "Compare with other periods to test stable vs stable conditions"
+    }
+}

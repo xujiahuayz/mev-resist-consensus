@@ -1,0 +1,12 @@
+{
+    "block_number": 15000102,
+    "miner": "0x28846f1Ec065eEa239152213373bb58B1C9Fc93B",
+    "num_transactions": 0,
+    "avg_gas_fee_gwei": 0,
+    "avg_confirm_time_blocks": 0,
+    "block_size_bytes": 536,
+    "total_gas_fees_gwei": 0,
+    "transactions": [],
+    "gas_fees_gwei": [],
+    "timestamp": 1655780129
+}

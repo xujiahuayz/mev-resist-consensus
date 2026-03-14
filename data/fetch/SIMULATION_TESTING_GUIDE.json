@@ -1,0 +1,46 @@
+{
+    "fetch_timestamp": "2026-03-14 20:25:08",
+    "total_periods": 6,
+    "simulation_testing_guide": {
+        "high_volatility_testing": {
+            "description": "Test MEV resistance under extreme market conditions",
+            "periods": [
+                "USDC_DEPEG_MARCH_2023",
+                "FTX_COLLAPSE_NOV_2022",
+                "LUNA_CRASH_MAY_2022"
+            ],
+            "use_case": "Compare MEV extraction patterns during market crashes"
+        },
+        "stable_market_testing": {
+            "description": "Test MEV resistance under normal market conditions",
+            "periods": [
+                "STABLE_POST_MERGE_2023",
+                "STABLE_POST_MERGE_2022",
+                "STABLE_PRE_MERGE_2022"
+            ],
+            "use_case": "Establish baseline behavior for comparison"
+        },
+        "era_comparison_testing": {
+            "description": "Compare pre-merge (PoW) vs post-merge (PoS) behavior",
+            "pre_merge_periods": [
+                "LUNA_CRASH_MAY_2022",
+                "STABLE_PRE_MERGE_2022"
+            ],
+            "post_merge_periods": [
+                "USDC_DEPEG_MARCH_2023",
+                "FTX_COLLAPSE_NOV_2022",
+                "STABLE_POST_MERGE_2023",
+                "STABLE_POST_MERGE_2022"
+            ],
+            "use_case": "Analyze consensus mechanism impact on MEV resistance"
+        }
+    },
+    "data_structure": {
+        "each_period_contains": [
+            "Individual block JSON files",
+            "Period summary with clear identification",
+            "Usage notes for simulation testing"
+        ],
+        "naming_convention": "PERIOD_TYPE_ERA_YEAR for easy identification"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "period_name": "FTX_COLLAPSE_NOV_2022",
+    "description": "FTX collapse period (November 2022) - High volatility, Post-merge",
+    "era": "post_merge",
+    "volatility_type": "high_volatility",
+    "start_block": 16000000,
+    "end_block": 16001000,
+    "total_blocks": 1001,
+    "fetch_timestamp": "2026-03-13 18:22:15",
+    "usage_notes": {
+        "simulation_testing": "Use this period for high_volatility market condition testing",
+        "data_identifier": "Period: FTX_COLLAPSE_NOV_2022, Era: post_merge",
+        "recommended_use": "Compare with other periods to test high_volatility vs stable conditions"
+    }
+}

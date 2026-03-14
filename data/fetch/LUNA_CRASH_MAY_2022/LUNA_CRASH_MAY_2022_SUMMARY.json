@@ -1,0 +1,15 @@
+{
+    "period_name": "LUNA_CRASH_MAY_2022",
+    "description": "Luna crash period (May 2022) - High volatility, Pre-merge",
+    "era": "pre_merge",
+    "volatility_type": "high_volatility",
+    "start_block": 14800000,
+    "end_block": 14801000,
+    "total_blocks": 1001,
+    "fetch_timestamp": "2026-03-13 18:53:06",
+    "usage_notes": {
+        "simulation_testing": "Use this period for high_volatility market condition testing",
+        "data_identifier": "Period: LUNA_CRASH_MAY_2022, Era: pre_merge",
+        "recommended_use": "Compare with other periods to test high_volatility vs stable conditions"
+    }
+}
