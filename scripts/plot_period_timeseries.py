@@ -9,11 +9,18 @@ Run:
 """
 
 import csv
+import re
 import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+# Month words to strip from period labels in legend
+MONTH_PATTERN = re.compile(
+    r"\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|MARCH|APRIL|JUNE|JULY|AUGUST|SEPT|OCTOBER|SEPTEMBER)\b",
+    re.IGNORECASE,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -35,6 +42,7 @@ def load_pos_blocks():
             continue
         period_name = period_dir.name
         label = period_name.replace("_", " ")
+        label = MONTH_PATTERN.sub("", label).strip()
         csv_path = period_dir / "pos" / f"pos_block_data_{CONFIG}.csv"
         if not csv_path.exists():
             continue
@@ -70,18 +78,23 @@ def plot_timeseries(period_blocks):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     sns.set_theme(style="whitegrid", font_scale=1.0)
     palette = sns.color_palette("husl", n_colors=len(period_blocks))
+    big_font = {"fontsize": 22}
+    label_font = {"fontsize": 20}
+    tick_font = 16
 
     # 1) Gas per block over time
     fig, ax = plt.subplots(figsize=(10, 5))
     for (period, (bnums, gas, _)), color in zip(period_blocks.items(), palette):
         ax.plot(bnums, gas, label=period, color=color, alpha=0.9, linewidth=1.2)
-    ax.set_xlabel("Simulated block index")
-    ax.set_ylabel("Gas fee per block")
-    ax.set_title("Gas fee per block over simulated time (PoS)")
-    ax.legend(fontsize=8)
+    ax.set_xlabel("Block number", **label_font)
+    ax.set_ylabel("Gas fee per block", **label_font)
+    ax.legend(fontsize=tick_font, loc="upper right")
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.tick_params(axis="both", labelsize=tick_font)
     plt.tight_layout()
-    gas_path = OUT_DIR / "period_timeseries_pos_gas.png"
-    plt.savefig(gas_path, dpi=150, bbox_inches="tight")
+    gas_path = OUT_DIR / "period_timeseries_pos_gas.pdf"
+    plt.savefig(gas_path, bbox_inches="tight")
     plt.close()
     print(f"Saved {gas_path}")
 
@@ -89,13 +102,15 @@ def plot_timeseries(period_blocks):
     fig, ax = plt.subplots(figsize=(10, 5))
     for (period, (bnums, _, mev)), color in zip(period_blocks.items(), palette):
         ax.plot(bnums, mev, label=period, color=color, alpha=0.9, linewidth=1.2)
-    ax.set_xlabel("Simulated block index")
-    ax.set_ylabel("MEV per block")
-    ax.set_title("MEV per block over simulated time (PoS)")
-    ax.legend(fontsize=8)
+    ax.set_xlabel("Block number", **label_font)
+    ax.set_ylabel("MEV per block", **label_font)
+    ax.legend(fontsize=tick_font, loc="upper right")
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.tick_params(axis="both", labelsize=tick_font)
     plt.tight_layout()
-    mev_path = OUT_DIR / "period_timeseries_pos_mev.png"
-    plt.savefig(mev_path, dpi=150, bbox_inches="tight")
+    mev_path = OUT_DIR / "period_timeseries_pos_mev.pdf"
+    plt.savefig(mev_path, bbox_inches="tight")
     plt.close()
     print(f"Saved {mev_path}")
 
