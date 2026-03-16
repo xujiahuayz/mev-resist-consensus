@@ -113,7 +113,8 @@ class User(Node):
         network = build_network([user], builders, [])
         tx: Transaction = user.create_transactions(1)
         user.broadcast_transactions(tx)
-        for node_id in user.visible_nodes:
+        # visible_nodes is populated by build_network; Pylint can't see it on the User stub.
+        for node_id in user.visible_nodes:  # pylint: disable=no-member
             node = network.nodes[node_id]['node']
             if hasattr(node, 'get_mempool'):
                 assert tx in node.get_mempool(), "Transaction not found in builder's mempool"

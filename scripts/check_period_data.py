@@ -45,7 +45,7 @@ def main():
         block_nums = []
         for f in flat_files[:5]:
             try:
-                with open(f, "r") as fp:
+                with open(f, "r", encoding="utf-8") as fp:
                     b = json.load(fp)
                 block_nums.append(b.get("block_number", f.stem.replace("block_", "")))
             except Exception:
@@ -54,7 +54,7 @@ def main():
             block_nums.append("...")
             for f in flat_files[-2:]:
                 try:
-                    with open(f, "r") as fp:
+                    with open(f, "r", encoding="utf-8") as fp:
                         b = json.load(fp)
                     block_nums.append(b.get("block_number", f.stem.replace("block_", "")))
                 except Exception:
@@ -63,7 +63,7 @@ def main():
 
         # Map first block to period
         try:
-            with open(flat_files[0], "r") as fp:
+            with open(flat_files[0], "r", encoding="utf-8") as fp:
                 b = json.load(fp)
             bn = int(b.get("block_number", flat_files[0].stem.replace("block_", "")))
             period = period_for_block(bn)
