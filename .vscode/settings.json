@@ -17,7 +17,7 @@
   "python.testing.nosetestsEnabled": false,
   "python.testing.pytestEnabled": true,
   "jupyter.notebookFileRoot": "${workspaceFolder}",
-  "python.languageServer": "Pylance",
+  "python.languageServer": "None",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
