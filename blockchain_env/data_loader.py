@@ -289,7 +289,32 @@ class EthereumDataLoader:
         else:
             return random.sample(all_data, min(n_samples, len(all_data)))
     
-    def get_simulation_data(self, 
+    def load_period_blocks(self, period_name: str) -> list:
+        """
+        Load all blocks for a period, preserving block-level structure.
+
+        Unlike load_period_data (which flattens transactions), this returns a
+        list of block dicts sorted by block_number, each containing:
+            block_number, miner, timestamp, num_transactions,
+            total_gas_fees_gwei, gas_fees_gwei, transactions, ...
+
+        Returns [] if the period directory does not exist or has no block files.
+        Used by the empirical analysis pipeline.
+        """
+        period_path = self.data_path / period_name
+        if not period_path.exists():
+            return []
+        blocks = []
+        for block_file in period_path.glob("block_*.json"):
+            try:
+                with open(block_file, "r", encoding="utf-8") as f:
+                    blocks.append(json.load(f))
+            except Exception as e:
+                print(f"Error loading {block_file}: {e}")
+        blocks.sort(key=lambda b: b.get("block_number", 0))
+        return blocks
+
+    def get_simulation_data(self,
                            period_type: str = None, 
                            era: str = None,
                            n_samples: int = 100) -> Dict:
