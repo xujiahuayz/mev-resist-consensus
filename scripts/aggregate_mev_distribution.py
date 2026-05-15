@@ -1,4 +1,4 @@
-"""Aggregate MEV distribution data for Figure 7 with corrected victim utility model.
+"""Aggregate MEV distribution data across PoS/PBS simulation CSVs with corrected victim utility model.
 
 Corrected model (Task 1):
   When transaction x_j is sandwiched, the attacker captures m_j = mev_potential.
@@ -127,8 +127,8 @@ def process_pos(data_folder: Path, output_folder: Path) -> None:
             key = str(val_count)
             if key not in aggregated:
                 aggregated[key] = {"total_mev": 0.0, "validators_mev": 0.0, "users_mev": 0.0}
-            for k in data:
-                aggregated[key][k] = aggregated[key].get(k, 0.0) + data[k]
+            for k, v in data.items():
+                aggregated[key][k] = aggregated[key].get(k, 0.0) + v
 
         out = output_folder / f"pos_data_user_attack_{user_count}.json"
         with open(out, 'w', encoding='utf-8') as f:
@@ -154,8 +154,8 @@ def process_pbs(data_folder: Path, output_folder: Path) -> None:
             key = str(bld_count)
             if key not in aggregated:
                 aggregated[key] = {"total_mev": 0.0, "builders_mev": 0.0, "users_mev": 0.0}
-            for k in data:
-                aggregated[key][k] = aggregated[key].get(k, 0.0) + data[k]
+            for k, v in data.items():
+                aggregated[key][k] = aggregated[key].get(k, 0.0) + v
 
         out = output_folder / f"pbs_data_user_attack_{user_count}.json"
         with open(out, 'w', encoding='utf-8') as f:
@@ -175,4 +175,4 @@ if __name__ == "__main__":
     print("\n=== Aggregating PBS/ePBS data (corrected victim utility) ===")
     process_pbs(pbs_data, output)
 
-    print("\nDone. Run plots/ss/grouped_plots.py to regenerate Figure 7.")
+    print("\nDone. Run plots/ss/grouped_plots.py to regenerate the MEV distribution plot.")
