@@ -89,7 +89,7 @@ def main():
         )
 
     ax.set_xlabel("Block Sequence Position", fontsize=30)
-    ax.set_ylabel("Mean Gas Fee per Block (Gwei)", fontsize=30)
+    ax.set_ylabel("Mean Gas Fee / Block (Gwei)", fontsize=30, y=0.4)
     ax.set_xlim(left=0)
     ax.set_ylim(bottom=0)
     ax.tick_params(axis="both", labelsize=28)

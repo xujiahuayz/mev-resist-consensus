@@ -122,8 +122,8 @@ def main():
                             label="Simulation (50% MEV)")
         legend_handles.append(sim_handle)
 
-    ax.set_xlabel("Cumulative Fraction of Block Producers", fontsize=30)
-    ax.set_ylabel("Cumulative Fraction of Blocks", fontsize=30)
+    ax.set_xlabel("Cumulative Share of Miners", fontsize=30)
+    ax.set_ylabel("Cumulative Share of Blocks", fontsize=30, y=0.4)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.tick_params(axis="both", labelsize=28)
