@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 from web3 import Web3
 
-INFURA_URL = "https://mainnet.infura.io/v3/dd763ae6e7ca4f059f69f4589ad695f0"
+RPC_URL = "https://ethereum.publicnode.com"
 OUTPUT_DIR = Path("data/fetch")
 
 PERIOD_RANGES = {
@@ -32,11 +32,11 @@ PERIOD_RANGES = {
 
 
 def connect():
-    w3 = Web3(Web3.HTTPProvider(INFURA_URL))
+    w3 = Web3(Web3.HTTPProvider(RPC_URL))
     if not w3.is_connected():
-        print("Failed to connect to Ethereum node. Check Infura URL and network.")
+        print(f"Failed to connect to {RPC_URL}. Check network.")
         sys.exit(1)
-    print(f"Connected. Current block: {w3.eth.block_number}")
+    print(f"Connected to {RPC_URL}. Current block: {w3.eth.block_number}")
     return w3
 
 
@@ -49,15 +49,12 @@ def fetch_and_analyze(w3, block_number):
         return None
 
     gas_fees = []
-    confirm_times = []
     transactions_data = []
 
     for txn in block["transactions"]:
         try:
-            receipt = w3.eth.get_transaction_receipt(txn["hash"])
             gas_fee_wei = txn["gasPrice"] * txn["gas"]
             gas_fee_gwei = w3.from_wei(gas_fee_wei, "gwei")
-            confirm_time = receipt["blockNumber"] - txn["blockNumber"]
             tx_data = {
                 "hash": txn["hash"].hex(),
                 "from": txn["from"],
@@ -69,15 +66,11 @@ def fetch_and_analyze(w3, block_number):
                 "gas_price_wei": txn["gasPrice"],
                 "gas_fee_gwei": str(gas_fee_gwei),
                 "gas_fee_wei": gas_fee_wei,
-                "confirm_time": confirm_time,
                 "block_number": txn["blockNumber"],
                 "transaction_index": txn["transactionIndex"],
                 "nonce": txn["nonce"],
-                "input": txn["input"].hex(),
-                "receipt_status": receipt["status"],
             }
             gas_fees.append(float(gas_fee_gwei))
-            confirm_times.append(confirm_time)
             transactions_data.append(tx_data)
         except Exception as e:
             print(f"  Error processing tx in block {block_number}: {e}")
@@ -89,7 +82,6 @@ def fetch_and_analyze(w3, block_number):
         "miner": block["miner"],
         "num_transactions": n,
         "avg_gas_fee_gwei": str(sum(gas_fees) / n) if n else "0",
-        "avg_confirm_time_blocks": sum(confirm_times) / n if n else 0,
         "block_size_bytes": block["size"],
         "total_gas_fees_gwei": str(sum(gas_fees)),
         "transactions": transactions_data,

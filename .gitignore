@@ -157,3 +157,11 @@ cython_debug/
 #.idea/
 
 **/**/.DS_Store
+# Raw blockchain block data — 718MB, regenerate with: python fetch/fetch_resume.py
+data/fetch/
+
+# Large per-transaction CSVs — regenerate with:
+#   python scripts/run_empirical_analysis.py
+#   python scripts/compute_simulation_baseline.py
+data/empirical/all_gas_fees.csv
+data/empirical/sim_baseline_gas_fees.csv
