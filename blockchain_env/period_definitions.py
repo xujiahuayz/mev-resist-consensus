@@ -1,17 +1,41 @@
-"""Block number ranges per period for partitioning flat fetch data and for fetch scripts."""
+"""Block ranges per period, loaded from fetch/periods_config.json.
 
-# Period name -> (start_block, end_block) inclusive. Used to assign blocks to periods when
-# data/fetch contains flat block_*.json (no period subdirs). Must not overlap so each block
-# maps to at most one period.
-BLOCK_RANGES_BY_PERIOD = {
-    "LUNA_CRASH_MAY_2022": (14800000, 14801000),
-    "STABLE_PRE_MERGE_2022": (15000000, 15001000),
-    "FTX_COLLAPSE_NOV_2022": (16000000, 16001000),
-    "STABLE_POST_MERGE_2022": (16001001, 16002000),
-    "USDC_DEPEG_MARCH_2023": (16900000, 16901000),
-    "STABLE_POST_MERGE_2023": (17500000, 17501000),
-}
+Single source of truth: fetch/periods_config.json. This module exposes the
+same dict-and-helper API the rest of the codebase has used historically.
+"""
 
+import json
+from pathlib import Path
+
+_CONFIG_PATH = Path(__file__).resolve().parent.parent / "fetch" / "periods_config.json"
+
+
+def _load() -> dict[str, tuple[int, int]]:
+    with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    out: dict[str, tuple[int, int]] = {}
+    for group_key in ("stable_periods", "high_volatility_periods"):
+        for name, body in cfg.get(group_key, {}).items():
+            out[name] = (int(body["start"]), int(body["end"]))
+    return out
+
+
+def _assert_invariants(ranges: dict[str, tuple[int, int]]) -> None:
+    items = sorted(ranges.items(), key=lambda kv: kv[1][0])
+    prev_end = -1
+    prev_name = None
+    for name, (start, end) in items:
+        if end <= start:
+            raise ValueError(f"Period {name} has non-positive span: {start}..{end}")
+        if start <= prev_end:
+            raise ValueError(
+                f"Period {name} ({start}..{end}) overlaps with {prev_name} (ends at {prev_end})"
+            )
+        prev_end, prev_name = end, name
+
+
+BLOCK_RANGES_BY_PERIOD: dict[str, tuple[int, int]] = _load()
+_assert_invariants(BLOCK_RANGES_BY_PERIOD)
 DEFAULT_PERIOD_NAMES = list(BLOCK_RANGES_BY_PERIOD.keys())
 
 

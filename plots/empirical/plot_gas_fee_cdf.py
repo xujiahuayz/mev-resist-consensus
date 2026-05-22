@@ -1,13 +1,16 @@
 """
-Empirical CDF of per-block transaction ordering inversion rates by market period.
+Per-period CDF of transaction gas fees.
 
-Reads:   data/empirical/ordering_inversions.csv
-Writes:  figures/empirical/inversion_ecdf.pdf
+These distributions are sampled directly in the simulator (see
+blockchain_env/user.py and blockchain_env/data_loader.py) — this figure
+documents the *calibration inputs* drawn from on-chain data per period.
+It is NOT a model-vs-reality comparison: overlaying the simulator here
+would be tautological (sampling from F vs. F).
 
-Each data point is one block's inversion_rate = inversion_count / max_possible.
-An inversion occurs when a lower-gas-price transaction appears before a
-higher-gas-price transaction, indicating non-priority ordering (potential MEV).
-Palette matches the rest of the project: ch:rot=-.25,hue=1,light=.75
+Reads:   data/empirical/all_gas_fees.csv
+Writes:  figures/empirical/gas_fee_cdf.pdf
+
+Palette: ch:rot=-.25,hue=1,light=.75
 """
 
 import sys
@@ -22,8 +25,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-DATA_PATH = PROJECT_ROOT / "data" / "empirical" / "ordering_inversions.csv"
-OUT_PATH  = PROJECT_ROOT / "figures" / "empirical" / "inversion_ecdf.pdf"
+DATA_PATH = PROJECT_ROOT / "data" / "empirical" / "all_gas_fees.csv"
+OUT_PATH  = PROJECT_ROOT / "figures" / "empirical" / "gas_fee_cdf.pdf"
 
 PERIODS = [
     "STABLE_PRE_MERGE_2022",
@@ -43,6 +46,7 @@ PERIOD_LABELS = {
     "USDC_DEPEG_MARCH_2023":  "USDC depeg",
 }
 
+# Solid for stable, dashed for crisis — visually separates regime categories.
 PERIOD_LINESTYLE = {
     "STABLE_PRE_MERGE_2022":  "-",
     "STABLE_POST_MERGE_2022": "-",
@@ -53,7 +57,7 @@ PERIOD_LINESTYLE = {
 }
 
 
-def ecdf(data):
+def cdf(data):
     x = np.sort(data)
     y = np.arange(1, len(x) + 1) / len(x)
     return x, y
@@ -64,9 +68,8 @@ def main():
         print(f"Missing {DATA_PATH}. Run scripts/run_empirical_analysis.py first.")
         return
 
-    df = pd.read_csv(DATA_PATH)
-    # Only blocks with enough transactions for meaningful inversion counts
-    df = df[df["num_transactions"] >= 5]
+    emp_df = pd.read_csv(DATA_PATH)
+    emp_df = emp_df[emp_df["gas_fee_gwei"] > 0]
 
     palette = sns.color_palette("ch:rot=-.25,hue=1,light=.75", len(PERIODS) + 1)
     period_color = {p: palette[i + 1] for i, p in enumerate(PERIODS)}
@@ -75,10 +78,10 @@ def main():
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for period in PERIODS:
-        sub = df[df["period"] == period]["inversion_rate"].dropna().to_numpy()
+        sub = emp_df[emp_df["period"] == period]["gas_fee_gwei"].dropna().to_numpy()
         if len(sub) == 0:
             continue
-        x, y = ecdf(sub)
+        x, y = cdf(sub)
         ax.plot(
             x, y,
             color=period_color[period],
@@ -87,12 +90,13 @@ def main():
             label=PERIOD_LABELS[period],
         )
 
-    ax.set_xlabel("Inversion Rate (per block)", fontsize=30)
-    ax.set_ylabel("Cumulative Fraction", fontsize=30)
-    ax.set_xlim(0, 1)
+    ax.set_xscale("log")
+    ax.set_xlabel("Transaction gas fee (Gwei, log scale)", fontsize=22)
+    ax.set_ylabel("Cumulative fraction", fontsize=22)
+    ax.set_xlim(left=emp_df["gas_fee_gwei"].quantile(0.001))
     ax.set_ylim(0, 1)
-    ax.tick_params(axis="both", labelsize=28)
-    ax.legend(fontsize=22, frameon=True)
+    ax.tick_params(axis="both", labelsize=18)
+    ax.legend(fontsize=14, frameon=True, title="Period sampling distribution")
 
     plt.tight_layout()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

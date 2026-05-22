@@ -3,15 +3,18 @@ import os
 import csv
 import time
 import multiprocessing as mp
+import pandas as pd
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
+from blockchain_env.empirical_metrics import ordering_inversions_from_tx_df
+from blockchain_env.sim_config import BLOCKS_PER_SIM, USERS, VALIDATORS
 # Network graph no longer needed - using direct probability distribution
 
-# Constants
-BLOCKNUM = 1000
+# Constants — sourced from sim_config (single source of truth across scripts)
+BLOCKNUM = BLOCKS_PER_SIM
 BLOCK_CAP = 100
-USERNUM = 50
-PROPNUM = 20
+USERNUM = USERS
+PROPNUM = VALIDATORS
 
 # Seed for reproducibility
 random.seed(16)
@@ -176,6 +179,27 @@ def simulate_pos(attacker_validators, attacker_users, output_dir=None, pool_init
         writer.writeheader()
         for block_data in block_data_list:
             writer.writerow(block_data)
+
+    # Per-block ordering inversions — commensurable with empirical ordering_inversions.csv
+    inv_filename = os.path.join(
+        base, f"pos_block_inversions_validators{attacker_validators}_users{attacker_users}.csv"
+    )
+    if all_transactions:
+        tx_df = pd.DataFrame(tx.to_dict() for tx in all_transactions)
+        tx_df = tx_df.dropna(subset=["included_at"])
+        inv_df = ordering_inversions_from_tx_df(
+            tx_df,
+            block_key="included_at",
+            order_key="position",
+            priority_key="gas_fee",
+            id_key="id",
+        )
+        inv_df.to_csv(inv_filename, index=False)
+    else:
+        pd.DataFrame(columns=[
+            "block_number", "num_transactions", "inversion_count",
+            "inversion_rate", "max_possible_inversions",
+        ]).to_csv(inv_filename, index=False)
 
     return block_data_list
 

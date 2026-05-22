@@ -116,3 +116,54 @@ Generates heatmaps showing transaction ordering inversion counts for PoS and PBS
 ```bash
 python plots/ss/tx_order.py
 ```
+
+## Empirical calibration pipeline
+
+Large fetched / regenerated CSVs are gitignored. To reproduce the empirical
+section from scratch:
+
+1. **Refetch on-chain blocks.** Period windows are defined in
+   `fetch/periods_config.json` (single source of truth, ~5,000 blocks per
+   period, anchored to event onsets).
+   ```bash
+   python fetch/fetch_resume.py
+   ```
+
+2. **Build empirical CSVs** (per-block gas-fee stats, all per-tx gas fees,
+   miner concentration, per-block ordering inversions):
+   ```bash
+   python scripts/run_empirical_analysis.py
+   ```
+
+3. **Run the primary simulation** at the canonical config
+   (`blockchain_env/sim_config.py`: 20 validators / 20 builders / 20
+   proposers / 50 users, 50% MEV) for each period:
+   ```bash
+   python scripts/run_experiments_by_period.py
+   ```
+   This emits per-block ordering-inversion CSVs alongside the existing
+   transaction / block CSVs.
+
+4. **Compute simulation baseline summaries:**
+   ```bash
+   python scripts/compute_simulation_baseline.py
+   ```
+
+5. *(Optional)* **Robustness sweep across MEV fractions** (25 / 50 / 75%):
+   ```bash
+   python scripts/run_robustness_sweep.py
+   ```
+
+6. **Render figures:**
+   ```bash
+   python plots/empirical/plot_gas_fee_cdf.py
+   python plots/empirical/plot_inversion_cdf.py
+   python plots/empirical/plot_lorenz_concentration.py
+   python plots/empirical/plot_gas_timeseries.py
+   ```
+
+7. **Run tests** (period config invariants):
+   ```bash
+   pip install pytest
+   pytest tests/
+   ```

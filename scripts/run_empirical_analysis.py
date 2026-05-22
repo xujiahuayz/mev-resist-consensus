@@ -58,7 +58,7 @@ def main():
         gdf.insert(0, "period", period_name)
         gas_block_rows.append(gdf)
 
-        # 2. All individual transaction gas fees (for ECDF plots)
+        # 2. All individual transaction gas fees (for CDF plots)
         for b in blocks:
             bnum = b.get("block_number")
             for fee in b.get("gas_fees_gwei", []):

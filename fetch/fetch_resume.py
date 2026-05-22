@@ -4,31 +4,27 @@ Resume-capable block fetcher. Skips blocks already on disk.
 Usage:
     python fetch/fetch_resume.py
 
-Fetches ~1001 blocks per period into data/fetch/<PERIOD>/, resuming from where
+Fetches ~5001 blocks per period into data/fetch/<PERIOD>/, resuming from where
 a previous run left off. Uses the same JSON format as fetch.py.
 
-Note: FTX_COLLAPSE block range is corrected to 15970000-15971000 (Nov 10-11 2022).
-The original fetch.py erroneously used 16000000, the same range as STABLE_POST_MERGE_2022.
+Period windows are loaded from fetch/periods_config.json via
+blockchain_env.period_definitions (single source of truth).
 """
 
 import json
-import os
 import sys
 import time
 from pathlib import Path
 from web3 import Web3
 
-RPC_URL = "https://ethereum.publicnode.com"
-OUTPUT_DIR = Path("data/fetch")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+from blockchain_env.period_definitions import BLOCK_RANGES_BY_PERIOD
 
-PERIOD_RANGES = {
-    "STABLE_PRE_MERGE_2022":   (15000000, 15001000),
-    "STABLE_POST_MERGE_2022":  (16000000, 16001000),
-    "STABLE_POST_MERGE_2023":  (17500000, 17501000),
-    "FTX_COLLAPSE_NOV_2022":   (15970000, 15971000),
-    "LUNA_CRASH_MAY_2022":     (14800000, 14801000),
-    "USDC_DEPEG_MARCH_2023":   (16900000, 16901000),
-}
+RPC_URL = "https://ethereum.publicnode.com"
+OUTPUT_DIR = PROJECT_ROOT / "data" / "fetch"
+
+PERIOD_RANGES = BLOCK_RANGES_BY_PERIOD
 
 
 def connect():

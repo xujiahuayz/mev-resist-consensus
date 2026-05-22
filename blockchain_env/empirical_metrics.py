@@ -152,18 +152,27 @@ def _modified_merge(l1: list[int], l2: list[int]) -> tuple[list[int], int]:
     return merged, cross
 
 
-def ordering_inversions_for_block(block: dict) -> dict:
+def ordering_inversions_for_block(
+    block: dict,
+    *,
+    order_key: str = "transaction_index",
+    priority_key: str = "gas_price_gwei",
+    id_key: str = "hash",
+) -> dict:
     """
-    Inversion count comparing gas-price priority order to actual transaction_index order.
+    Inversion count comparing priority order to actual inclusion order within a block.
+
+    Works on both empirical block dicts (default keys: transaction_index, gas_price_gwei, hash)
+    and simulator-output block dicts (override to e.g. order_key="position",
+    priority_key="gas_fee", id_key="id").
 
     Algorithm:
-      1. Sort txs by gas_price_gwei descending → expected_rank[hash] = position (0=highest)
-      2. Read txs sorted by transaction_index ascending
-      3. Build rank_sequence: rank of each tx in gas-priority order, in actual order
-      4. Count inversions in rank_sequence
+      1. Sort txs by priority_key descending → expected_rank[id] = position (0=highest)
+      2. Read txs in actual order_key order
+      3. Count inversions in the resulting rank sequence
 
     An inversion means a lower-priority tx (higher rank number) appears before
-    a higher-priority tx (lower rank number) — evidence of non-gas ordering.
+    a higher-priority tx (lower rank number) — evidence of non-priority ordering.
 
     Returns:
         block_number, num_transactions, inversion_count,
@@ -183,21 +192,19 @@ def ordering_inversions_for_block(block: dict) -> dict:
             "max_possible_inversions": 0,
         }
 
-    # Sort by gas price descending to assign expected ranks
     try:
-        by_gas = sorted(txs, key=lambda t: float(t.get("gas_price_gwei") or 0), reverse=True)
+        by_priority = sorted(txs, key=lambda t: float(t.get(priority_key) or 0), reverse=True)
     except (TypeError, ValueError):
-        by_gas = txs
+        by_priority = txs
 
-    expected_rank = {tx.get("hash", ""): i for i, tx in enumerate(by_gas)}
+    expected_rank = {tx.get(id_key, i): i for i, tx in enumerate(by_priority)}
 
-    # Read in actual transaction_index order
     try:
-        actual_order = sorted(txs, key=lambda t: int(t.get("transaction_index") or 0))
+        actual_order = sorted(txs, key=lambda t: float(t.get(order_key) or 0))
     except (TypeError, ValueError):
         actual_order = txs
 
-    rank_sequence = [expected_rank.get(tx.get("hash", ""), i) for i, tx in enumerate(actual_order)]
+    rank_sequence = [expected_rank.get(tx.get(id_key, i), i) for i, tx in enumerate(actual_order)]
 
     _, inv_count = _inversionen(rank_sequence)
     max_possible = n * (n - 1) // 2
@@ -211,9 +218,52 @@ def ordering_inversions_for_block(block: dict) -> dict:
     }
 
 
-def ordering_inversions_per_block(blocks: list[dict]) -> pd.DataFrame:
+def ordering_inversions_per_block(
+    blocks: list[dict],
+    *,
+    order_key: str = "transaction_index",
+    priority_key: str = "gas_price_gwei",
+    id_key: str = "hash",
+) -> pd.DataFrame:
     """Apply ordering_inversions_for_block to each block. Returns DataFrame."""
-    return pd.DataFrame([ordering_inversions_for_block(b) for b in blocks])
+    return pd.DataFrame([
+        ordering_inversions_for_block(
+            b, order_key=order_key, priority_key=priority_key, id_key=id_key
+        )
+        for b in blocks
+    ])
+
+
+def ordering_inversions_from_tx_df(
+    tx_df: "pd.DataFrame",
+    *,
+    block_key: str = "included_at",
+    order_key: str = "position",
+    priority_key: str = "gas_fee",
+    id_key: str = "id",
+) -> pd.DataFrame:
+    """
+    Compute per-block inversions from a flat transactions DataFrame.
+
+    Used to postprocess simulator output CSVs (one row per transaction,
+    keyed by block via `block_key`) into a per-block inversions table
+    matching the schema of data/empirical/ordering_inversions.csv.
+    """
+    if tx_df.empty:
+        return pd.DataFrame(columns=[
+            "block_number", "num_transactions", "inversion_count",
+            "inversion_rate", "max_possible_inversions",
+        ])
+    rows = []
+    for bnum, group in tx_df.groupby(block_key, sort=True):
+        block = {
+            "block_number": int(bnum),
+            "transactions": group.to_dict(orient="records"),
+        }
+        rows.append(ordering_inversions_for_block(
+            block, order_key=order_key, priority_key=priority_key, id_key=id_key,
+        ))
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------

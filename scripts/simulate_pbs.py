@@ -10,17 +10,21 @@ import tracemalloc
 import multiprocessing as mp
 from typing import List, Tuple, Dict, Any, Optional
 
+import pandas as pd
+
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.proposer import Proposer
 from blockchain_env.transaction import Transaction
+from blockchain_env.empirical_metrics import ordering_inversions_from_tx_df
+from blockchain_env.sim_config import BLOCKS_PER_SIM, USERS, BUILDERS, PROPOSERS
 
-# Constants
-BLOCKNUM: int = 1000
+# Constants — sourced from sim_config (single source of truth across scripts)
+BLOCKNUM: int = BLOCKS_PER_SIM
 BLOCK_CAP: int = 100
-USERNUM: int = 50
-BUILDERNUM: int = 20
-PROPOSERNUM: int = 20
+USERNUM: int = USERS
+BUILDERNUM: int = BUILDERS
+PROPOSERNUM: int = PROPOSERS
 
 random.seed(16)
 
@@ -284,6 +288,35 @@ def _save_block_data(
         for block_data in block_data_list:
             block_writer.writerow(block_data)
 
+
+def _save_block_inversions(
+    all_transactions: List[Any],
+    attacker_builder_count: int,
+    attacker_user_count: int,
+    output_dir: Optional[str] = None,
+) -> None:
+    """Save per-block ordering inversions — commensurable with empirical ordering_inversions.csv."""
+    base: str = output_dir if output_dir else "data/same_seed/pbs_network_p0.05"
+    inv_filename: str = os.path.join(
+        base, f"pbs_block_inversions_builders{attacker_builder_count}_users{attacker_user_count}.csv"
+    )
+    if all_transactions:
+        tx_df = pd.DataFrame(tx.to_dict() for tx in all_transactions)
+        tx_df = tx_df.dropna(subset=["included_at"])
+        inv_df = ordering_inversions_from_tx_df(
+            tx_df,
+            block_key="included_at",
+            order_key="position",
+            priority_key="gas_fee",
+            id_key="id",
+        )
+        inv_df.to_csv(inv_filename, index=False)
+    else:
+        pd.DataFrame(columns=[
+            "block_number", "num_transactions", "inversion_count",
+            "inversion_rate", "max_possible_inversions",
+        ]).to_csv(inv_filename, index=False)
+
 def simulate_pbs(
     attacker_builder_count: int,
     attacker_user_count: int,
@@ -306,6 +339,9 @@ def simulate_pbs(
 
     # Save block data to a separate CSV
     _save_block_data(block_data_list, attacker_builder_count, attacker_user_count, output_dir)
+
+    # Save per-block ordering inversions
+    _save_block_inversions(all_transactions, attacker_builder_count, attacker_user_count, output_dir)
 
     # Run garbage collection to clear memory
     gc.collect()

@@ -1,15 +1,17 @@
 """
-Lorenz curves for miner block production concentration by market period.
+Lorenz curves: real Ethereum block-producer concentration per period.
+
+This figure plays a single role: it documents the *real-world counterfactual*
+that any protocol change (ePBS) should improve on (or, at minimum, not
+worsen). The simulated PoS curve is included for visual context, but it
+sits on the equality diagonal **by construction** — the model selects from
+a small uniform validator set, so the diagonal is a property of the
+modelling choice, not a calibration result. Do not read the simulated
+curve as a calibration claim.
 
 Reads:   data/empirical/miner_block_counts.csv
-         data/empirical/sim_baseline_validator_counts.csv  (optional)
+         data/empirical/sim_baseline_validator_counts.csv  (optional context)
 Writes:  figures/empirical/lorenz_concentration.pdf
-
-Solid lines: real Ethereum miner concentration.
-Dotted lines (same color): PoS simulation validator concentration (10 validators,
-50% MEV). Simulation curves sit closer to the equality diagonal because the model
-has far fewer validators than real Ethereum — the comparison shows that even a
-small PoS network is far less concentrated than real miner pools.
 """
 
 import sys
@@ -19,10 +21,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.lines import Line2D
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+from blockchain_env.sim_config import VALIDATORS
 
 DATA_PATH     = PROJECT_ROOT / "data" / "empirical" / "miner_block_counts.csv"
 SIM_DATA_PATH = PROJECT_ROOT / "data" / "empirical" / "sim_baseline_validator_counts.csv"
@@ -57,7 +62,6 @@ PERIOD_LINESTYLE = {
 
 
 def lorenz_curve(counts):
-    """Return (x, y) for the Lorenz curve of block counts."""
     arr = np.sort(np.array(counts, dtype=float))
     n = len(arr)
     cum_blocks = np.cumsum(arr)
@@ -80,15 +84,12 @@ def main():
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Perfect equality diagonal
-    ax.plot([0, 1], [0, 1], color="dimgrey", linestyle=":", linewidth=1.8,
-            label="Perfect equality")
+    ax.plot([0, 1], [0, 1], color="dimgrey", linestyle=":", linewidth=1.8)
 
-    from matplotlib.lines import Line2D
-    legend_handles = []
-    eq_handle = Line2D([0], [0], color="dimgrey", linestyle=":", linewidth=1.8,
-                       label="Perfect equality")
-    legend_handles.append(eq_handle)
+    legend_handles = [
+        Line2D([0], [0], color="dimgrey", linestyle=":", linewidth=1.8,
+               label="Perfect equality"),
+    ]
 
     for period in PERIODS:
         sub = df[df["period"] == period]["block_count"].dropna().tolist()
@@ -104,7 +105,6 @@ def main():
         )
         legend_handles.append(line)
 
-        # Overlay simulation validator concentration for the same period
         if sim_df is not None:
             sim_sub = sim_df[sim_df["period"] == period]["block_count"].dropna().tolist()
             if len(sim_sub) > 0:
@@ -114,20 +114,31 @@ def main():
                     color=period_color[period],
                     linestyle=":",
                     linewidth=2.0,
-                    alpha=0.75,
+                    alpha=0.6,
                 )
 
     if sim_df is not None and len(sim_df) > 0:
-        sim_handle = Line2D([0], [0], color="dimgrey", linestyle=":", linewidth=2.0,
-                            label="Simulation (50% MEV)")
-        legend_handles.append(sim_handle)
+        legend_handles.append(Line2D(
+            [0], [0], color="dimgrey", linestyle=":", linewidth=2.0,
+            label=f"PoS sim ({VALIDATORS} validators, uniform)",
+        ))
 
-    ax.set_xlabel("Cumulative Share of Miners", fontsize=30)
-    ax.set_ylabel("Cumulative Share of Blocks", fontsize=30, y=0.4)
+    ax.set_xlabel("Cumulative share of producers", fontsize=22)
+    ax.set_ylabel("Cumulative share of blocks", fontsize=22)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.tick_params(axis="both", labelsize=28)
-    ax.legend(handles=legend_handles, fontsize=20, frameon=True, loc="upper left")
+    ax.tick_params(axis="both", labelsize=18)
+    ax.legend(handles=legend_handles, fontsize=14, frameon=True, loc="upper left")
+
+    # Annotate the role of this figure right on the plot — no implied calibration claim.
+    ax.text(
+        0.98, 0.02,
+        f"Simulated curve hugs diagonal by construction\n"
+        f"({VALIDATORS} validators, uniform selection)",
+        transform=ax.transAxes, ha="right", va="bottom",
+        fontsize=11, color="dimgrey",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="lightgrey", alpha=0.8),
+    )
 
     plt.tight_layout()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

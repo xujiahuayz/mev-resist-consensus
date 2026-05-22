@@ -29,8 +29,16 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 os.chdir(PROJECT_ROOT)
 
-# Subset of (validators/builders, users) for by-period runs
-CONFIGS = [(0, 0), (10, 25), (20, 50)]
+from blockchain_env.sim_config import VALIDATORS, BUILDERS, USERS, MEV_FRACTION_PRIMARY
+
+# (num_attacker_validators_or_builders, num_attacker_users) for by-period runs:
+# baseline (no attackers), primary (MEV_FRACTION_PRIMARY), and saturated (all attackers).
+_primary_v = int(round(VALIDATORS * MEV_FRACTION_PRIMARY))
+_primary_b = int(round(BUILDERS * MEV_FRACTION_PRIMARY))
+_primary_u = int(round(USERS * MEV_FRACTION_PRIMARY))
+# Note: pos uses _primary_v, pbs uses _primary_b; in the canonical config these are equal.
+assert _primary_v == _primary_b, "PoS/PBS attacker counts diverged; check sim_config"
+CONFIGS = [(0, 0), (_primary_v, _primary_u), (VALIDATORS, USERS)]
 POOL_SAMPLES = 2000
 
 
