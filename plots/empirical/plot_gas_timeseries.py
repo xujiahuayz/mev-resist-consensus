@@ -22,35 +22,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from plots.empirical._style import PERIODS, PERIOD_LABELS, PERIOD_LINESTYLE, period_palette
+
 DATA_PATH = PROJECT_ROOT / "data" / "empirical" / "gas_fee_per_block.csv"
 OUT_PATH  = PROJECT_ROOT / "figures" / "empirical" / "gas_timeseries.pdf"
-
-PERIODS = [
-    "STABLE_PRE_MERGE_2022",
-    "STABLE_POST_MERGE_2022",
-    "STABLE_POST_MERGE_2023",
-    "FTX_COLLAPSE_NOV_2022",
-    "LUNA_CRASH_MAY_2022",
-    "USDC_DEPEG_MARCH_2023",
-]
-
-PERIOD_LABELS = {
-    "STABLE_PRE_MERGE_2022":  "Stable (pre-merge)",
-    "STABLE_POST_MERGE_2022": "Stable post-merge 2022",
-    "STABLE_POST_MERGE_2023": "Stable post-merge 2023",
-    "FTX_COLLAPSE_NOV_2022":  "FTX collapse",
-    "LUNA_CRASH_MAY_2022":    "Luna crash",
-    "USDC_DEPEG_MARCH_2023":  "USDC depeg",
-}
-
-PERIOD_LINESTYLE = {
-    "STABLE_PRE_MERGE_2022":  "-",
-    "STABLE_POST_MERGE_2022": "-",
-    "STABLE_POST_MERGE_2023": "-",
-    "FTX_COLLAPSE_NOV_2022":  "--",
-    "LUNA_CRASH_MAY_2022":    "--",
-    "USDC_DEPEG_MARCH_2023":  "--",
-}
 
 ROLLING_WINDOW = 10
 
@@ -62,8 +37,7 @@ def main():
 
     df = pd.read_csv(DATA_PATH)
 
-    palette = sns.color_palette("ch:rot=-.25,hue=1,light=.75", len(PERIODS) + 1)
-    period_color = {p: palette[i + 1] for i, p in enumerate(PERIODS)}
+    period_color = period_palette()
 
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -94,7 +68,6 @@ def main():
     ax.set_ylim(bottom=0)
     ax.tick_params(axis="both", labelsize=28)
     ax.yaxis.get_offset_text().set_fontsize(28)
-    ax.legend(fontsize=22, frameon=True)
 
     plt.tight_layout()
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
