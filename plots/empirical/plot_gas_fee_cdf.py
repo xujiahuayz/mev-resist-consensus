@@ -87,10 +87,18 @@ def main():
                     print(f"  SKIP sim overlay for {period}: "
                           f"real median={real_med:.0f}, sim median={sim_med:.0f} (ratio={ratio:.1f}×)")
 
+    # Set left xlim from global min so all curves start at y≈0
+    all_values = [emp_df[VALUE_COL].dropna().to_numpy()]
+    if sim_df is not None:
+        all_values.append(sim_df["gas_fee_gwei"].dropna().to_numpy())
+    global_min = min(v.min() for v in all_values if len(v) > 0)
+
     ax.set_xscale("log")
+    ax.minorticks_off()
+    ax.grid(which="minor", visible=False)
     ax.set_xlabel("Gas Fee (Gwei)", fontsize=30)
     ax.set_ylabel("Cumulative Fraction", fontsize=30)
-    ax.set_xlim(left=emp_df[VALUE_COL].quantile(0.001))
+    ax.set_xlim(left=global_min * 0.9)
     ax.set_ylim(0, 1)
     ax.tick_params(axis="both", labelsize=28)
 
