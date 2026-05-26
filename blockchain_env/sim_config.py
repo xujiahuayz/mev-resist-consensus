@@ -5,10 +5,10 @@ The primary (paper-headline) config is the values below; robustness sweeps
 vary MEV_FRACTION across MEV_FRACTIONS_ROBUSTNESS.
 """
 
-VALIDATORS = 20
-BUILDERS = 20
-PROPOSERS = 20
-USERS = 50
+VALIDATORS = 50
+BUILDERS = 50
+PROPOSERS = 50
+USERS = 100
 BLOCKS_PER_SIM = 1000
 
 MEV_FRACTION_PRIMARY = 0.50
