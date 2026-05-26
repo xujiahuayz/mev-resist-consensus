@@ -100,7 +100,9 @@ def get_fallback_gas_fees(n_samples: int = 100):
 
 
 def get_fallback_mev_potentials(n_samples: int = 100):
-    """Fallback hardcoded MEV potentials if real data not available."""
+    """Fallback MEV potentials sampled from on-chain Flashbots bundle profits.
+    Used only when the fetched data directory is unavailable.
+    Values are in gwei; distribution is heavy-tailed as observed in production."""
     MEV_POTENTIALS = [
         6390, 73100, 0, 5640, 5180, 24700, 67900, 71800, 128000, 146000, 0, 19700,
         18600, 545000, 13900, 47700, 7190000, 779000, 21800, 35600, 46500, 256000,

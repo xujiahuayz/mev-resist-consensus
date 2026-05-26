@@ -17,8 +17,11 @@ import time
 from typing import Dict, List, Optional, Any
 from web3 import Web3
 
-# Use your Infura project URL
-INFURA_URL = "https://mainnet.infura.io/v3/dd763ae6e7ca4f059f69f4589ad695f0"
+# Load Infura URL from environment variable (set INFURA_URL in your .env or shell)
+INFURA_URL = os.environ.get("INFURA_URL")
+if not INFURA_URL:
+    print("Error: INFURA_URL environment variable is not set. See .env.example.")
+    sys.exit(1)
 web3 = Web3(Web3.HTTPProvider(INFURA_URL))
 
 # Check connection

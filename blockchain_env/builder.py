@@ -113,7 +113,7 @@ class Builder(Node):
             # Reactive adjustment based on other builders' bids
             if my_last_bid < highest_last_bid:
                 # Increase bid if below highest
-                bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value * 0.9)
+                bid = min(highest_last_bid + 0.1 * highest_last_bid, block_value * 0.9)  # 0.9 cap: builder keeps ≥10% margin
             elif my_last_bid == highest_last_bid:
                 # If tied for highest, increase slightly
                 bid = my_last_bid + random.random() * (block_value * 0.9 - my_last_bid)
@@ -122,7 +122,7 @@ class Builder(Node):
                 bid = my_last_bid - 0.7 * (my_last_bid - second_highest_last_bid) if second_highest_last_bid > 0 else my_last_bid * 0.95
             
             # Ensure bid is within reasonable bounds
-            bid = max(0.0, min(bid, block_value * 0.9))
+            bid = max(0.0, min(bid, block_value * 0.9))  # cap ensures builder retains ≥10% margin
         
         # Add small random variation
         bid = bid * random.uniform(0.98, 1.02)

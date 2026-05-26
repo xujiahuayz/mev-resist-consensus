@@ -165,3 +165,7 @@ data/fetch/
 #   python scripts/compute_simulation_baseline.py
 data/empirical/all_gas_fees.csv
 data/empirical/sim_baseline_gas_fees.csv
+
+# Builder auction simulation CSVs — regenerate with: python scripts/run_builder_auction.py
+data/builder_auction/
+data/bidding_sweep/
