@@ -43,8 +43,8 @@ MEV_LABELS       = ["0%", "5%", "10%", "20%", "100%"]
 EPBS_PALETTE = sns.color_palette("ch:rot=-.25,hue=1,light=.75", len(LORENZ_N_ATTACKS) + 1)[1:]
 POS_PALETTE  = sns.color_palette("flare", len(LORENZ_N_ATTACKS) + 2)[1:-1]
 
-LABEL_FS = 32
-TICK_FS  = 26
+LABEL_FS = 40
+TICK_FS  = 34
 
 
 def gini(counts: np.ndarray) -> float:
@@ -87,15 +87,18 @@ def plot_lorenz(blocks_df: pd.DataFrame, summary_df: pd.DataFrame):
     # PoS: actual simulation data — one curve per MEV attacker fraction
     # All near-identical (Gini ≈ 0.01) because validator selection is uniform random
     pos_ginis = []
+    pos_last_x, pos_last_y = None, None
     for n_attack, color in zip(LORENZ_N_ATTACKS, POS_PALETTE):
         wins = load_pos_wins(n_attack)
         pos_ginis.append(gini(wins))
         x, y = lorenz_curve(wins)
         ax.plot(x, y, color=color, linewidth=3.0, alpha=0.75)
+        pos_last_x, pos_last_y = x, y
 
     pos_gini_val = float(np.mean(pos_ginis))
 
     # ePBS: auction simulation with capability heterogeneity — one curve per MEV fraction
+    epbs_last_x, epbs_last_y = None, None
     for n_attack, color in zip(LORENZ_N_ATTACKS, EPBS_PALETTE):
         sub = blocks_df[blocks_df["n_attack"] == n_attack]
         win_counts = np.zeros(N_BUILDERS, dtype=int)
@@ -103,11 +106,12 @@ def plot_lorenz(blocks_df: pd.DataFrame, summary_df: pd.DataFrame):
             win_counts[int(idx)] += 1
         x, y = lorenz_curve(win_counts)
         ax.plot(x, y, color=color, linewidth=3.0)
+        epbs_last_x, epbs_last_y = x, y
 
     ax.plot([0, 1], [0, 1], color="grey", linewidth=1.5, linestyle="--", zorder=2)
 
     ax.set_xlabel("Cumulative share of builders", fontsize=LABEL_FS)
-    ax.set_ylabel("Cumulative share of blocks won", fontsize=LABEL_FS)
+    ax.set_ylabel("Cumulative block share", fontsize=LABEL_FS)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.tick_params(axis="both", labelsize=TICK_FS)
