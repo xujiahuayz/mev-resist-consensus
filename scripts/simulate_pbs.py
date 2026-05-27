@@ -155,78 +155,96 @@ def _create_block_data(block_num: int, winning_bid: Tuple[str, List[Transaction]
 
     return block_data, all_block_transactions
 
-def process_block(block_num: int, network_graph: Any = None) -> Tuple[Dict[str, Any], List[Transaction]]:
-    """Process a single block in the simulation.
-    
-    Each block has 5 rounds. In each round:
-    - Builders retry receiving pending transactions (with probability)
-    - New user transactions are created and broadcast (only in round 0)
-    - Builders select transactions and place bids (reacting to other builders' bids)
-    
+MAX_AUCTION_ROUNDS: int = 24  # Full slot duration per EIP-7732 (0.5 s × 24 = 12 s)
+
+def _process_block_adaptive(
+    block_num: int,
+    proposer: Any,
+    commit_round: int,
+) -> Tuple[Dict[str, Any], List[Transaction]]:
+    """Process one block with adaptive auction duration.
+
+    Runs all MAX_AUCTION_ROUNDS rounds so the proposer can observe bids beyond
+    commit_round. The winner is selected from the highest bid at commit_round;
+    bids in later rounds are recorded in proposer.all_observed_bids and used by
+    proposer.adjust_auction_duration to adapt commit_round for the next block.
+
     Args:
-        block_num: Current block number
-        network_graph: Deprecated - kept for backward compatibility, not used
+        block_num:    Current block number.
+        proposer:     Pre-selected proposer for this block (already reset).
+        commit_round: Number of rounds after which the winner is committed (T_s).
     """
-    # Get all nodes (no network graph needed)
     user_nodes, builder_nodes, proposer_nodes = _get_all_nodes()
-    
-    # All receivers that should get transactions
     receivers = builder_nodes + proposer_nodes
-    
-    # Each block has 5 rounds
-    NUM_ROUNDS_PER_BLOCK = 5
-    
-    # Track bids across rounds for reactive bidding
+
     last_round_bids: List[float] = []
-    final_builder_results: List[Tuple[str, List[Transaction], float]] = []
-    
-    # Process rounds: in each round, retry pending transactions, then bid
-    for round_num in range(NUM_ROUNDS_PER_BLOCK):
-        # First, process pending mempool for all receivers (retry with probability)
+    committed_results: List[Tuple[str, List[Transaction], float]] = []
+
+    for round_num in range(MAX_AUCTION_ROUNDS):
         for receiver in receivers:
             receiver.process_pending_mempool(round_num)
-        
-        # Process user transactions (new transactions created this round)
-        # Only create transactions in the first round to avoid duplicates
+
         if round_num == 0:
             _process_user_transactions(user_nodes, block_num, receivers)
-        
-        # Process builder bids for this round (builders react to last round's bids)
-        builder_results, round_bids = _process_builder_bids_round(builder_nodes, block_num, round_num, last_round_bids)
-        
-        # Update last_round_bids for next round
+
+        builder_results, round_bids = _process_builder_bids_round(
+            builder_nodes, block_num, round_num, last_round_bids
+        )
+
+        # Proposer records the highest bid each round for adaptive T_s tracking
+        if round_bids:
+            proposer.receive_bid("max_bid", max(round_bids))
+        proposer.end_round()
+
+        # Commit winner at T_s; rounds beyond T_s are observed only
+        if round_num == commit_round - 1:
+            committed_results = builder_results
+
         last_round_bids = round_bids
-        
-        # Store final results (will be overwritten each round, keeping the last)
-        final_builder_results = builder_results
-    
-    # After all rounds, process proposer bids (select winner from final round)
-    winning_bid, winning_builder, winning_proposer = _process_proposer_bids(proposer_nodes, builder_nodes, final_builder_results, block_num)
-    
-    # Create block data
-    block_data, all_block_transactions = _create_block_data(block_num, winning_bid, winning_builder, winning_proposer)
-    
-    # Clear mempools for ALL participants (users, builders, proposers) instantaneously
-    # This removes transactions that have been included on-chain, regardless of propagation delay
-    # Note: Since builders use deepcopy, we must remove by transaction ID, not object reference
+
+    # Select winner from the committed round's results
+    if committed_results:
+        max_bid_value: float = max(r[2] for r in committed_results)
+        tolerance: float = max(1e-9, max_bid_value * 1e-9)
+        top_bidders = [r for r in committed_results if abs(r[2] - max_bid_value) <= tolerance]
+        winning_entry = random.choice(top_bidders)
+        winning_builder = next((b for b in builder_nodes if b.id == winning_entry[0]), None)
+    else:
+        winning_entry = ("", [], 0.0)
+        winning_builder = None
+
+    block_data, all_block_transactions = _create_block_data(
+        block_num, winning_entry, winning_builder, proposer
+    )
+
     included_tx_ids = {tx.id for tx in all_block_transactions} if all_block_transactions else set()
-    
-    # Remove included transactions from all users' mempools (instantaneous, no propagation delay)
     for user in user_nodes:
         user.mempool = [tx for tx in user.mempool if tx.id not in included_tx_ids]
-        user.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
-    
-    # Remove included transactions from all builders' mempools (instantaneous, no propagation delay)
+        user.clear_mempool(block_num)
     for builder in builder_nodes:
         builder.mempool = [tx for tx in builder.mempool if tx.id not in included_tx_ids]
-        builder.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
-    
-    # Remove included transactions from all proposers' mempools (instantaneous, no propagation delay)
-    for proposer in proposer_nodes:
-        proposer.mempool = [tx for tx in proposer.mempool if tx.id not in included_tx_ids]
-        proposer.clear_mempool(block_num)  # Also clear old transactions (created_at < block_num - 5)
+        builder.clear_mempool(block_num)
+    for prop in proposer_nodes:
+        prop.mempool = [tx for tx in prop.mempool if tx.id not in included_tx_ids]
+        prop.clear_mempool(block_num)
 
     return block_data, all_block_transactions
+
+
+def process_block(block_num: int, network_graph: Any = None) -> Tuple[Dict[str, Any], List[Transaction]]:
+    """Process a single block (parallel-compatible, fixed commit_round=12).
+
+    Kept for backward compatibility with pool.starmap callers. The main simulation
+    now uses _run_simulation_blocks_adaptive (sequential) which calls
+    _process_block_adaptive with the proposer's adaptive T_s.
+
+    Args:
+        block_num: Current block number
+        network_graph: Deprecated - not used
+    """
+    proposer = random.choice(proposer_list)
+    proposer.reset_for_new_block()
+    return _process_block_adaptive(block_num, proposer, commit_round=12)
 
 
 def _set_attacker_status(attacker_builder_count: int, attacker_user_count: int) -> None:
@@ -240,7 +258,7 @@ def _run_simulation_blocks(
     pool_initializer: Optional[Any] = None,
     pool_initargs: Optional[tuple] = None,
 ) -> Tuple[List[Dict[str, Any]], List[Transaction]]:
-    """Run simulation blocks. Optional initializer sets period-specific gas/MEV pools in workers."""
+    """Run simulation blocks in parallel (fixed commit_round=12, no adaptive T_s)."""
     pool_kw: Dict[str, Any] = {"processes": num_processes}
     if pool_initializer is not None:
         pool_kw["initializer"] = pool_initializer
@@ -251,6 +269,53 @@ def _run_simulation_blocks(
     block_data_list, all_transactions = zip(*results)
     all_transactions = [tx for block_txs in all_transactions for tx in block_txs]
     return list(block_data_list), all_transactions
+
+
+def _run_simulation_blocks_adaptive(
+    pool_initializer: Optional[Any] = None,
+    pool_initargs: Optional[tuple] = None,
+) -> Tuple[List[Dict[str, Any]], List[Transaction]]:
+    """Run simulation blocks sequentially with adaptive auction duration (T_s mechanism).
+
+    Each block pre-selects a proposer that observes all MAX_AUCTION_ROUNDS rounds
+    and commits the winner at T_s. After each block, proposer.adjust_auction_duration
+    updates T_s for the next block based on whether competitive bids arrived before
+    or after the previous commitment round, implementing:
+
+        T_s = T_{s-1} + 1  if any bid > b_w arrived after round T_{s-1}
+        T_s = T_{s-1} - 1  if any bid > b_w arrived only before round T_{s-1}
+        T_s = T_{s-1}      otherwise
+    """
+    if pool_initializer is not None:
+        pool_initializer(*(pool_initargs or ()))
+
+    T_s: int = 12  # Initial commit round; adapts within [1, 24] across blocks
+    prev_winning_bid: Optional[Tuple[str, float]] = None
+    prev_end_round: Optional[int] = None
+
+    block_data_list: List[Dict[str, Any]] = []
+    all_transactions: List[Transaction] = []
+
+    for block_num in range(BLOCKNUM):
+        proposer = random.choice(proposer_list)
+        proposer.reset_for_new_block()
+        proposer.max_rounds = T_s
+
+        block_data, block_txs = _process_block_adaptive(block_num, proposer, T_s)
+
+        # Adapt T_s for the next block: proposer inspects bids from this block
+        # against the previous block's winning bid and commitment round
+        proposer.adjust_auction_duration(prev_winning_bid, prev_end_round)
+        T_s = proposer.max_rounds
+
+        winning_bid_amount: float = block_data.get("winning_bid", 0.0)
+        prev_winning_bid = (block_data.get("builder_id", ""), winning_bid_amount)
+        prev_end_round = T_s
+
+        block_data_list.append(block_data)
+        all_transactions.extend(block_txs)
+
+    return block_data_list, all_transactions
 
 def _save_transaction_data(
     all_transactions: List[Transaction],
@@ -333,8 +398,8 @@ def simulate_pbs(
     # Set attacker status for builders and users
     _set_attacker_status(attacker_builder_count, attacker_user_count)
 
-    # Run simulation blocks (workers use period pools when pool_initializer is set)
-    block_data_list, all_transactions = _run_simulation_blocks(
+    # Run simulation blocks sequentially with adaptive auction duration (T_s mechanism)
+    block_data_list, all_transactions = _run_simulation_blocks_adaptive(
         pool_initializer=pool_initializer,
         pool_initargs=pool_initargs,
     )

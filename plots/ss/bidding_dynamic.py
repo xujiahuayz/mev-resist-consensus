@@ -8,8 +8,8 @@ sns.set_theme(style="whitegrid")
 
 # random.seed(16)
 
-ATTACK_BUILDERS = {f"builder_{i}" for i in range(3)} | {f"builder_{i+5}" for i in range(10)}
-NON_ATTACK_BUILDERS = {f"builder_{i+3}" for i in range(2)} | {f"builder_{i+15}" for i in range(5)}
+ATTACK_BUILDERS = {f"builder_{i}" for i in range(6)} | {f"builder_{i+13}" for i in range(19)}
+NON_ATTACK_BUILDERS = {f"builder_{i+6}" for i in range(7)} | {f"builder_{i+32}" for i in range(18)}
 
 def _get_builder_color(builder_id: str, winning_builder: str, is_winning_attacker: bool) -> str:
     """Get color for a builder based on its type and winning status."""
@@ -201,7 +201,7 @@ def plot_block_value_dynamics(file_path_input, block_number_input):
     plt.close()
 
 if __name__ == "__main__":
-    FILE_PATH = 'data/same_seed/bid_builder10.csv'
+    FILE_PATH = 'data/same_seed/bid_builder25.csv'
     BLOCK_NUMBER = 1
 
     plot_bid_dynamics(FILE_PATH, BLOCK_NUMBER)

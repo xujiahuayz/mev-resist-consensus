@@ -2,12 +2,12 @@
 Builder concentration: PoS vs ePBS Lorenz curves + standalone Gini table.
 
 Reads:   data/same_seed/pos_visible80/pos_block_data_validators{n}_users*.csv
-           (actual PoS simulation, 50 validators, sweeping MEV attacker fraction,
+           (actual PoS simulation, 20 validators, sweeping MEV attacker fraction,
             aggregated over all user-attack configurations)
          data/builder_auction/builder_auction_blocks.csv
          data/builder_auction/builder_auction_summary.csv
            (ePBS auction simulation with log-normal capability heterogeneity,
-            sigma=1.5, 50 builders, all MEV fractions 0-100%, 1000 blocks each)
+            sigma=1.5, 20 builders, all MEV fractions 0-100%, 1000 blocks each)
 Writes:  figures/ss/builder_auction_lorenz.pdf
          figures/ss/builder_auction_table.pdf
 
@@ -34,11 +34,11 @@ BLOCKS_PATH  = PROJECT_ROOT / "data" / "builder_auction" / "builder_auction_bloc
 SUMMARY_PATH = PROJECT_ROOT / "data" / "builder_auction" / "builder_auction_summary.csv"
 OUT_DIR      = PROJECT_ROOT / "figures" / "ss"
 
-N_VALIDATORS = 50
-N_BUILDERS   = 50
+N_VALIDATORS = 20
+N_BUILDERS   = 20
 
-LORENZ_N_ATTACKS = [0, 5, 10, 25, 50]   # → 0%, 10%, 20%, 50%, 100% MEV
-MEV_LABELS       = ["0%", "10%", "20%", "50%", "100%"]
+LORENZ_N_ATTACKS = [0, 1, 2, 4, 20]   # → 0%, 5%, 10%, 20%, 100% MEV
+MEV_LABELS       = ["0%", "5%", "10%", "20%", "100%"]
 
 EPBS_PALETTE = sns.color_palette("ch:rot=-.25,hue=1,light=.75", len(LORENZ_N_ATTACKS) + 1)[1:]
 POS_PALETTE  = sns.color_palette("flare", len(LORENZ_N_ATTACKS) + 2)[1:-1]
@@ -71,7 +71,7 @@ def load_pos_wins(n_attack: int) -> np.ndarray:
         raise FileNotFoundError(f"No PoS data for n_attack={n_attack} in {POS_DATA_DIR}")
     combined = pd.concat([pd.read_csv(f) for f in dfs])
     wins = combined.groupby("validator_id").size()
-    # Ensure all 50 validators are represented (fill zeros for any missing)
+    # Ensure all 20 validators are represented (fill zeros for any missing)
     full = np.zeros(N_VALIDATORS, dtype=int)
     for i, vid in enumerate(sorted(wins.index)):
         idx = int(vid.split("_")[1])

@@ -169,19 +169,26 @@ def save_results(auction_data: List[Tuple[int, int, str, str, float, float]], at
 
 
 def create_test_builders_and_users() -> Tuple[List[ModifiedBuilder], List[User]]:
-    """Create builders and users for simulation."""
+    """Create 50 builders for bid-trajectory figures.
+
+    Strategy split: 26% late-entry (13 builders), 74% reactive (37 builders).
+    MEV split: 50% attack (25 builders), 50% benign (25 builders).
+    IDs are fixed so bidding_dynamic.py coloring stays consistent:
+      attack  → builders 0–5  (late) and 13–31 (reactive)
+      benign  → builders 6–12 (late) and 32–49 (reactive)
+    """
     builders: List[ModifiedBuilder] = (
-        [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(3)] +
-        [ModifiedBuilder(f"builder_{i+3}", is_attacker=False, strategy="late_enter") for i in range(2)] +
-        [ModifiedBuilder(f"builder_{i+5}", is_attacker=True, strategy="reactive") for i in range(10)] +
-        [ModifiedBuilder(f"builder_{i+15}", is_attacker=False, strategy="reactive") for i in range(5)]
+        [ModifiedBuilder(f"builder_{i}", is_attacker=True, strategy="late_enter") for i in range(6)] +
+        [ModifiedBuilder(f"builder_{i+6}", is_attacker=False, strategy="late_enter") for i in range(7)] +
+        [ModifiedBuilder(f"builder_{i+13}", is_attacker=True, strategy="reactive") for i in range(19)] +
+        [ModifiedBuilder(f"builder_{i+32}", is_attacker=False, strategy="reactive") for i in range(18)]
     )
     users: List[User] = [User(f"user_{i}", False) for i in range(50)]
     return builders, users
 
 
 if __name__ == "__main__":
-    for num_attack_builders in [10]:
+    for num_attack_builders in [25]:
         test_builders, test_users = create_test_builders_and_users()
         test_auction_data: List[Tuple[int, int, str, str, float, float]] = simulate_auction(test_builders, test_users, BLOCK_NUM)
         save_results(test_auction_data, num_attack_builders)
