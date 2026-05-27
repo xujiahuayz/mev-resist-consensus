@@ -63,9 +63,9 @@ def process_block(block_num, network_graph=None):
     # All receivers (validators) that should receive transactions
     receivers = validator_nodes
     
-    # Each block has 5 rounds
-    NUM_ROUNDS_PER_BLOCK = 5
-    
+    # 24 rounds per block matches the ePBS slot duration (one round per 0.5 s)
+    NUM_ROUNDS_PER_BLOCK = 24
+
     # Process rounds: in each round, retry pending transactions and process new ones
     for round_num in range(NUM_ROUNDS_PER_BLOCK):
         # First, process pending mempool for all receivers (retry with probability)
