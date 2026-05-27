@@ -7,8 +7,8 @@ import pandas as pd
 from blockchain_env.user import User
 from blockchain_env.builder import Builder
 from blockchain_env.empirical_metrics import ordering_inversions_from_tx_df
-from blockchain_env.sim_config import BLOCKS_PER_SIM, USERS, VALIDATORS
-# Network graph no longer needed - using direct probability distribution
+from blockchain_env.sim_config import BLOCKS_PER_SIM, USERS, VALIDATORS, NETWORK_P
+from blockchain_env.network import build_network
 
 # Constants — sourced from sim_config (single source of truth across scripts)
 BLOCKNUM = BLOCKS_PER_SIM
@@ -23,13 +23,17 @@ random.seed(16)
 num_cores = os.cpu_count()
 num_processes = max(num_cores - 1, 1)  # Use all cores except one, but at least one
 
-# Create network participants (no network graph needed - using direct probability distribution)
-# Set uniform transaction inclusion probability for all validators (between 0.4 and 0.8)
-# This ensures fair distribution - no validator receives everything
-uniform_validator_probability = random.uniform(0.4, 0.8)
+# Create network participants
+validator_list = [Builder(f"validator_{i}", False) for i in range(PROPNUM)]
+user_list = [User(f"user_{i}", False) for i in range(USERNUM)]
 
-validator_list = [Builder(f"validator_{i}", False, transaction_inclusion_probability=uniform_validator_probability) for i in range(PROPNUM)]  # is_attacker will be set in simulation
-user_list = [User(f"user_{i}", False) for i in range(USERNUM)]  # is_attacker will be set in simulation
+# Build Erdős–Rényi graph and set each node's transaction-visibility probability
+# from its realized degree: better-connected nodes see more mempool transactions.
+_er_graph = build_network(user_list, validator_list, [], p=NETWORK_P)
+_n_total = USERNUM + PROPNUM
+for _node in user_list + validator_list:
+    _deg = _er_graph.degree[_node.id]
+    _node.transaction_inclusion_probability = _deg / (_n_total - 1) if _n_total > 1 else 1.0
 
 def transaction_number():
     random_number = random.randint(0, 100)

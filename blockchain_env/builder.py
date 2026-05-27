@@ -29,11 +29,13 @@ class Builder(Node):
             self.active_stake = initial_stake
 
     def launch_attack(self, block_num: int, target_transaction: Transaction, attack_type: str) -> Transaction:
-        """Launch an attack transaction targeting a specific transaction."""
-        if attack_type == 'front':
-            gas_fee: int = target_transaction.gas_fee + 1
-        else:
-            gas_fee: int = target_transaction.gas_fee - 1
+        """Launch an attack transaction targeting a specific transaction.
+
+        Builders control transaction ordering directly, so the attack tx uses a
+        zero gas fee — positioning is achieved by explicit block ordering, not
+        by outbidding on gas.
+        """
+        gas_fee: int = 0
         mev_potential: int = 0
         creator_id: int = self.id
         created_at: int = block_num

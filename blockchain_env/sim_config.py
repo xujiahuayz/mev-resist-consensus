@@ -10,6 +10,7 @@ BUILDERS = 50
 PROPOSERS = 50
 USERS = 100
 BLOCKS_PER_SIM = 1000
+NETWORK_P = 0.15  # Erdős–Rényi edge probability for transaction-propagation graph
 
 MEV_FRACTION_PRIMARY = 0.50
 MEV_FRACTIONS_ROBUSTNESS = (0.25, 0.50, 0.75)
