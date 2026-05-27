@@ -15,7 +15,7 @@ Auction dynamics mirror bidding.py's ModifiedBuilder:
 
 Parameters
 ----------
-  n_attack  in 0..N_BUILDERS  (all 21 values)
+  n_attack  in 0..N_BUILDERS  (all 51 values)
   N_BLOCKS  = 1000  per configuration
   SEED      = 42
   CAP_SIGMA = 1.5   (log-normal sigma; calibrated to empirical Gini ~0.83)
@@ -40,7 +40,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = PROJECT_ROOT / "data" / "builder_auction"
 
 # ── simulation parameters ──────────────────────────────────────────────────────
-N_BUILDERS        = 20
+N_BUILDERS        = 50
 N_BLOCKS          = 1000
 ATTACK_COUNTS     = list(range(0, N_BUILDERS + 1))
 SEED              = 42

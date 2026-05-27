@@ -10,7 +10,7 @@ from blockchain_env.user import User
 # Constants
 BLOCK_CAP: int = 100
 MAX_ROUNDS: int = 24
-BUILDER_COUNT: int = 20
+BUILDER_COUNT: int = 50
 BLOCK_NUM: int = 10
 
 random.seed(16)
